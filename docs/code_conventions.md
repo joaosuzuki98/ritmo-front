@@ -45,7 +45,7 @@ Base rule: the file name tells the type of what it contains.
 - **Booleans:** `is/has/should` prefix. E.g.: `isDarkMode`, `hasPermission`, `shouldSync`.
 - **Event handlers:** `handle` + event inside the component (`handlePress`, `handleSubmit`), `on` + event on the prop (`onPress`, `onNotificationOpened`).
 
-## 3. Arrow functions (required standard)
+## 3. Functions
 
 Use **arrow function with `const`** as the standard form for components, hooks, utils, callbacks, and handlers. Follows the project Prettier config (`arrowParens: avoid` → `x => ...`, not `(x) => ...`).
 
@@ -126,3 +126,11 @@ Rules:
 2. **Named exports** (`export const Button`) as standard in `components/`, `hooks/`, `utils/`, `queries/`, `store/`. `export default` only where tooling requires it (e.g.: root `App.tsx`).
 3. `.tsx` file structure: imports → types/props → component/hook → styles → export. No stray executable logic at module top level (only constants and config).
 4. `index.ts` only re-exports. Do not put logic, components, or styles in it.
+
+## 8. Formatting
+
+See [prettierrc.js](../.prettierrc.js)
+
+## 9. Comments
+
+Comment on the **why**, not the **what** — the code already describes what it does; the comment should justify a non-obvious decision.
