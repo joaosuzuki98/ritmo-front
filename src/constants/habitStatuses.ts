@@ -1,4 +1,9 @@
-export const habitStatusCodes = ['pending', 'completed', 'skipped'] as const
+export const habitStatusCodes = [
+    'pending',
+    'completed',
+    'skipped',
+    'paused',
+] as const
 export type HabitStatusCode = (typeof habitStatusCodes)[number]
 
 export type HabitStatusPresentation = {
@@ -13,6 +18,7 @@ export const habitStatusPresentations: Record<
     pending: { label: 'Pending', rank: 1 },
     completed: { label: 'Completed', rank: 3 },
     skipped: { label: 'Skipped', rank: 2 },
+    paused: { label: 'Paused', rank: 0 },
 }
 
 export const getHabitStatusPresentation = (

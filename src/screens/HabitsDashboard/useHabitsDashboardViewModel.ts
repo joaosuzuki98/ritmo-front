@@ -157,8 +157,9 @@ export const composeHabitCards = (
         .map(habit => {
             const completion = completionByHabit.get(habit.id)
             const priority = getPriorityPresentation(habit.priority)
+            const isPaused = habit.status === 'paused'
             const status = getHabitStatusPresentation(
-                completion?.status ?? habit.status,
+                isPaused ? 'paused' : completion?.status ?? habit.status,
             )
             const history = (completionHistoryByHabit.get(habit.id) ?? [])
                 .slice()
@@ -184,8 +185,11 @@ export const composeHabitCards = (
                 priorityLabel: priority.label,
                 priorityAccessibleLabel: priority.accessibleLabel,
                 priorityColor: priority.color,
-                status: completion?.status ?? habit.status,
+                status: isPaused
+                    ? 'paused'
+                    : completion?.status ?? habit.status,
                 statusLabel: status.label,
+                isPaused,
                 completionTime: completion?.completionTime,
                 isFocusOfDay: habit.isFocusOfDay,
                 frequencyType: habit.frequencyType,
@@ -236,9 +240,18 @@ export const filterAndSortCards = (
             .toLocaleLowerCase()
             .includes(query.trim().toLocaleLowerCase()),
     )
-    if (!sort) return filtered
+    const keepPausedLast = (
+        left: HabitCardViewData,
+        right: HabitCardViewData,
+    ) => {
+        if (left.isPaused === right.isPaused) return 0
+        return left.isPaused ? 1 : -1
+    }
+    if (!sort) return [...filtered].sort(keepPausedLast)
     return [...filtered]
         .sort((left, right) => {
+            const pausedOrder = keepPausedLast(left, right)
+            if (pausedOrder) return pausedOrder
             if (sort === 'title') return left.title.localeCompare(right.title)
             if (sort === 'priority')
                 return (
@@ -459,6 +472,42 @@ export const useHabitsDashboardViewModel = (
         setReloadToken(current => current + 1)
     }
 
+    const toggleHabitPause = async (habitId: string) => {
+        const currentCard = data.cards.find(card => card.id === habitId)
+        if (!currentCard) return
+        const nextIsPaused = !currentCard.isPaused
+        const nextStatus = nextIsPaused ? 'paused' : 'pending'
+        const nextStatusLabel = getHabitStatusPresentation(nextStatus).label
+        const persistedHabit = await database
+            .get<Habit>('habits')
+            .find(habitId)
+            .catch(() => null)
+
+        if (!persistedHabit) {
+            setData(current => ({
+                ...current,
+                cards: current.cards.map(card =>
+                    card.id === habitId
+                        ? {
+                              ...card,
+                              isPaused: nextIsPaused,
+                              status: nextStatus,
+                              statusLabel: nextStatusLabel,
+                          }
+                        : card,
+                ),
+            }))
+            return
+        }
+
+        await database.write(async () => {
+            await persistedHabit.update(record => {
+                record.status = nextStatus
+            })
+        })
+        setReloadToken(current => current + 1)
+    }
+
     return {
         ...data,
         state:
@@ -476,6 +525,7 @@ export const useHabitsDashboardViewModel = (
         clearSearch: () => setQuery(''),
         clearSort: () => setSort(null),
         createHabit,
+        toggleHabitPause,
         reorder: (sourceIndex: number, targetIndex: number) => {
             const sourceId = visibleCards[sourceIndex]?.id
             const targetId = visibleCards[targetIndex]?.id

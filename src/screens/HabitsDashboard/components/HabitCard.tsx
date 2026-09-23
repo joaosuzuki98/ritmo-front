@@ -1,10 +1,16 @@
-import Animated, { ZoomIn } from 'react-native-reanimated'
+import { useEffect, useRef, useState } from 'react'
+import Animated, {
+    LinearTransition,
+    ZoomIn,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated'
 import { PanGestureHandler } from 'react-native-gesture-handler'
 import type { PanGestureHandlerGestureEvent } from 'react-native-gesture-handler'
-import { useRef, useState } from 'react'
 import { Pressable, Text, View, useWindowDimensions } from 'react-native'
-import { Flame, Pause } from 'phosphor-react-native'
-import { useAnimatedStyle, withSpring } from 'react-native-reanimated'
+import { Flame, Pause, Play } from 'phosphor-react-native'
 import type { SharedValue } from 'react-native-reanimated'
 
 import type { HabitCardViewData } from '../habitDashboard.types'
@@ -15,6 +21,7 @@ import { typography } from '../../../styles/typography'
 type HabitCardProps = {
     habit: HabitCardViewData
     onPress: () => void
+    onPause: () => void
     onMoveUp: () => void
     onMoveDown: () => void
     onDragEnd: (targetIndex: number) => void
@@ -29,6 +36,7 @@ type HabitCardProps = {
 export const HabitCard = ({
     habit,
     onPress,
+    onPause,
     onDragEnd,
     isDragging,
     index,
@@ -42,6 +50,17 @@ export const HabitCard = ({
     const [isGestureDragging, setIsGestureDragging] = useState(false)
     const lastTranslationY = useRef(0)
     const dragStep = 188 * scale
+    const pauseOpacity = useSharedValue(habit.isPaused ? 0.48 : 1)
+    useEffect(() => {
+        const nextOpacity = habit.isPaused ? 0.48 : 1
+        pauseOpacity.value = reducedMotion
+            ? nextOpacity
+            : withTiming(nextOpacity, { duration: 220 })
+    }, [habit.isPaused, pauseOpacity, reducedMotion])
+    const visualStyle = useAnimatedStyle(() => ({
+        opacity:
+            pauseOpacity.value * (isDragging || isGestureDragging ? 0.7 : 1),
+    }))
     const dragStyle = useAnimatedStyle(() => {
         const sourceIndex = draggedIndex.value
         if (sourceIndex < 0)
@@ -102,16 +121,17 @@ export const HabitCard = ({
     const content = (
         <Animated.View
             entering={reducedMotion ? undefined : ZoomIn.delay(index * 45)}
+            layout={reducedMotion ? undefined : LinearTransition.duration(220)}
             style={[
                 {
                     backgroundColor: habit.priorityColor,
                     borderRadius: 16 * scale,
                     marginBottom: 20 * scale,
                     minHeight: 168 * scale,
-                    opacity: isDragging || isGestureDragging ? 0.7 : 1,
                     paddingHorizontal: 24 * scale,
                     paddingVertical: 18 * scale,
                 },
+                visualStyle,
                 dragStyle,
             ]}
         >
@@ -142,16 +162,29 @@ export const HabitCard = ({
                         {habit.categoryLabel ? ` - ${habit.categoryLabel}` : ''}
                     </Text>
                     <Pressable
-                        accessibilityLabel={`Pause ${habit.title}`}
+                        accessibilityLabel={`${
+                            habit.isPaused ? 'Resume' : 'Pause'
+                        } ${habit.title}`}
                         accessibilityRole="button"
-                        onPress={() => undefined}
+                        onPress={event => {
+                            event.stopPropagation()
+                            onPause()
+                        }}
                         style={{ padding: 4 * scale }}
                     >
-                        <Pause
-                            color={colors.priorityText}
-                            size={27 * scale}
-                            weight="regular"
-                        />
+                        {habit.isPaused ? (
+                            <Play
+                                color={colors.priorityText}
+                                size={27 * scale}
+                                weight="regular"
+                            />
+                        ) : (
+                            <Pause
+                                color={colors.priorityText}
+                                size={27 * scale}
+                                weight="regular"
+                            />
+                        )}
                     </Pressable>
                 </View>
                 {habit.description ? (

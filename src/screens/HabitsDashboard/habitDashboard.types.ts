@@ -37,6 +37,7 @@ export type HabitCardViewData = {
     priorityColor: string
     status: HabitStatusCode | string
     statusLabel: string
+    isPaused: boolean
     completionTime?: Date
     isFocusOfDay: boolean
     frequencyType?: string

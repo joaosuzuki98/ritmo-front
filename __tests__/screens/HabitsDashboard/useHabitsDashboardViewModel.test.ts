@@ -37,6 +37,30 @@ describe('dashboard transformations', () => {
         })
     })
 
+    it('presents paused habits independently from their daily completion', () => {
+        const cards = composeHabitCards(
+            [habit({ status: 'paused' })],
+            [],
+            [
+                {
+                    habitId: 'habit-1',
+                    date: new Date(2026, 8, 21),
+                    status: 'completed',
+                    updatedAt: new Date(2026, 8, 21, 12),
+                },
+            ] as never,
+            'user-1',
+            1,
+            new Date(2026, 8, 21),
+        )
+
+        expect(cards[0]).toMatchObject({
+            isPaused: true,
+            status: 'paused',
+            statusLabel: 'Paused',
+        })
+    })
+
     it('filters case-insensitively and restores manual order when sorting clears', () => {
         const cards = [
             {
@@ -63,6 +87,20 @@ describe('dashboard transformations', () => {
         expect(
             filterAndSortCards(cards, '', 'title').map(card => card.id),
         ).toEqual(['b', 'a'])
+    })
+
+    it('keeps paused habits after active habits in every sort mode', () => {
+        const cards = [
+            { id: 'paused', title: 'A habit', isPaused: true },
+            { id: 'active', title: 'Z habit', isPaused: false },
+        ] as never
+
+        expect(
+            filterAndSortCards(cards, '', null).map(card => card.id),
+        ).toEqual(['active', 'paused'])
+        expect(
+            filterAndSortCards(cards, '', 'title').map(card => card.id),
+        ).toEqual(['active', 'paused'])
     })
 
     it('does not move an item outside valid bounds', () => {

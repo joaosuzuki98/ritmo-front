@@ -247,6 +247,9 @@ export const HabitsDashboardScreen = ({
                                     key={`${viewModel.weekDay}-${habit.id}`}
                                     habit={habit}
                                     onPress={() => setSelectedHabit(habit)}
+                                    onPause={() =>
+                                        viewModel.toggleHabitPause(habit.id)
+                                    }
                                     index={index}
                                     totalCards={viewModel.visibleCards.length}
                                     draggedIndex={draggedIndex}
