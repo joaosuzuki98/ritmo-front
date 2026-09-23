@@ -1,7 +1,22 @@
-import { appSchema, tableSchema } from '@nozbe/watermelondb'
+import {
+    appSchema,
+    tableSchema as watermelonTableSchema,
+} from '@nozbe/watermelondb'
+
+type TableSchemaConfig = Parameters<typeof watermelonTableSchema>[0]
+
+const tableSchema = (config: TableSchemaConfig) =>
+    watermelonTableSchema({
+        ...config,
+        columns: config.columns.map(column =>
+            column.name === 'created_at' || column.name === 'updated_at'
+                ? { ...column, isOptional: false }
+                : column,
+        ),
+    })
 
 export const databaseSchema = appSchema({
-    version: 1,
+    version: 2,
     tables: [
         tableSchema({
             name: 'users',
@@ -232,6 +247,16 @@ export const databaseSchema = appSchema({
                 { name: 'name', type: 'string' },
                 { name: 'included_habit_ids', type: 'string' },
                 { name: 'included_events', type: 'string' },
+                { name: 'created_at', type: 'number', isOptional: true },
+                { name: 'updated_at', type: 'number', isOptional: true },
+            ],
+        }),
+        tableSchema({
+            name: 'habit_display_preferences',
+            columns: [
+                { name: 'user_id', type: 'string', isIndexed: true },
+                { name: 'week_day', type: 'number', isIndexed: true },
+                { name: 'ordered_habit_ids', type: 'string' },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],

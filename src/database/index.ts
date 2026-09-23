@@ -9,6 +9,7 @@ import { EventSubtask } from './models/EventSubtask'
 import { Goal } from './models/Goal'
 import { GroupConsistencyGoal } from './models/GroupConsistencyGoal'
 import { Habit } from './models/Habit'
+import { HabitDisplayPreference } from './models/HabitDisplayPreference'
 import { HabitCondition } from './models/HabitCondition'
 import { HabitDependency } from './models/HabitDependency'
 import { IncompletionReason } from './models/IncompletionReason'
@@ -34,6 +35,7 @@ export const database = new Database({
         User,
         Category,
         Habit,
+        HabitDisplayPreference,
         HabitDependency,
         HabitCondition,
         Event,
@@ -59,6 +61,7 @@ export * from './models/EventSubtask'
 export * from './models/Goal'
 export * from './models/GroupConsistencyGoal'
 export * from './models/Habit'
+export * from './models/HabitDisplayPreference'
 export * from './models/HabitCondition'
 export * from './models/HabitDependency'
 export * from './models/IncompletionReason'

@@ -6,6 +6,10 @@ module.exports = {
             '<rootDir>/__mocks__/newAppScreenMock.js',
         '^react-native-safe-area-context$':
             '<rootDir>/__mocks__/safeAreaContextMock.js',
+        '^react-native-reanimated$':
+            '<rootDir>/__mocks__/react-native-reanimated.js',
+        '^react-native-gesture-handler$':
+            '<rootDir>/__mocks__/react-native-gesture-handler.js',
     },
     transformIgnorePatterns: [
         'node_modules/(?!((jest-)?react-native|@react-native(-community)?|react-native-css-interop)/)',
