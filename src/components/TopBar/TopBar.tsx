@@ -29,8 +29,8 @@ export const TopBar = ({
             style={[
                 topBarStyles.container,
                 {
-                    minHeight: 104 * scale + top,
-                    paddingHorizontal: 24 * scale,
+                    minHeight: 88 * scale + top,
+                    paddingHorizontal: 20 * scale,
                     paddingTop: top,
                 },
             ]}
@@ -43,46 +43,46 @@ export const TopBar = ({
                 style={[
                     topBarStyles.profile,
                     {
-                        borderRadius: 38 * scale,
-                        height: 76 * scale,
-                        width: 76 * scale,
+                        borderRadius: 32 * scale,
+                        height: 64 * scale,
+                        width: 64 * scale,
                     },
                 ]}
             />
-            <View style={[topBarStyles.identity, { marginLeft: 16 * scale }]}>
+            <View style={[topBarStyles.identity, { marginLeft: 12 * scale }]}>
                 <Text
                     numberOfLines={1}
-                    style={[topBarStyles.name, { fontSize: 29 * scale }]}
+                    style={[topBarStyles.name, { fontSize: 24 * scale }]}
                 >
                     {userName}
                 </Text>
             </View>
-            <View style={[topBarStyles.stats, { gap: 16 * scale }]}>
-                <View style={[topBarStyles.stat, { gap: 6 * scale }]}>
+            <View style={[topBarStyles.stats, { gap: 12 * scale }]}>
+                <View style={[topBarStyles.stat, { gap: 4 * scale }]}>
                     <Lightning
                         color={topBarStyles.lightning.color}
-                        size={38 * scale}
+                        size={29 * scale}
                         weight="fill"
                     />
                     <Text
                         style={[
                             topBarStyles.statValue,
-                            { fontSize: 30 * scale },
+                            { fontSize: 24 * scale },
                         ]}
                     >
                         {totalPoints}
                     </Text>
                 </View>
-                <View style={[topBarStyles.stat, { gap: 6 * scale }]}>
+                <View style={[topBarStyles.stat, { gap: 4 * scale }]}>
                     <Fire
                         color={topBarStyles.fire.color}
-                        size={35 * scale}
+                        size={27 * scale}
                         weight="fill"
                     />
                     <Text
                         style={[
                             topBarStyles.statValue,
-                            { fontSize: 30 * scale },
+                            { fontSize: 24 * scale },
                         ]}
                     >
                         {level}
@@ -95,12 +95,12 @@ export const TopBar = ({
                 onPress={onMenuPress}
                 style={[
                     topBarStyles.menu,
-                    { marginLeft: 24 * scale, padding: 6 * scale },
+                    { marginLeft: 16 * scale, padding: 6 * scale },
                 ]}
             >
                 <List
                     color={topBarStyles.menuText.color}
-                    size={42 * scale}
+                    size={34 * scale}
                     weight="regular"
                 />
             </Pressable>
