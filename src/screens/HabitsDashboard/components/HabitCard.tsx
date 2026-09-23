@@ -14,6 +14,7 @@ import { typography } from '../../../styles/typography'
 
 type HabitCardProps = {
     habit: HabitCardViewData
+    onPress: () => void
     onMoveUp: () => void
     onMoveDown: () => void
     onDragEnd: (targetIndex: number) => void
@@ -27,6 +28,7 @@ type HabitCardProps = {
 
 export const HabitCard = ({
     habit,
+    onPress,
     onDragEnd,
     isDragging,
     index,
@@ -113,81 +115,88 @@ export const HabitCard = ({
                 dragStyle,
             ]}
         >
-            <View
-                style={{
-                    alignItems: 'center',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                }}
+            <Pressable
+                accessibilityLabel={`Open details for ${habit.title}`}
+                accessibilityRole="button"
+                onPress={onPress}
+                style={{ flex: 1 }}
             >
-                <Text
-                    numberOfLines={1}
+                <View
                     style={{
-                        color: colors.priorityText,
-                        flex: 1,
-                        fontFamily: typography.fontFamily,
-                        fontSize: 20 * scale,
-                        fontWeight: '600',
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
                     }}
                 >
-                    {habit.title}
-                    {habit.categoryLabel ? ` - ${habit.categoryLabel}` : ''}
-                </Text>
-                <Pressable
-                    accessibilityLabel={`Pause ${habit.title}`}
-                    accessibilityRole="button"
-                    onPress={() => undefined}
-                    style={{ padding: 4 * scale }}
+                    <Text
+                        numberOfLines={1}
+                        style={{
+                            color: colors.priorityText,
+                            flex: 1,
+                            fontFamily: typography.fontFamily,
+                            fontSize: 20 * scale,
+                            fontWeight: '600',
+                        }}
+                    >
+                        {habit.title}
+                        {habit.categoryLabel ? ` - ${habit.categoryLabel}` : ''}
+                    </Text>
+                    <Pressable
+                        accessibilityLabel={`Pause ${habit.title}`}
+                        accessibilityRole="button"
+                        onPress={() => undefined}
+                        style={{ padding: 4 * scale }}
+                    >
+                        <Pause
+                            color={colors.priorityText}
+                            size={27 * scale}
+                            weight="regular"
+                        />
+                    </Pressable>
+                </View>
+                {habit.description ? (
+                    <Text
+                        style={{
+                            color: colors.white,
+                            fontFamily: typography.fontFamily,
+                            fontSize: 18 * scale,
+                            fontWeight: '600',
+                            lineHeight: 26 * scale,
+                            marginTop: 21 * scale,
+                            maxWidth: '72%',
+                        }}
+                    >
+                        {habit.description}
+                    </Text>
+                ) : null}
+                <View
+                    style={{
+                        alignItems: 'center',
+                        bottom: 22 * scale,
+                        flexDirection: 'row',
+                        position: 'absolute',
+                        right: 22 * scale,
+                    }}
                 >
-                    <Pause
+                    <Flame
                         color={colors.priorityText}
-                        size={27 * scale}
+                        size={39 * scale}
                         weight="regular"
                     />
-                </Pressable>
-            </View>
-            {habit.description ? (
-                <Text
-                    style={{
-                        color: colors.white,
-                        fontFamily: typography.fontFamily,
-                        fontSize: 18 * scale,
-                        fontWeight: '600',
-                        lineHeight: 26 * scale,
-                        marginTop: 21 * scale,
-                        maxWidth: '72%',
-                    }}
-                >
-                    {habit.description}
-                </Text>
-            ) : null}
-            <View
-                style={{
-                    alignItems: 'center',
-                    bottom: 22 * scale,
-                    flexDirection: 'row',
-                    position: 'absolute',
-                    right: 22 * scale,
-                }}
-            >
-                <Flame
-                    color={colors.priorityText}
-                    size={39 * scale}
-                    weight="regular"
-                />
-                <Text
-                    accessibilityLabel={`Streak 20 for ${habit.title}`}
-                    style={{
-                        color: colors.white,
-                        fontFamily: typography.fontFamily,
-                        fontSize: 42 * scale,
-                        fontWeight: '400',
-                        marginLeft: 7 * scale,
-                    }}
-                >
-                    20
-                </Text>
-            </View>
+                    <Text
+                        accessibilityLabel={`Streak ${habit.currentStreak} for ${habit.title}`}
+                        style={{
+                            color: colors.white,
+                            fontFamily: typography.fontFamily,
+                            fontSize: 42 * scale,
+                            fontWeight: '400',
+                            marginLeft: 7 * scale,
+                        }}
+                    >
+                        {habit.currentStreak}
+                    </Text>
+                </View>
+            </Pressable>
         </Animated.View>
     )
     return (

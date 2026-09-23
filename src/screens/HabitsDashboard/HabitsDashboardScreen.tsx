@@ -26,8 +26,12 @@ import { DaySelector } from './components/DaySelector'
 import { AddHabitModal } from './components/AddHabitModal'
 import { HabitCard } from './components/HabitCard'
 import { HabitToolbar } from './components/HabitToolbar'
+import { HabitDetailsModal } from './components/HabitDetailsModal'
 import { SearchInput } from './components/SearchInput'
-import type { HabitsDashboardScreenProps } from './habitDashboard.types'
+import type {
+    HabitsDashboardScreenProps,
+    HabitCardViewData,
+} from './habitDashboard.types'
 import { useHabitsDashboardViewModel } from './useHabitsDashboardViewModel'
 
 export const HabitsDashboardScreen = ({
@@ -39,6 +43,8 @@ export const HabitsDashboardScreen = ({
 }: HabitsDashboardScreenProps) => {
     const viewModel = useHabitsDashboardViewModel(currentUserId, initialWeekDay)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const [selectedHabit, setSelectedHabit] =
+        useState<HabitCardViewData | null>(null)
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const draggedIndex = useSharedValue(-1)
@@ -240,6 +246,7 @@ export const HabitsDashboardScreen = ({
                                 <HabitCard
                                     key={`${viewModel.weekDay}-${habit.id}`}
                                     habit={habit}
+                                    onPress={() => setSelectedHabit(habit)}
                                     index={index}
                                     totalCards={viewModel.visibleCards.length}
                                     draggedIndex={draggedIndex}
@@ -265,6 +272,11 @@ export const HabitsDashboardScreen = ({
                 isVisible={isAddHabitModalVisible}
                 onClose={onCloseAddHabitModal}
                 onCreateHabit={viewModel.createHabit}
+            />
+            <HabitDetailsModal
+                habit={selectedHabit}
+                isVisible={selectedHabit !== null}
+                onClose={() => setSelectedHabit(null)}
             />
         </View>
     )

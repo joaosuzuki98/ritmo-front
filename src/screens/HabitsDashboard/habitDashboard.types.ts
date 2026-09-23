@@ -18,6 +18,14 @@ export type BottomRouteConfig = {
     accessibilityLabel: string
 }
 
+export type HabitCompletionViewData = {
+    date: Date
+    status: string
+    completionTime?: Date
+    note?: string
+    distractionLockEnabled?: boolean
+}
+
 export type HabitCardViewData = {
     id: string
     title: string
@@ -31,8 +39,19 @@ export type HabitCardViewData = {
     statusLabel: string
     completionTime?: Date
     isFocusOfDay: boolean
+    frequencyType?: string
+    weekDays: number[]
     estimatedDurationMinutes?: number
     preferredTime?: Date
+    seasonalStart?: Date
+    seasonalEnd?: Date
+    createdAt?: Date
+    completedCount: number
+    skippedCount: number
+    successRate: number
+    currentStreak: number
+    longestStreak: number
+    completionHistory: HabitCompletionViewData[]
     manualIndex: number
     isTemporarilySorted: boolean
 }

@@ -14,6 +14,7 @@ import {
     type CompletionRecord,
     type Habit,
     type HabitDisplayPreference,
+    type Streak,
     type User,
 } from '../../database'
 import { localDateKey } from '../../utils/normalizeLocalDate'
@@ -31,18 +32,29 @@ type HabitSource = Pick<
     | 'categoryId'
     | 'name'
     | 'description'
+    | 'frequencyType'
     | 'weekDays'
     | 'priority'
     | 'status'
     | 'estimatedDurationMinutes'
     | 'preferredTime'
     | 'isFocusOfDay'
+    | 'seasonalStart'
+    | 'seasonalEnd'
+    | 'createdAt'
 >
 type CompletionSource = Pick<
     CompletionRecord,
-    'habitId' | 'date' | 'status' | 'completionTime' | 'updatedAt'
+    | 'habitId'
+    | 'date'
+    | 'status'
+    | 'completionTime'
+    | 'note'
+    | 'distractionLockEnabled'
+    | 'updatedAt'
 >
 type CategorySource = Pick<Category, 'id' | 'userId' | 'name'>
+type StreakSource = Pick<Streak, 'habitId' | 'currentStreak' | 'longestStreak'>
 
 const mockCategories: CategorySource[] = [
     { id: 'mock-category', userId: 'local-user', name: 'Categoria ABC' },
@@ -57,6 +69,7 @@ const mockHabits: HabitSource[] = [
         description:
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ac hendrerit lacus. Lorem ipsum dolor sit amet Lorem',
         weekDays: [1, 2, 3, 4, 5, 6, 7],
+        frequencyType: 'daily',
         priority: 'high',
         status: 'pending',
         isFocusOfDay: true,
@@ -69,6 +82,7 @@ const mockHabits: HabitSource[] = [
         description:
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ac hendrerit lacus. Lorem ipsum dolor sit amet Lorem',
         weekDays: [1, 2, 3, 4, 5, 6, 7],
+        frequencyType: 'daily',
         priority: 'medium',
         status: 'pending',
         isFocusOfDay: false,
@@ -81,6 +95,7 @@ const mockHabits: HabitSource[] = [
         description:
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ac hendrerit lacus. Lorem ipsum dolor sit amet Lorem',
         weekDays: [1, 2, 3, 4, 5, 6, 7],
+        frequencyType: 'daily',
         priority: 'low',
         status: 'pending',
         isFocusOfDay: false,
@@ -95,6 +110,7 @@ export const composeHabitCards = (
     weekDay: WeekDay,
     selectedDate: Date,
     orderedHabitIds: readonly string[] = [],
+    streaks: readonly StreakSource[] = [],
 ): HabitCardViewData[] => {
     const categoryById = new Map(
         categories
@@ -103,8 +119,12 @@ export const composeHabitCards = (
     )
     const dateKey = localDateKey(selectedDate)
     const completionByHabit = new Map<string, CompletionSource>()
+    const completionHistoryByHabit = new Map<string, CompletionSource[]>()
 
     completions.forEach(record => {
+        const history = completionHistoryByHabit.get(record.habitId) ?? []
+        history.push(record)
+        completionHistoryByHabit.set(record.habitId, history)
         if (localDateKey(record.date) !== dateKey) return
         const current = completionByHabit.get(record.habitId)
         if (
@@ -114,6 +134,15 @@ export const composeHabitCards = (
         )
             completionByHabit.set(record.habitId, record)
     })
+    const streakByHabit = new Map(
+        streaks.map(streak => [
+            streak.habitId,
+            {
+                current: streak.currentStreak,
+                longest: streak.longestStreak,
+            },
+        ]),
+    )
 
     const matching = habits
         .filter(
@@ -131,6 +160,19 @@ export const composeHabitCards = (
             const status = getHabitStatusPresentation(
                 completion?.status ?? habit.status,
             )
+            const history = (completionHistoryByHabit.get(habit.id) ?? [])
+                .slice()
+                .sort(
+                    (left, right) => right.date.getTime() - left.date.getTime(),
+                )
+            const completedCount = history.filter(
+                record => record.status === 'completed',
+            ).length
+            const skippedCount = history.filter(
+                record => record.status === 'skipped',
+            ).length
+            const attempts = completedCount + skippedCount
+            const streak = streakByHabit.get(habit.id)
             const card: HabitCardViewData = {
                 id: habit.id,
                 title: habit.name,
@@ -146,8 +188,25 @@ export const composeHabitCards = (
                 statusLabel: status.label,
                 completionTime: completion?.completionTime,
                 isFocusOfDay: habit.isFocusOfDay,
+                frequencyType: habit.frequencyType,
+                weekDays: habit.weekDays,
                 estimatedDurationMinutes: habit.estimatedDurationMinutes,
                 preferredTime: habit.preferredTime,
+                seasonalStart: habit.seasonalStart,
+                seasonalEnd: habit.seasonalEnd,
+                createdAt: habit.createdAt,
+                completedCount,
+                skippedCount,
+                successRate: attempts ? (completedCount / attempts) * 100 : 0,
+                currentStreak: streak?.current ?? 0,
+                longestStreak: streak?.longest ?? 0,
+                completionHistory: history.map(record => ({
+                    date: record.date,
+                    status: record.status,
+                    completionTime: record.completionTime,
+                    note: record.note,
+                    distractionLockEnabled: record.distractionLockEnabled,
+                })),
                 manualIndex: orderedHabitIds.indexOf(habit.id),
                 isTemporarilySorted: false,
             }
@@ -257,25 +316,32 @@ export const useHabitsDashboardViewModel = (
         let active = true
         const load = async () => {
             try {
-                const [user, habits, categories, completions, preferences] =
-                    await Promise.all([
-                        database
-                            .get<User>('users')
-                            .find(currentUserId)
-                            .catch(() => null),
-                        database.get<Habit>('habits').query().fetch(),
-                        database.get<Category>('categories').query().fetch(),
-                        database
-                            .get<CompletionRecord>('completion_records')
-                            .query()
-                            .fetch(),
-                        database
-                            .get<HabitDisplayPreference>(
-                                'habit_display_preferences',
-                            )
-                            .query()
-                            .fetch(),
-                    ])
+                const [
+                    user,
+                    habits,
+                    categories,
+                    completions,
+                    streaks,
+                    preferences,
+                ] = await Promise.all([
+                    database
+                        .get<User>('users')
+                        .find(currentUserId)
+                        .catch(() => null),
+                    database.get<Habit>('habits').query().fetch(),
+                    database.get<Category>('categories').query().fetch(),
+                    database
+                        .get<CompletionRecord>('completion_records')
+                        .query()
+                        .fetch(),
+                    database.get<Streak>('streaks').query().fetch(),
+                    database
+                        .get<HabitDisplayPreference>(
+                            'habit_display_preferences',
+                        )
+                        .query()
+                        .fetch(),
+                ])
                 if (!active) return
                 const preference =
                     preferences.find(
@@ -294,6 +360,7 @@ export const useHabitsDashboardViewModel = (
                     weekDay,
                     new Date(),
                     preference?.orderedHabitIds ?? [],
+                    streaks,
                 )
                 setData({ user, cards, preference })
                 setState(cards.length === 0 ? 'empty' : 'success')
