@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -55,6 +56,7 @@ export const AddHabitModal = ({
     onCreateHabit,
 }: AddHabitModalProps) => {
     const { height, width } = useWindowDimensions()
+    const { bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
     const daySize = Math.min(
         42 * scale,
@@ -133,6 +135,7 @@ export const AddHabitModal = ({
                                 borderTopRightRadius: 28 * scale,
                                 maxHeight: height * 0.9,
                                 paddingHorizontal: spacing.lg * scale,
+                                paddingBottom: bottom,
                             },
                         ]}
                     >

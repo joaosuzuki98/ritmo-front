@@ -8,6 +8,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { getHabitStatusPresentation } from '../../../constants/habitStatuses'
 import { weekDayLabels, type WeekDay } from '../../../constants/weekDays'
@@ -60,6 +61,7 @@ export const HabitDetailsModal = ({
     onClose,
 }: HabitDetailsModalProps) => {
     const { height, width } = useWindowDimensions()
+    const { bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
 
     if (!habit) return null
@@ -109,6 +111,7 @@ export const HabitDetailsModal = ({
                         {
                             height: Math.min(height * 0.9, 760 * scale),
                             paddingHorizontal: spacing.lg * scale,
+                            paddingBottom: bottom,
                         },
                     ]}
                 >
