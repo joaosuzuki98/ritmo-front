@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Animated, {
+    FadeOut,
     LinearTransition,
     ZoomIn,
     useAnimatedStyle,
@@ -9,8 +10,14 @@ import Animated, {
 } from 'react-native-reanimated'
 import { PanGestureHandler } from 'react-native-gesture-handler'
 import type { PanGestureHandlerGestureEvent } from 'react-native-gesture-handler'
-import { Pressable, Text, View, useWindowDimensions } from 'react-native'
-import { Flame, Pause, Play } from 'phosphor-react-native'
+import {
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+    useWindowDimensions,
+} from 'react-native'
+import { CheckCircle, Flame, Pause, Play } from 'phosphor-react-native'
 import type { SharedValue } from 'react-native-reanimated'
 
 import type { HabitCardViewData } from '../habitDashboard.types'
@@ -22,6 +29,7 @@ type HabitCardProps = {
     habit: HabitCardViewData
     onPress: () => void
     onPause: () => void
+    onComplete: () => void
     onMoveUp: () => void
     onMoveDown: () => void
     onDragEnd: (targetIndex: number) => void
@@ -37,6 +45,7 @@ export const HabitCard = ({
     habit,
     onPress,
     onPause,
+    onComplete,
     onDragEnd,
     isDragging,
     index,
@@ -49,6 +58,10 @@ export const HabitCard = ({
     const scale = getResponsiveScale(width)
     const [isGestureDragging, setIsGestureDragging] = useState(false)
     const lastTranslationY = useRef(0)
+    const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const lastTapAt = useRef(0)
+    const [showCelebration, setShowCelebration] = useState(false)
+    const wasCompleted = useRef(habit.status === 'completed')
     const dragStep = 188 * scale
     const pauseOpacity = useSharedValue(habit.isPaused ? 0.48 : 1)
     useEffect(() => {
@@ -61,6 +74,37 @@ export const HabitCard = ({
         opacity:
             pauseOpacity.value * (isDragging || isGestureDragging ? 0.7 : 1),
     }))
+    useEffect(() => {
+        if (habit.status === 'completed' && !wasCompleted.current) {
+            setShowCelebration(true)
+            const timeout = setTimeout(() => setShowCelebration(false), 760)
+            wasCompleted.current = true
+            return () => clearTimeout(timeout)
+        }
+        wasCompleted.current = habit.status === 'completed'
+    }, [habit.status])
+    useEffect(
+        () => () => {
+            if (tapTimeout.current) clearTimeout(tapTimeout.current)
+        },
+        [],
+    )
+    const handleCardPress = () => {
+        const now = Date.now()
+        if (now - lastTapAt.current < 280) {
+            if (tapTimeout.current) clearTimeout(tapTimeout.current)
+            tapTimeout.current = null
+            lastTapAt.current = 0
+            onComplete()
+            return
+        }
+        lastTapAt.current = now
+        tapTimeout.current = setTimeout(() => {
+            lastTapAt.current = 0
+            tapTimeout.current = null
+            onPress()
+        }, 280)
+    }
     const dragStyle = useAnimatedStyle(() => {
         const sourceIndex = draggedIndex.value
         if (sourceIndex < 0)
@@ -126,6 +170,11 @@ export const HabitCard = ({
                 {
                     backgroundColor: habit.priorityColor,
                     borderRadius: 16 * scale,
+                    borderColor:
+                        habit.status === 'completed'
+                            ? colors.success
+                            : 'transparent',
+                    borderWidth: 2,
                     marginBottom: 20 * scale,
                     minHeight: 168 * scale,
                     paddingHorizontal: 24 * scale,
@@ -135,10 +184,38 @@ export const HabitCard = ({
                 dragStyle,
             ]}
         >
+            {showCelebration ? (
+                <View pointerEvents="none" style={styles.celebrationLayer}>
+                    {[
+                        { color: colors.success, left: '10%', top: '28%' },
+                        { color: colors.accent, left: '28%', top: '10%' },
+                        { color: colors.text, left: '52%', top: '18%' },
+                        { color: colors.success, left: '72%', top: '34%' },
+                        { color: colors.accent, left: '84%', top: '12%' },
+                        { color: colors.text, left: '42%', top: '42%' },
+                    ].map((particle, particleIndex) => (
+                        <Animated.View
+                            entering={ZoomIn.delay(particleIndex * 30).duration(
+                                180,
+                            )}
+                            exiting={FadeOut.duration(380)}
+                            key={`${particle.left}-${particle.top}`}
+                            style={[
+                                styles.celebrationParticle,
+                                {
+                                    backgroundColor: particle.color,
+                                    left: particle.left,
+                                    top: particle.top,
+                                },
+                            ]}
+                        />
+                    ))}
+                </View>
+            ) : null}
             <Pressable
                 accessibilityLabel={`Open details for ${habit.title}`}
                 accessibilityRole="button"
-                onPress={onPress}
+                onPress={handleCardPress}
                 style={{ flex: 1 }}
             >
                 <View
@@ -161,31 +238,40 @@ export const HabitCard = ({
                         {habit.title}
                         {habit.categoryLabel ? ` - ${habit.categoryLabel}` : ''}
                     </Text>
-                    <Pressable
-                        accessibilityLabel={`${
-                            habit.isPaused ? 'Resume' : 'Pause'
-                        } ${habit.title}`}
-                        accessibilityRole="button"
-                        onPress={event => {
-                            event.stopPropagation()
-                            onPause()
-                        }}
-                        style={{ padding: 4 * scale }}
-                    >
-                        {habit.isPaused ? (
-                            <Play
-                                color={colors.priorityText}
+                    <View style={styles.headerActions}>
+                        {habit.status === 'completed' ? (
+                            <CheckCircle
+                                color={colors.success}
                                 size={27 * scale}
-                                weight="regular"
+                                weight="fill"
                             />
-                        ) : (
-                            <Pause
-                                color={colors.priorityText}
-                                size={27 * scale}
-                                weight="regular"
-                            />
-                        )}
-                    </Pressable>
+                        ) : null}
+                        <Pressable
+                            accessibilityLabel={`${
+                                habit.isPaused ? 'Resume' : 'Pause'
+                            } ${habit.title}`}
+                            accessibilityRole="button"
+                            onPress={event => {
+                                event.stopPropagation()
+                                onPause()
+                            }}
+                            style={{ padding: 4 * scale }}
+                        >
+                            {habit.isPaused ? (
+                                <Play
+                                    color={colors.priorityText}
+                                    size={27 * scale}
+                                    weight="regular"
+                                />
+                            ) : (
+                                <Pause
+                                    color={colors.priorityText}
+                                    size={27 * scale}
+                                    weight="regular"
+                                />
+                            )}
+                        </Pressable>
+                    </View>
                 </View>
                 {habit.description ? (
                     <Text
@@ -242,3 +328,25 @@ export const HabitCard = ({
         </PanGestureHandler>
     )
 }
+
+const styles = StyleSheet.create({
+    celebrationLayer: {
+        bottom: 0,
+        left: 0,
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        zIndex: 3,
+    },
+    headerActions: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: 8,
+    },
+    celebrationParticle: {
+        borderRadius: 4,
+        height: 8,
+        position: 'absolute',
+        width: 8,
+    },
+})

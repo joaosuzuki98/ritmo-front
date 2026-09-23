@@ -9,6 +9,8 @@ const Tab = createBottomTabNavigator<AppTabParamList>()
 
 export const AppNavigator = () => {
     const [isAddHabitModalVisible, setIsAddHabitModalVisible] = useState(false)
+    // TODO: Persist this dismissal in onboarding/preferences instead of resetting on app launch.
+    const [isDoubleTapHintVisible, setIsDoubleTapHintVisible] = useState(true)
     const openAddHabitModal = () => setIsAddHabitModalVisible(true)
     const closeAddHabitModal = () => setIsAddHabitModalVisible(false)
 
@@ -26,6 +28,10 @@ export const AppNavigator = () => {
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}
+                        isDoubleTapHintVisible={isDoubleTapHintVisible}
+                        onCloseDoubleTapHint={() =>
+                            setIsDoubleTapHintVisible(false)
+                        }
                     />
                 )}
             </Tab.Screen>
@@ -36,6 +42,10 @@ export const AppNavigator = () => {
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}
+                        isDoubleTapHintVisible={isDoubleTapHintVisible}
+                        onCloseDoubleTapHint={() =>
+                            setIsDoubleTapHintVisible(false)
+                        }
                     />
                 )}
             </Tab.Screen>
@@ -46,6 +56,10 @@ export const AppNavigator = () => {
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}
+                        isDoubleTapHintVisible={isDoubleTapHintVisible}
+                        onCloseDoubleTapHint={() =>
+                            setIsDoubleTapHintVisible(false)
+                        }
                     />
                 )}
             </Tab.Screen>
@@ -56,6 +70,10 @@ export const AppNavigator = () => {
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}
+                        isDoubleTapHintVisible={isDoubleTapHintVisible}
+                        onCloseDoubleTapHint={() =>
+                            setIsDoubleTapHintVisible(false)
+                        }
                     />
                 )}
             </Tab.Screen>

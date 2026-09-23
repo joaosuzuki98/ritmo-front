@@ -63,4 +63,6 @@ export type HabitsDashboardScreenProps = {
     isAddHabitModalVisible?: boolean
     onOpenAddHabitModal?: () => void
     onCloseAddHabitModal?: () => void
+    isDoubleTapHintVisible?: boolean
+    onCloseDoubleTapHint?: () => void
 }

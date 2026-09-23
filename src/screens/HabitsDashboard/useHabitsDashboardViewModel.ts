@@ -508,6 +508,122 @@ export const useHabitsDashboardViewModel = (
         setReloadToken(current => current + 1)
     }
 
+    const completeHabit = async (habitId: string) => {
+        const currentCard = data.cards.find(card => card.id === habitId)
+        if (!currentCard || currentCard.isPaused) return
+
+        const completionTime = new Date()
+        const dateKey = localDateKey(completionTime)
+        const alreadyCompleted = currentCard.status === 'completed'
+        const completedCount = alreadyCompleted
+            ? currentCard.completedCount
+            : currentCard.completedCount + 1
+        const attempts = completedCount + currentCard.skippedCount
+        const completionHistory = currentCard.completionHistory.some(
+            record => localDateKey(record.date) === dateKey,
+        )
+            ? currentCard.completionHistory.map(record =>
+                  localDateKey(record.date) === dateKey
+                      ? {
+                            ...record,
+                            status: 'completed',
+                            completionTime,
+                        }
+                      : record,
+              )
+            : [
+                  {
+                      date: completionTime,
+                      status: 'completed',
+                      completionTime,
+                      distractionLockEnabled: false,
+                  },
+                  ...currentCard.completionHistory,
+              ]
+        const applyLocalCompletion = () => {
+            setData(current => ({
+                ...current,
+                cards: current.cards.map(card =>
+                    card.id === habitId
+                        ? {
+                              ...card,
+                              status: 'completed',
+                              statusLabel: 'Completed',
+                              completionTime,
+                              completedCount,
+                              successRate: attempts
+                                  ? (completedCount / attempts) * 100
+                                  : 0,
+                              currentStreak: Math.max(1, card.currentStreak),
+                              longestStreak: Math.max(1, card.longestStreak),
+                              completionHistory,
+                          }
+                        : card,
+                ),
+            }))
+        }
+        const persistedHabit = await database
+            .get<Habit>('habits')
+            .find(habitId)
+            .catch(() => null)
+
+        if (!persistedHabit) {
+            applyLocalCompletion()
+            return
+        }
+
+        const records = await database
+            .get<CompletionRecord>('completion_records')
+            .query()
+            .fetch()
+        const currentRecord = records
+            .filter(
+                record =>
+                    record.habitId === habitId &&
+                    localDateKey(record.date) === dateKey,
+            )
+            .sort(
+                (left, right) =>
+                    (right.updatedAt?.getTime() ?? right.date.getTime()) -
+                    (left.updatedAt?.getTime() ?? left.date.getTime()),
+            )[0]
+        const streaks = await database.get<Streak>('streaks').query().fetch()
+        const streak = streaks.find(item => item.habitId === habitId)
+
+        await database.write(async () => {
+            if (currentRecord) {
+                await currentRecord.update(record => {
+                    record.status = 'completed'
+                    record.completionTime = completionTime
+                })
+            } else {
+                await database
+                    .get<CompletionRecord>('completion_records')
+                    .create(record => {
+                        record.habitId = habitId
+                        record.date = completionTime
+                        record.status = 'completed'
+                        record.completionTime = completionTime
+                        record.distractionLockEnabled = false
+                    })
+            }
+
+            if (streak) {
+                await streak.update(record => {
+                    record.currentStreak = Math.max(1, record.currentStreak)
+                    record.longestStreak = Math.max(1, record.longestStreak)
+                })
+            } else {
+                await database.get<Streak>('streaks').create(record => {
+                    record.habitId = habitId
+                    record.currentStreak = 1
+                    record.longestStreak = 1
+                })
+            }
+        })
+        setReloadToken(current => current + 1)
+    }
+
     return {
         ...data,
         state:
@@ -526,6 +642,7 @@ export const useHabitsDashboardViewModel = (
         clearSort: () => setSort(null),
         createHabit,
         toggleHabitPause,
+        completeHabit,
         reorder: (sourceIndex: number, targetIndex: number) => {
             const sourceId = visibleCards[sourceIndex]?.id
             const targetId = visibleCards[targetIndex]?.id

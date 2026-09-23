@@ -27,6 +27,7 @@ import { AddHabitModal } from './components/AddHabitModal'
 import { HabitCard } from './components/HabitCard'
 import { HabitToolbar } from './components/HabitToolbar'
 import { HabitDetailsModal } from './components/HabitDetailsModal'
+import { DoubleTapHintModal } from './components/DoubleTapHintModal'
 import { SearchInput } from './components/SearchInput'
 import type {
     HabitsDashboardScreenProps,
@@ -40,6 +41,8 @@ export const HabitsDashboardScreen = ({
     isAddHabitModalVisible = false,
     onOpenAddHabitModal = () => undefined,
     onCloseAddHabitModal = () => undefined,
+    isDoubleTapHintVisible = true,
+    onCloseDoubleTapHint = () => undefined,
 }: HabitsDashboardScreenProps) => {
     const viewModel = useHabitsDashboardViewModel(currentUserId, initialWeekDay)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -250,6 +253,9 @@ export const HabitsDashboardScreen = ({
                                     onPause={() =>
                                         viewModel.toggleHabitPause(habit.id)
                                     }
+                                    onComplete={() =>
+                                        viewModel.completeHabit(habit.id)
+                                    }
                                     index={index}
                                     totalCards={viewModel.visibleCards.length}
                                     draggedIndex={draggedIndex}
@@ -280,6 +286,10 @@ export const HabitsDashboardScreen = ({
                 habit={selectedHabit}
                 isVisible={selectedHabit !== null}
                 onClose={() => setSelectedHabit(null)}
+            />
+            <DoubleTapHintModal
+                isVisible={isDoubleTapHintVisible}
+                onClose={onCloseDoubleTapHint}
             />
         </View>
     )
