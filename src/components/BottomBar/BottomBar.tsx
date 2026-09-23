@@ -13,11 +13,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { bottomBarStyles } from './BottomBar.styles'
 import { getResponsiveScale } from '../../styles/responsive'
 
+type BottomBarProps = BottomTabBarProps & {
+    onAddHabit: () => void
+}
+
 export const BottomBar = ({
     state,
     descriptors,
     navigation,
-}: BottomTabBarProps) => {
+    onAddHabit,
+}: BottomBarProps) => {
     const { bottom } = useSafeAreaInsets()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
@@ -25,7 +30,7 @@ export const BottomBar = ({
         <Pressable
             accessibilityLabel="Add habit"
             accessibilityRole="button"
-            onPress={() => undefined}
+            onPress={onAddHabit}
             style={[
                 bottomBarStyles.add,
                 {

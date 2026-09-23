@@ -40,4 +40,7 @@ export type HabitCardViewData = {
 export type HabitsDashboardScreenProps = {
     currentUserId: string
     initialWeekDay?: WeekDay
+    isAddHabitModalVisible?: boolean
+    onOpenAddHabitModal?: () => void
+    onCloseAddHabitModal?: () => void
 }

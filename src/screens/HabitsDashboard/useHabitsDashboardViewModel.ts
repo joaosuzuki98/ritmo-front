@@ -22,6 +22,7 @@ import type {
     HabitCardViewData,
     SortCriterion,
 } from './habitDashboard.types'
+import type { AddHabitFormData } from './addHabitSchema'
 
 type HabitSource = Pick<
     Habit,
@@ -211,6 +212,14 @@ export const reorderHabitIds = (
     return next
 }
 
+const parsePreferredTime = (value: string): Date | undefined => {
+    if (!value.trim()) return undefined
+    const [hours, minutes] = value.split(':').map(Number)
+    const date = new Date()
+    date.setHours(hours, minutes, 0, 0)
+    return date
+}
+
 type DashboardData = {
     user: User | null
     cards: HabitCardViewData[]
@@ -233,6 +242,7 @@ export const useHabitsDashboardViewModel = (
     })
     const [state, setState] = useState<DashboardRenderState>('loading')
     const [isReducedMotion, setIsReducedMotion] = useState(false)
+    const [reloadToken, setReloadToken] = useState(0)
 
     useEffect(() => {
         AccessibilityInfo.isReduceMotionEnabled().then(setIsReducedMotion)
@@ -295,7 +305,7 @@ export const useHabitsDashboardViewModel = (
         return () => {
             active = false
         }
-    }, [currentUserId, weekDay])
+    }, [currentUserId, reloadToken, weekDay])
 
     const visibleCards = useMemo(
         () => filterAndSortCards(data.cards, query, sort),
@@ -333,6 +343,55 @@ export const useHabitsDashboardViewModel = (
         }))
     }
 
+    const createHabit = async (formData: AddHabitFormData) => {
+        const categoryName = formData.categoryName?.trim()
+        const categories = categoryName
+            ? await database.get<Category>('categories').query().fetch()
+            : []
+        const existingCategory = categories.find(
+            category =>
+                category.userId === currentUserId &&
+                category.name.toLocaleLowerCase() ===
+                    categoryName?.toLocaleLowerCase(),
+        )
+
+        await database.write(async () => {
+            let categoryId = existingCategory?.id
+            if (categoryName && !categoryId) {
+                const category = await database
+                    .get<Category>('categories')
+                    .create(record => {
+                        record.userId = currentUserId
+                        record.name = categoryName
+                    })
+                categoryId = category.id
+            }
+
+            await database.get<Habit>('habits').create(record => {
+                record.userId = currentUserId
+                record.categoryId = categoryId
+                record.name = formData.name.trim()
+                record.description = formData.description?.trim() || undefined
+                record.frequencyType = formData.frequencyType
+                record.weekDays =
+                    formData.frequencyType === 'daily'
+                        ? [1, 2, 3, 4, 5, 6, 7]
+                        : formData.weekDays
+                record.estimatedDurationMinutes =
+                    formData.estimatedDurationMinutes.trim()
+                        ? Number(formData.estimatedDurationMinutes)
+                        : undefined
+                record.preferredTime = parsePreferredTime(
+                    formData.preferredTime,
+                )
+                record.priority = formData.priority
+                record.isFocusOfDay = formData.isFocusOfDay
+                record.status = 'pending'
+            })
+        })
+        setReloadToken(current => current + 1)
+    }
+
     return {
         ...data,
         state:
@@ -349,6 +408,7 @@ export const useHabitsDashboardViewModel = (
         moveDay,
         clearSearch: () => setQuery(''),
         clearSort: () => setSort(null),
+        createHabit,
         reorder: (sourceIndex: number, targetIndex: number) => {
             const sourceId = visibleCards[sourceIndex]?.id
             const targetId = visibleCards[targetIndex]?.id

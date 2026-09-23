@@ -23,6 +23,7 @@ import { spacing } from '../../styles/spacing'
 import { getResponsiveScale } from '../../styles/responsive'
 import { typography } from '../../styles/typography'
 import { DaySelector } from './components/DaySelector'
+import { AddHabitModal } from './components/AddHabitModal'
 import { HabitCard } from './components/HabitCard'
 import { HabitToolbar } from './components/HabitToolbar'
 import { SearchInput } from './components/SearchInput'
@@ -32,6 +33,9 @@ import { useHabitsDashboardViewModel } from './useHabitsDashboardViewModel'
 export const HabitsDashboardScreen = ({
     currentUserId,
     initialWeekDay,
+    isAddHabitModalVisible = false,
+    onOpenAddHabitModal = () => undefined,
+    onCloseAddHabitModal = () => undefined,
 }: HabitsDashboardScreenProps) => {
     const viewModel = useHabitsDashboardViewModel(currentUserId, initialWeekDay)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -192,7 +196,7 @@ export const HabitsDashboardScreen = ({
                                 </Text>
                                 <Pressable
                                     accessibilityLabel="Add a habit"
-                                    onPress={() => undefined}
+                                    onPress={onOpenAddHabitModal}
                                 >
                                     <Text
                                         style={{
@@ -256,6 +260,12 @@ export const HabitsDashboardScreen = ({
                     </Animated.View>
                 </PanGestureHandler>
             </ScrollView>
+            <AddHabitModal
+                initialWeekDay={viewModel.weekDay}
+                isVisible={isAddHabitModalVisible}
+                onClose={onCloseAddHabitModal}
+                onCreateHabit={viewModel.createHabit}
+            />
         </View>
     )
 }
