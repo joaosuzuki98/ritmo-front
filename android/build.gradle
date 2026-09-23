@@ -19,3 +19,17 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// WatermelonDB 0.28 references BuildConfig, which AGP 9 no longer generates
+// automatically for Android library modules.
+subprojects { subproject ->
+    subproject.pluginManager.withPlugin("com.android.library") {
+        if (subproject.name == "nozbe_watermelondb") {
+            subproject.android {
+                buildFeatures {
+                    buildConfig = true
+                }
+            }
+        }
+    }
+}
