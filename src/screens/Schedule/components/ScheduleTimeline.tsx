@@ -169,8 +169,8 @@ const styles = StyleSheet.create({
     entryTitle: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontWeight: '500',
+        fontWeight: '600',
         position: 'absolute',
-        textAlign: 'center',
+        textAlign: 'left',
     },
 })
