@@ -14,23 +14,23 @@ import { bottomBarStyles } from './BottomBar.styles'
 import { getResponsiveScale } from '../../styles/responsive'
 
 type BottomBarProps = BottomTabBarProps & {
-    onAddHabit: () => void
+    onAddItem: (routeName: string) => void
 }
 
 export const BottomBar = ({
     state,
     descriptors,
     navigation,
-    onAddHabit,
+    onAddItem,
 }: BottomBarProps) => {
     const { bottom } = useSafeAreaInsets()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const addButton = (
         <Pressable
-            accessibilityLabel="Add habit"
+            accessibilityLabel="Add item"
             accessibilityRole="button"
-            onPress={onAddHabit}
+            onPress={() => onAddItem(state.routes[state.index].name)}
             style={[
                 bottomBarStyles.add,
                 {

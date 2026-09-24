@@ -3,22 +3,31 @@ import { useState } from 'react'
 
 import { BottomBar } from '../components/BottomBar'
 import { HabitsDashboardScreen } from '../screens/HabitsDashboard/HabitsDashboardScreen'
+import { ScheduleScreen } from '../screens/Schedule/ScheduleScreen'
 import type { AppTabParamList } from './types'
 
 const Tab = createBottomTabNavigator<AppTabParamList>()
 
 export const AppNavigator = () => {
     const [isAddHabitModalVisible, setIsAddHabitModalVisible] = useState(false)
+    const [isAddScheduleItemModalVisible, setIsAddScheduleItemModalVisible] =
+        useState(false)
     // TODO: Persist this dismissal in onboarding/preferences instead of resetting on app launch.
     const [isDoubleTapHintVisible, setIsDoubleTapHintVisible] = useState(true)
     const openAddHabitModal = () => setIsAddHabitModalVisible(true)
     const closeAddHabitModal = () => setIsAddHabitModalVisible(false)
+    const openAddItem = (routeName: string) => {
+        if (routeName === 'Schedule') {
+            setIsAddScheduleItemModalVisible(true)
+            return
+        }
+
+        setIsAddHabitModalVisible(true)
+    }
 
     return (
         <Tab.Navigator
-            tabBar={props => (
-                <BottomBar {...props} onAddHabit={openAddHabitModal} />
-            )}
+            tabBar={props => <BottomBar {...props} onAddItem={openAddItem} />}
             screenOptions={{ headerShown: false }}
         >
             <Tab.Screen name="Habits">
@@ -37,14 +46,10 @@ export const AppNavigator = () => {
             </Tab.Screen>
             <Tab.Screen name="Schedule">
                 {() => (
-                    <HabitsDashboardScreen
-                        currentUserId="local-user"
-                        isAddHabitModalVisible={isAddHabitModalVisible}
-                        onOpenAddHabitModal={openAddHabitModal}
-                        onCloseAddHabitModal={closeAddHabitModal}
-                        isDoubleTapHintVisible={isDoubleTapHintVisible}
-                        onCloseDoubleTapHint={() =>
-                            setIsDoubleTapHintVisible(false)
+                    <ScheduleScreen
+                        isAddItemModalVisible={isAddScheduleItemModalVisible}
+                        onCloseAddItemModal={() =>
+                            setIsAddScheduleItemModalVisible(false)
                         }
                     />
                 )}
