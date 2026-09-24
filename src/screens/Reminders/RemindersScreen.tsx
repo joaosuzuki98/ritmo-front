@@ -109,7 +109,7 @@ export const RemindersScreen = ({
                     </View>
                     <View style={styles.yearRow}>
                         <CalendarBlank color={colors.text} size={24 * scale} />
-                        <Text style={[styles.year, { fontSize: 30 * scale }]}>
+                        <Text style={[styles.year, { fontSize: 25 * scale }]}>
                             {viewModel.visibleMonth.getFullYear()}
                         </Text>
                     </View>
