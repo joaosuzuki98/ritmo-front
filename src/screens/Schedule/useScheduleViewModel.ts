@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import type { AddScheduleItemFormData } from './addScheduleItemSchema'
 import type { ScheduleEntry, ScheduleHabit } from './schedule.types'
 
 const monthNames = [
@@ -107,6 +108,9 @@ export const getHourLabel = (hour: number): string => {
     return `${String(displayHour).padStart(2, '0')}:00 ${period}`
 }
 
+export const parseScheduleHour = (time: string): number =>
+    Number(time.slice(0, 2))
+
 export const useScheduleViewModel = () => {
     const today = startOfDay(new Date())
     const [selectedDate, setSelectedDate] = useState(today)
@@ -115,6 +119,9 @@ export const useScheduleViewModel = () => {
     )
     const [linkedHabits, setLinkedHabits] = useState<
         Record<string, Array<{ habitId: string; startHour: number }>>
+    >({})
+    const [manualItems, setManualItems] = useState<
+        Record<string, ScheduleEntry[]>
     >({})
 
     useEffect(() => {
@@ -138,10 +145,12 @@ export const useScheduleViewModel = () => {
                 },
             ]
         })
-        return [...baseEntries, ...linkedEntries].sort(
-            (left, right) => left.startHour - right.startHour,
-        )
-    }, [linkedHabits, selectedDate])
+        return [
+            ...baseEntries,
+            ...(manualItems[dateKey(selectedDate)] ?? []),
+            ...linkedEntries,
+        ].sort((left, right) => left.startHour - right.startHour)
+    }, [linkedHabits, manualItems, selectedDate])
 
     const moveDate = (delta: number) => {
         setSelectedDate(current => {
@@ -176,6 +185,27 @@ export const useScheduleViewModel = () => {
         })
     }
 
+    const addScheduleItem = ({
+        endTime,
+        startTime,
+        title,
+    }: AddScheduleItemFormData) => {
+        const key = dateKey(selectedDate)
+        const startHour = parseScheduleHour(startTime)
+        const endHour = parseScheduleHour(endTime)
+        const item: ScheduleEntry = {
+            endHour,
+            id: `manual-${Date.now()}`,
+            isManual: true,
+            startHour,
+            title: title.trim(),
+        }
+        setManualItems(current => ({
+            ...current,
+            [key]: [...(current[key] ?? []), item],
+        }))
+    }
+
     return {
         availableHabits,
         calendarMonth,
@@ -184,9 +214,11 @@ export const useScheduleViewModel = () => {
         formatMonthLabel,
         getCalendarDays,
         getHourLabel,
+        addScheduleItem,
         linkHabit,
         moveCalendarMonth,
         moveDate,
+        parseScheduleHour,
         selectDate,
         selectedDate,
     }

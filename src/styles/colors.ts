@@ -11,6 +11,7 @@ export const colors = {
     scheduleBackground: '#8065C7',
     scheduleCurrent: '#351779',
     scheduleLinked: '#593AA8',
+    scheduleManual: '#6B50B6',
     scheduleLine: '#E8E0FF',
     white: '#FFFFFF',
     priorityLow: '#27B574',

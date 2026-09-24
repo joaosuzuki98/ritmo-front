@@ -11,6 +11,7 @@ import {
     CaretLeft,
     CaretRight,
     Link,
+    Plus,
 } from 'phosphor-react-native'
 
 import { TopBar } from '../../components/TopBar'
@@ -20,8 +21,10 @@ import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { CalendarModal } from './components/CalendarModal'
+import { AddScheduleItemModal } from './components/AddScheduleItemModal'
 import { LinkHabitModal } from './components/LinkHabitModal'
 import { ScheduleTimeline } from './components/ScheduleTimeline'
+import type { AddScheduleItemFormData } from './addScheduleItemSchema'
 import { useScheduleViewModel } from './useScheduleViewModel'
 
 export const ScheduleScreen = () => {
@@ -30,12 +33,19 @@ export const ScheduleScreen = () => {
     const viewModel = useScheduleViewModel()
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
     const [linkHour, setLinkHour] = useState(-1)
+    const [addItemHour, setAddItemHour] = useState(-1)
 
     const openLinkModal = (hour: number) => setLinkHour(hour)
     const closeLinkModal = () => setLinkHour(-1)
     const handleSelectHabit = (habitId: string) => {
         viewModel.linkHabit(habitId, linkHour)
         closeLinkModal()
+    }
+    const openAddItemModal = (hour: number) => setAddItemHour(hour)
+    const closeAddItemModal = () => setAddItemHour(-1)
+    const handleCreateItem = (data: AddScheduleItemFormData) => {
+        viewModel.addScheduleItem(data)
+        closeAddItemModal()
     }
 
     return (
@@ -80,22 +90,40 @@ export const ScheduleScreen = () => {
                         <CaretRight color={colors.text} size={34 * scale} />
                     </Pressable>
                 </View>
-                <Pressable
-                    accessibilityLabel="Link a habit"
-                    accessibilityRole="button"
-                    onPress={() => openLinkModal(8)}
-                    style={[styles.linkButton, { marginBottom: 18 * scale }]}
-                >
-                    <Link color={colors.text} size={18 * scale} />
-                    <Text
-                        style={[
-                            styles.linkButtonText,
-                            { fontSize: 14 * scale },
-                        ]}
+                <View style={[styles.actions, { marginBottom: 18 * scale }]}>
+                    <Pressable
+                        accessibilityLabel="Link a habit"
+                        accessibilityRole="button"
+                        onPress={() => openLinkModal(8)}
+                        style={styles.linkButton}
                     >
-                        Link a habit
-                    </Text>
-                </Pressable>
+                        <Link color={colors.text} size={18 * scale} />
+                        <Text
+                            style={[
+                                styles.linkButtonText,
+                                { fontSize: 14 * scale },
+                            ]}
+                        >
+                            Link a habit
+                        </Text>
+                    </Pressable>
+                    <Pressable
+                        accessibilityLabel="Add schedule item"
+                        accessibilityRole="button"
+                        onPress={() => openAddItemModal(8)}
+                        style={styles.addItemButton}
+                    >
+                        <Plus color={colors.text} size={18 * scale} />
+                        <Text
+                            style={[
+                                styles.linkButtonText,
+                                { fontSize: 14 * scale },
+                            ]}
+                        >
+                            Add item
+                        </Text>
+                    </Pressable>
+                </View>
             </View>
             <ScheduleTimeline
                 entries={viewModel.entries}
@@ -120,6 +148,12 @@ export const ScheduleScreen = () => {
                 onClose={closeLinkModal}
                 onSelectHabit={handleSelectHabit}
             />
+            <AddScheduleItemModal
+                initialStartHour={Math.max(0, addItemHour)}
+                isVisible={addItemHour >= 0}
+                onClose={closeAddItemModal}
+                onCreateItem={handleCreateItem}
+            />
         </View>
     )
 }
@@ -130,6 +164,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         paddingHorizontal: spacing.md,
     },
+    actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
     titleRow: { alignItems: 'center', flexDirection: 'row' },
     title: {
         color: colors.text,
@@ -167,7 +202,15 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         flexDirection: 'row',
         gap: spacing.xs,
-        marginTop: spacing.sm,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+    },
+    addItemButton: {
+        alignItems: 'center',
+        backgroundColor: colors.scheduleCurrent,
+        borderRadius: 18,
+        flexDirection: 'row',
+        gap: spacing.xs,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.xs,
     },

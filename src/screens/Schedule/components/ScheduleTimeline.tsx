@@ -100,6 +100,8 @@ export const ScheduleTimeline = ({
                                     ? colors.scheduleCurrent
                                     : entry.habitId
                                     ? colors.scheduleLinked
+                                    : entry.isManual
+                                    ? colors.scheduleManual
                                     : colors.scheduleBackground,
                                 height: Math.max(
                                     hourHeight,
