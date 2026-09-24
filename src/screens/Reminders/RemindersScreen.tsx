@@ -301,9 +301,9 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontWeight: '400',
     },
-    yearRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+    yearRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs },
     calendarButton: {
-        alignItems: 'center',
+        alignItems: 'flex-end',
         height: spacing.touchTarget,
         justifyContent: 'center',
         width: spacing.touchTarget,
