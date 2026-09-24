@@ -8,9 +8,8 @@ import {
 } from 'react-native'
 import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native'
 
-import { TopBar } from '../../components/TopBar'
+import { ScreenLayout } from '../../components/ScreenLayout'
 import { colors } from '../../styles/colors'
-import { globalStyles } from '../../styles/globalStyles'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -34,28 +33,19 @@ export const ScheduleScreen = ({
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
 
     return (
-        <View style={globalStyles.screen}>
-            <TopBar
-                level={7}
-                onMenuPress={() => undefined}
-                onProfilePress={() => undefined}
-                totalPoints={27}
-                userName="Teste da Silva"
-            />
-            <View style={[styles.header, { paddingTop: 30 * scale }]}>
-                <View style={styles.titleRow}>
-                    <Text style={[styles.title, { fontSize: 52 * scale }]}>
-                        Schedule
-                    </Text>
-                    <Pressable
-                        accessibilityLabel="Open calendar"
-                        accessibilityRole="button"
-                        onPress={() => setIsCalendarVisible(true)}
-                        style={styles.calendarButton}
-                    >
-                        <CalendarBlank color={colors.text} size={35 * scale} />
-                    </Pressable>
-                </View>
+        <ScreenLayout
+            title="Schedule"
+            titleAccessory={
+                <Pressable
+                    accessibilityLabel="Open calendar"
+                    accessibilityRole="button"
+                    onPress={() => setIsCalendarVisible(true)}
+                    style={styles.calendarButton}
+                >
+                    <CalendarBlank color={colors.text} size={35 * scale} />
+                </Pressable>
+            }
+            subtitle={
                 <View style={styles.dateRow}>
                     <Pressable
                         accessibilityLabel="Previous day"
@@ -64,7 +54,15 @@ export const ScheduleScreen = ({
                     >
                         <CaretLeft color={colors.text} size={34 * scale} />
                     </Pressable>
-                    <Text style={[styles.dateText, { fontSize: 34 * scale }]}>
+                    <Text
+                        style={[
+                            styles.dateText,
+                            {
+                                fontSize:
+                                    typography.screenSubtitle.fontSize * scale,
+                            },
+                        ]}
+                    >
                         {viewModel.formatScheduleDate(viewModel.selectedDate)}
                     </Text>
                     <Pressable
@@ -75,7 +73,13 @@ export const ScheduleScreen = ({
                         <CaretRight color={colors.text} size={34 * scale} />
                     </Pressable>
                 </View>
-            </View>
+            }
+            level={7}
+            onMenuPress={() => undefined}
+            onProfilePress={() => undefined}
+            totalPoints={27}
+            userName="Teste da Silva"
+        >
             <ScheduleTimeline
                 entries={viewModel.entries}
                 getHourLabel={viewModel.getHourLabel}
@@ -101,22 +105,11 @@ export const ScheduleScreen = ({
                     onCloseAddItemModal()
                 }}
             />
-        </View>
+        </ScreenLayout>
     )
 }
 
 const styles = StyleSheet.create({
-    header: {
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        paddingHorizontal: spacing.md,
-    },
-    titleRow: { alignItems: 'center', flexDirection: 'row' },
-    title: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontWeight: '500',
-    },
     calendarButton: {
         alignItems: 'center',
         height: spacing.touchTarget,

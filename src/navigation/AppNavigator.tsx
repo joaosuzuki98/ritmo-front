@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { BottomBar } from '../components/BottomBar'
 import { HabitsDashboardScreen } from '../screens/HabitsDashboard/HabitsDashboardScreen'
+import { RemindersScreen } from '../screens/Reminders/RemindersScreen'
 import { ScheduleScreen } from '../screens/Schedule/ScheduleScreen'
 import type { AppTabParamList } from './types'
 
@@ -12,6 +13,8 @@ export const AppNavigator = () => {
     const [isAddHabitModalVisible, setIsAddHabitModalVisible] = useState(false)
     const [isAddScheduleItemModalVisible, setIsAddScheduleItemModalVisible] =
         useState(false)
+    const [isAddReminderEventModalVisible, setIsAddReminderEventModalVisible] =
+        useState(false)
     // TODO: Persist this dismissal in onboarding/preferences instead of resetting on app launch.
     const [isDoubleTapHintVisible, setIsDoubleTapHintVisible] = useState(true)
     const openAddHabitModal = () => setIsAddHabitModalVisible(true)
@@ -19,6 +22,11 @@ export const AppNavigator = () => {
     const openAddItem = (routeName: string) => {
         if (routeName === 'Schedule') {
             setIsAddScheduleItemModalVisible(true)
+            return
+        }
+
+        if (routeName === 'Reminders') {
+            setIsAddReminderEventModalVisible(true)
             return
         }
 
@@ -56,14 +64,10 @@ export const AppNavigator = () => {
             </Tab.Screen>
             <Tab.Screen name="Reminders">
                 {() => (
-                    <HabitsDashboardScreen
-                        currentUserId="local-user"
-                        isAddHabitModalVisible={isAddHabitModalVisible}
-                        onOpenAddHabitModal={openAddHabitModal}
-                        onCloseAddHabitModal={closeAddHabitModal}
-                        isDoubleTapHintVisible={isDoubleTapHintVisible}
-                        onCloseDoubleTapHint={() =>
-                            setIsDoubleTapHintVisible(false)
+                    <RemindersScreen
+                        isAddEventModalVisible={isAddReminderEventModalVisible}
+                        onCloseAddEventModal={() =>
+                            setIsAddReminderEventModalVisible(false)
                         }
                     />
                 )}
@@ -72,6 +76,7 @@ export const AppNavigator = () => {
                 {() => (
                     <HabitsDashboardScreen
                         currentUserId="local-user"
+                        title="Todo"
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}

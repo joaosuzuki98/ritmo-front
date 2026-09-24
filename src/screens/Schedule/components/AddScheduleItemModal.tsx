@@ -30,6 +30,9 @@ type AddScheduleItemModalProps = {
     isVisible: boolean
     onClose: () => void
     onCreateItem: (data: AddScheduleItemFormData) => void
+    title?: string
+    subtitle?: string
+    submitLabel?: string
 }
 
 const getInitialValues = (startHour: number): AddScheduleItemFormData => ({
@@ -43,6 +46,9 @@ export const AddScheduleItemModal = ({
     isVisible,
     onClose,
     onCreateItem,
+    title = 'Add schedule item',
+    subtitle = 'Habits are added automatically.',
+    submitLabel = 'ADD ITEM',
 }: AddScheduleItemModalProps) => {
     const { bottom } = useSafeAreaInsets()
     const { height, width } = useWindowDimensions()
@@ -109,7 +115,7 @@ export const AddScheduleItemModal = ({
                                         { fontSize: 30 * scale },
                                     ]}
                                 >
-                                    Add schedule item
+                                    {title}
                                 </Text>
                                 <Text
                                     style={[
@@ -117,7 +123,7 @@ export const AddScheduleItemModal = ({
                                         { fontSize: 13 * scale },
                                     ]}
                                 >
-                                    Habits are added automatically.
+                                    {subtitle}
                                 </Text>
                             </View>
                             <Pressable
@@ -229,7 +235,9 @@ export const AddScheduleItemModal = ({
                                 onPress={() => handleSubmit(handleCreate)()}
                                 style={styles.submitButton}
                             >
-                                <Text style={styles.submitText}>ADD ITEM</Text>
+                                <Text style={styles.submitText}>
+                                    {submitLabel}
+                                </Text>
                             </Pressable>
                         </ScrollView>
                     </View>
