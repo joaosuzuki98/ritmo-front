@@ -87,7 +87,12 @@ export const RemindersScreen = ({
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.calendarHeader}>
-                    <View style={styles.monthControls}>
+                    <View
+                        style={[
+                            styles.monthControls,
+                            { marginLeft: -spacing.md * scale },
+                        ]}
+                    >
                         <Pressable
                             accessibilityLabel="Previous month"
                             onPress={() => viewModel.moveMonth(-1)}
