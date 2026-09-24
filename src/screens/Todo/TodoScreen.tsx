@@ -11,6 +11,7 @@ import {
 import { Check, SquaresFour } from 'phosphor-react-native'
 
 import { ScreenLayout } from '../../components/ScreenLayout'
+import { ScreenSubtitle } from '../../components/ScreenSubtitle'
 import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
@@ -116,11 +117,7 @@ export const TodoScreen = ({
     return (
         <ScreenLayout
             title="To-do"
-            subtitle={
-                <Text style={[styles.subtitle, { fontSize: 14 * scale }]}>
-                    Organize your next steps
-                </Text>
-            }
+            subtitle={<ScreenSubtitle>Organize your next steps</ScreenSubtitle>}
             userName="Teste da Silva"
             level={7}
             totalPoints={27}
@@ -306,11 +303,6 @@ export const TodoScreen = ({
 
 const styles = StyleSheet.create({
     content: { paddingBottom: spacing.xl, paddingTop: spacing.lg },
-    subtitle: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        marginTop: spacing.xxs,
-    },
     categoryButton: {
         alignItems: 'center',
         backgroundColor: colors.surfaceMuted,
