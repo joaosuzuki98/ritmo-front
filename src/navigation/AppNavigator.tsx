@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { BottomBar } from '../components/BottomBar'
 import { HabitsDashboardScreen } from '../screens/HabitsDashboard/HabitsDashboardScreen'
+import { ScheduleScreen } from '../screens/Schedule/ScheduleScreen'
 import type { AppTabParamList } from './types'
 
 const Tab = createBottomTabNavigator<AppTabParamList>()
@@ -35,20 +36,7 @@ export const AppNavigator = () => {
                     />
                 )}
             </Tab.Screen>
-            <Tab.Screen name="Schedule">
-                {() => (
-                    <HabitsDashboardScreen
-                        currentUserId="local-user"
-                        isAddHabitModalVisible={isAddHabitModalVisible}
-                        onOpenAddHabitModal={openAddHabitModal}
-                        onCloseAddHabitModal={closeAddHabitModal}
-                        isDoubleTapHintVisible={isDoubleTapHintVisible}
-                        onCloseDoubleTapHint={() =>
-                            setIsDoubleTapHintVisible(false)
-                        }
-                    />
-                )}
-            </Tab.Screen>
+            <Tab.Screen name="Schedule">{() => <ScheduleScreen />}</Tab.Screen>
             <Tab.Screen name="Reminders">
                 {() => (
                     <HabitsDashboardScreen
