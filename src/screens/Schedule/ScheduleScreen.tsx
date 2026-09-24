@@ -131,11 +131,11 @@ export const ScheduleScreen = ({
 
 const styles = StyleSheet.create({
     calendarButton: {
-        alignItems: 'center',
         height: spacing.touchTarget,
         justifyContent: 'center',
-        marginLeft: spacing.sm,
         width: spacing.touchTarget,
+        marginLeft: spacing.sm,
+        marginTop: 4,
     },
     dateRow: {
         alignItems: 'flex-start',
