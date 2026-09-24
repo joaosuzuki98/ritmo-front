@@ -1,5 +1,4 @@
 import {
-    Pressable,
     ScrollView,
     StyleSheet,
     Text,
@@ -15,17 +14,15 @@ import { typography } from '../../../styles/typography'
 type ScheduleTimelineProps = {
     entries: ScheduleEntry[]
     getHourLabel: (hour: number) => string
-    onOpenLink: (hour: number) => void
 }
 
-const firstHour = 6
-const lastHour = 22
+const firstHour = 0
+const lastHour = 23
 const baseHourHeight = 102
 
 export const ScheduleTimeline = ({
     entries,
     getHourLabel,
-    onOpenLink,
 }: ScheduleTimelineProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
@@ -44,12 +41,8 @@ export const ScheduleTimeline = ({
         >
             <View style={{ height: hours.length * hourHeight }}>
                 {hours.map(hour => (
-                    <Pressable
-                        accessibilityLabel={`Link a habit at ${getHourLabel(
-                            hour,
-                        )}`}
+                    <View
                         key={hour}
-                        onPress={() => onOpenLink(hour)}
                         style={[
                             styles.hourRow,
                             {
@@ -63,7 +56,12 @@ export const ScheduleTimeline = ({
                                 styles.timeLabel,
                                 {
                                     paddingLeft: 34 * scale,
-                                    top: 36 * scale,
+                                    top:
+                                        (hour === 12
+                                            ? 11
+                                            : hour === 0
+                                            ? 20
+                                            : 36) * scale,
                                     width: 116 * scale,
                                 },
                             ]}
@@ -71,16 +69,19 @@ export const ScheduleTimeline = ({
                             <Text
                                 style={[
                                     styles.timeText,
-                                    { fontSize: 25 * scale },
+                                    {
+                                        fontSize: 21 * scale,
+                                        lineHeight: 25 * scale,
+                                    },
                                 ]}
                             >
                                 {getHourLabel(hour)}
                             </Text>
                         </View>
-                    </Pressable>
+                    </View>
                 ))}
                 {entries.map(entry => (
-                    <Pressable
+                    <View
                         accessibilityLabel={`${entry.title.replace(
                             '\n',
                             ' ',
@@ -88,11 +89,6 @@ export const ScheduleTimeline = ({
                             entry.startHour,
                         )} to ${getHourLabel(entry.endHour)}`}
                         key={entry.id}
-                        onPress={
-                            entry.habitId
-                                ? () => onOpenLink(entry.startHour)
-                                : undefined
-                        }
                         style={[
                             styles.entry,
                             {
@@ -124,7 +120,7 @@ export const ScheduleTimeline = ({
                         >
                             {entry.title}
                         </Text>
-                    </Pressable>
+                    </View>
                 ))}
             </View>
         </ScrollView>

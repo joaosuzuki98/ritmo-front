@@ -10,16 +10,24 @@ const Tab = createBottomTabNavigator<AppTabParamList>()
 
 export const AppNavigator = () => {
     const [isAddHabitModalVisible, setIsAddHabitModalVisible] = useState(false)
+    const [isAddScheduleItemModalVisible, setIsAddScheduleItemModalVisible] =
+        useState(false)
     // TODO: Persist this dismissal in onboarding/preferences instead of resetting on app launch.
     const [isDoubleTapHintVisible, setIsDoubleTapHintVisible] = useState(true)
     const openAddHabitModal = () => setIsAddHabitModalVisible(true)
     const closeAddHabitModal = () => setIsAddHabitModalVisible(false)
+    const openAddItem = (routeName: string) => {
+        if (routeName === 'Schedule') {
+            setIsAddScheduleItemModalVisible(true)
+            return
+        }
+
+        setIsAddHabitModalVisible(true)
+    }
 
     return (
         <Tab.Navigator
-            tabBar={props => (
-                <BottomBar {...props} onAddHabit={openAddHabitModal} />
-            )}
+            tabBar={props => <BottomBar {...props} onAddItem={openAddItem} />}
             screenOptions={{ headerShown: false }}
         >
             <Tab.Screen name="Habits">
@@ -36,7 +44,16 @@ export const AppNavigator = () => {
                     />
                 )}
             </Tab.Screen>
-            <Tab.Screen name="Schedule">{() => <ScheduleScreen />}</Tab.Screen>
+            <Tab.Screen name="Schedule">
+                {() => (
+                    <ScheduleScreen
+                        isAddItemModalVisible={isAddScheduleItemModalVisible}
+                        onCloseAddItemModal={() =>
+                            setIsAddScheduleItemModalVisible(false)
+                        }
+                    />
+                )}
+            </Tab.Screen>
             <Tab.Screen name="Reminders">
                 {() => (
                     <HabitsDashboardScreen

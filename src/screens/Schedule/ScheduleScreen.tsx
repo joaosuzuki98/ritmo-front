@@ -6,13 +6,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import {
-    CalendarBlank,
-    CaretLeft,
-    CaretRight,
-    Link,
-    Plus,
-} from 'phosphor-react-native'
+import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native'
 
 import { TopBar } from '../../components/TopBar'
 import { colors } from '../../styles/colors'
@@ -22,31 +16,22 @@ import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { CalendarModal } from './components/CalendarModal'
 import { AddScheduleItemModal } from './components/AddScheduleItemModal'
-import { LinkHabitModal } from './components/LinkHabitModal'
 import { ScheduleTimeline } from './components/ScheduleTimeline'
-import type { AddScheduleItemFormData } from './addScheduleItemSchema'
 import { useScheduleViewModel } from './useScheduleViewModel'
 
-export const ScheduleScreen = () => {
+type ScheduleScreenProps = {
+    isAddItemModalVisible: boolean
+    onCloseAddItemModal: () => void
+}
+
+export const ScheduleScreen = ({
+    isAddItemModalVisible,
+    onCloseAddItemModal,
+}: ScheduleScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const viewModel = useScheduleViewModel()
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
-    const [linkHour, setLinkHour] = useState(-1)
-    const [addItemHour, setAddItemHour] = useState(-1)
-
-    const openLinkModal = (hour: number) => setLinkHour(hour)
-    const closeLinkModal = () => setLinkHour(-1)
-    const handleSelectHabit = (habitId: string) => {
-        viewModel.linkHabit(habitId, linkHour)
-        closeLinkModal()
-    }
-    const openAddItemModal = (hour: number) => setAddItemHour(hour)
-    const closeAddItemModal = () => setAddItemHour(-1)
-    const handleCreateItem = (data: AddScheduleItemFormData) => {
-        viewModel.addScheduleItem(data)
-        closeAddItemModal()
-    }
 
     return (
         <View style={globalStyles.screen}>
@@ -90,45 +75,10 @@ export const ScheduleScreen = () => {
                         <CaretRight color={colors.text} size={34 * scale} />
                     </Pressable>
                 </View>
-                <View style={[styles.actions, { marginBottom: 18 * scale }]}>
-                    <Pressable
-                        accessibilityLabel="Link a habit"
-                        accessibilityRole="button"
-                        onPress={() => openLinkModal(8)}
-                        style={styles.linkButton}
-                    >
-                        <Link color={colors.text} size={18 * scale} />
-                        <Text
-                            style={[
-                                styles.linkButtonText,
-                                { fontSize: 14 * scale },
-                            ]}
-                        >
-                            Link a habit
-                        </Text>
-                    </Pressable>
-                    <Pressable
-                        accessibilityLabel="Add schedule item"
-                        accessibilityRole="button"
-                        onPress={() => openAddItemModal(8)}
-                        style={styles.addItemButton}
-                    >
-                        <Plus color={colors.text} size={18 * scale} />
-                        <Text
-                            style={[
-                                styles.linkButtonText,
-                                { fontSize: 14 * scale },
-                            ]}
-                        >
-                            Add item
-                        </Text>
-                    </Pressable>
-                </View>
             </View>
             <ScheduleTimeline
                 entries={viewModel.entries}
                 getHourLabel={viewModel.getHourLabel}
-                onOpenLink={openLinkModal}
             />
             <CalendarModal
                 isVisible={isCalendarVisible}
@@ -141,18 +91,14 @@ export const ScheduleScreen = () => {
                 }}
                 selectedDate={viewModel.selectedDate}
             />
-            <LinkHabitModal
-                habits={viewModel.availableHabits}
-                hourLabel={viewModel.getHourLabel(Math.max(0, linkHour))}
-                isVisible={linkHour >= 0}
-                onClose={closeLinkModal}
-                onSelectHabit={handleSelectHabit}
-            />
             <AddScheduleItemModal
-                initialStartHour={Math.max(0, addItemHour)}
-                isVisible={addItemHour >= 0}
-                onClose={closeAddItemModal}
-                onCreateItem={handleCreateItem}
+                initialStartHour={8}
+                isVisible={isAddItemModalVisible}
+                onClose={onCloseAddItemModal}
+                onCreateItem={data => {
+                    viewModel.addScheduleItem(data)
+                    onCloseAddItemModal()
+                }}
             />
         </View>
     )
@@ -164,7 +110,6 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         paddingHorizontal: spacing.md,
     },
-    actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
     titleRow: { alignItems: 'center', flexDirection: 'row' },
     title: {
         color: colors.text,
@@ -195,28 +140,5 @@ const styles = StyleSheet.create({
         color: colors.text,
         fontFamily: typography.fontFamily,
         fontWeight: '300',
-    },
-    linkButton: {
-        alignItems: 'center',
-        backgroundColor: colors.accent,
-        borderRadius: 18,
-        flexDirection: 'row',
-        gap: spacing.xs,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs,
-    },
-    addItemButton: {
-        alignItems: 'center',
-        backgroundColor: colors.scheduleCurrent,
-        borderRadius: 18,
-        flexDirection: 'row',
-        gap: spacing.xs,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs,
-    },
-    linkButtonText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontWeight: '600',
     },
 })

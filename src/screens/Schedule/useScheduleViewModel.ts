@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { database, type Habit } from '../../database'
 import type { AddScheduleItemFormData } from './addScheduleItemSchema'
-import type { ScheduleEntry, ScheduleHabit } from './schedule.types'
+import type { ScheduleEntry } from './schedule.types'
 
 const monthNames = [
     'January',
@@ -37,29 +38,6 @@ const baseEntries: ScheduleEntry[] = [
         id: 'clean-house',
         startHour: 15,
         title: 'Clean my house',
-    },
-]
-
-const availableHabits: ScheduleHabit[] = [
-    {
-        description: 'Build a calm start to the day.',
-        id: 'morning-stretch',
-        title: 'Morning stretch',
-    },
-    {
-        description: 'Read a few pages without distractions.',
-        id: 'read-book',
-        title: 'Read for 20 minutes',
-    },
-    {
-        description: 'Keep your energy steady throughout the day.',
-        id: 'drink-water',
-        title: 'Drink water',
-    },
-    {
-        description: 'Close the day with a clear next step.',
-        id: 'plan-tomorrow',
-        title: 'Plan tomorrow',
     },
 ]
 
@@ -104,8 +82,11 @@ export const getCalendarDays = (month: Date): Array<Date | null> => {
 export const getHourLabel = (hour: number): string => {
     const normalizedHour = hour % 24
     const displayHour = normalizedHour % 12 || 12
-    const period = normalizedHour < 12 ? 'AM' : 'PM'
-    return `${String(displayHour).padStart(2, '0')}:00 ${period}`
+    const label = `${String(displayHour).padStart(2, '0')}:00`
+
+    if (normalizedHour === 0) return `AM\n${label}`
+    if (normalizedHour === 12) return `PM\n${label}`
+    return label
 }
 
 export const parseScheduleHour = (time: string): number =>
@@ -117,9 +98,7 @@ export const useScheduleViewModel = () => {
     const [calendarMonth, setCalendarMonth] = useState(
         new Date(today.getFullYear(), today.getMonth(), 1),
     )
-    const [linkedHabits, setLinkedHabits] = useState<
-        Record<string, Array<{ habitId: string; startHour: number }>>
-    >({})
+    const [habits, setHabits] = useState<Habit[]>([])
     const [manualItems, setManualItems] = useState<
         Record<string, ScheduleEntry[]>
     >({})
@@ -130,18 +109,51 @@ export const useScheduleViewModel = () => {
         )
     }, [selectedDate])
 
+    useEffect(() => {
+        let isActive = true
+        const subscription = database
+            .get<Habit>('habits')
+            .query()
+            .observe()
+            .subscribe({
+                next: records => {
+                    if (isActive) setHabits(records)
+                },
+                error: () => {
+                    if (isActive) setHabits([])
+                },
+            })
+
+        return () => {
+            isActive = false
+            subscription.unsubscribe()
+        }
+    }, [])
+
     const entries = useMemo(() => {
-        const dayLinks = linkedHabits[dateKey(selectedDate)] ?? []
-        const linkedEntries = dayLinks.flatMap(link => {
-            const habit = availableHabits.find(item => item.id === link.habitId)
-            if (!habit) return []
+        const weekDay = selectedDate.getDay() || 7
+        const linkedEntries = habits.flatMap(habit => {
+            if (
+                habit.status === 'paused' ||
+                !habit.preferredTime ||
+                !habit.weekDays.includes(weekDay)
+            )
+                return []
+            const startHour = habit.preferredTime.getHours()
             return [
                 {
-                    endHour: link.startHour + 1,
+                    endHour:
+                        startHour +
+                        Math.max(
+                            1,
+                            Math.ceil(
+                                (habit.estimatedDurationMinutes ?? 60) / 60,
+                            ),
+                        ),
                     habitId: habit.id,
-                    id: `habit-${habit.id}-${link.startHour}`,
-                    startHour: link.startHour,
-                    title: habit.title,
+                    id: `habit-${habit.id}-${startHour}`,
+                    startHour,
+                    title: habit.name,
                 },
             ]
         })
@@ -150,7 +162,7 @@ export const useScheduleViewModel = () => {
             ...(manualItems[dateKey(selectedDate)] ?? []),
             ...linkedEntries,
         ].sort((left, right) => left.startHour - right.startHour)
-    }, [linkedHabits, manualItems, selectedDate])
+    }, [habits, manualItems, selectedDate])
 
     const moveDate = (delta: number) => {
         setSelectedDate(current => {
@@ -169,20 +181,6 @@ export const useScheduleViewModel = () => {
             current =>
                 new Date(current.getFullYear(), current.getMonth() + delta, 1),
         )
-    }
-
-    const linkHabit = (habitId: string, startHour: number) => {
-        const key = dateKey(selectedDate)
-        setLinkedHabits(current => {
-            const currentDayLinks = current[key] ?? []
-            const nextDayLinks = currentDayLinks.filter(
-                link => link.startHour !== startHour,
-            )
-            return {
-                ...current,
-                [key]: [...nextDayLinks, { habitId, startHour }],
-            }
-        })
     }
 
     const addScheduleItem = ({
@@ -207,7 +205,6 @@ export const useScheduleViewModel = () => {
     }
 
     return {
-        availableHabits,
         calendarMonth,
         entries,
         formatScheduleDate,
@@ -215,7 +212,6 @@ export const useScheduleViewModel = () => {
         getCalendarDays,
         getHourLabel,
         addScheduleItem,
-        linkHabit,
         moveCalendarMonth,
         moveDate,
         parseScheduleHour,
