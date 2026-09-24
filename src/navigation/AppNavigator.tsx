@@ -5,6 +5,7 @@ import { BottomBar } from '../components/BottomBar'
 import { HabitsDashboardScreen } from '../screens/HabitsDashboard/HabitsDashboardScreen'
 import { RemindersScreen } from '../screens/Reminders/RemindersScreen'
 import { ScheduleScreen } from '../screens/Schedule/ScheduleScreen'
+import { TodoScreen } from '../screens/Todo/TodoScreen'
 import type { AppTabParamList } from './types'
 
 const Tab = createBottomTabNavigator<AppTabParamList>()
@@ -14,6 +15,8 @@ export const AppNavigator = () => {
     const [isAddScheduleItemModalVisible, setIsAddScheduleItemModalVisible] =
         useState(false)
     const [isAddReminderEventModalVisible, setIsAddReminderEventModalVisible] =
+        useState(false)
+    const [isAddTodoTaskModalVisible, setIsAddTodoTaskModalVisible] =
         useState(false)
     // TODO: Persist this dismissal in onboarding/preferences instead of resetting on app launch.
     const [isDoubleTapHintVisible, setIsDoubleTapHintVisible] = useState(true)
@@ -27,6 +30,11 @@ export const AppNavigator = () => {
 
         if (routeName === 'Reminders') {
             setIsAddReminderEventModalVisible(true)
+            return
+        }
+
+        if (routeName === 'Todo') {
+            setIsAddTodoTaskModalVisible(true)
             return
         }
 
@@ -74,15 +82,10 @@ export const AppNavigator = () => {
             </Tab.Screen>
             <Tab.Screen name="Todo">
                 {() => (
-                    <HabitsDashboardScreen
-                        currentUserId="local-user"
-                        title="Todo"
-                        isAddHabitModalVisible={isAddHabitModalVisible}
-                        onOpenAddHabitModal={openAddHabitModal}
-                        onCloseAddHabitModal={closeAddHabitModal}
-                        isDoubleTapHintVisible={isDoubleTapHintVisible}
-                        onCloseDoubleTapHint={() =>
-                            setIsDoubleTapHintVisible(false)
+                    <TodoScreen
+                        isAddTaskModalVisible={isAddTodoTaskModalVisible}
+                        onCloseAddTaskModal={() =>
+                            setIsAddTodoTaskModalVisible(false)
                         }
                     />
                 )}
