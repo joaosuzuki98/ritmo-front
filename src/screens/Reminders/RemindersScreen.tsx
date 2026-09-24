@@ -9,9 +9,8 @@ import {
 } from 'react-native'
 import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native'
 
-import { TopBar } from '../../components/TopBar'
+import { ScreenLayout } from '../../components/ScreenLayout'
 import { colors } from '../../styles/colors'
-import { globalStyles } from '../../styles/globalStyles'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -61,20 +60,14 @@ export const RemindersScreen = ({
         useState(false)
 
     return (
-        <View style={globalStyles.screen}>
-            <TopBar
-                level={7}
-                onMenuPress={() => undefined}
-                onProfilePress={() => undefined}
-                totalPoints={27}
-                userName="Teste da Silva"
-            />
-            <View style={[styles.header, { paddingHorizontal: 30 * scale }]}>
-                <Text style={[styles.title, { fontSize: 48 * scale }]}>
-                    Reminders
-                </Text>
-            </View>
-
+        <ScreenLayout
+            title="Reminders"
+            level={7}
+            onMenuPress={() => undefined}
+            onProfilePress={() => undefined}
+            totalPoints={27}
+            userName="Teste da Silva"
+        >
             <ScrollView
                 contentContainerStyle={[
                     styles.content,
@@ -266,22 +259,11 @@ export const RemindersScreen = ({
                     onCloseAddEventModal()
                 }}
             />
-        </View>
+        </ScreenLayout>
     )
 }
 
 const styles = StyleSheet.create({
-    header: {
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        paddingBottom: 28,
-        paddingTop: 24,
-    },
-    title: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontWeight: '500',
-    },
     content: { paddingTop: 24 },
     calendarHeader: {
         alignItems: 'center',

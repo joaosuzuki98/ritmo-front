@@ -54,7 +54,7 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
                 style={{
                     color: colors.text,
                     fontFamily: typography.fontFamily,
-                    fontSize: 39 * scale,
+                    fontSize: typography.screenSubtitle.fontSize * scale,
                     fontWeight: '300',
                     textAlign: 'center',
                     width: 216 * scale,

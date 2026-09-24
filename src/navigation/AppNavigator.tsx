@@ -76,6 +76,7 @@ export const AppNavigator = () => {
                 {() => (
                     <HabitsDashboardScreen
                         currentUserId="local-user"
+                        title="Todo"
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}

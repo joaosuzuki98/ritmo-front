@@ -1,5 +1,7 @@
 export const typography = {
     fontFamily: 'Quicksand',
+    screenTitle: { fontSize: 42, fontWeight: '500' as const },
+    screenSubtitle: { fontSize: 24 },
     title: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const },
     heading: { fontSize: 20, lineHeight: 26, fontWeight: '700' as const },
     body: { fontSize: 15, lineHeight: 21, fontWeight: '400' as const },

@@ -16,9 +16,8 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated'
 
-import { TopBar } from '../../components/TopBar'
+import { ScreenLayout } from '../../components/ScreenLayout'
 import { colors } from '../../styles/colors'
-import { globalStyles } from '../../styles/globalStyles'
 import { spacing } from '../../styles/spacing'
 import { getResponsiveScale } from '../../styles/responsive'
 import { typography } from '../../styles/typography'
@@ -37,6 +36,7 @@ import { useHabitsDashboardViewModel } from './useHabitsDashboardViewModel'
 
 export const HabitsDashboardScreen = ({
     currentUserId,
+    title = 'Habits',
     initialWeekDay,
     isAddHabitModalVisible = false,
     onOpenAddHabitModal = () => undefined,
@@ -92,43 +92,27 @@ export const HabitsDashboardScreen = ({
     }
 
     return (
-        <View style={globalStyles.screen}>
-            <TopBar
-                userName={viewModel.user?.name ?? 'Teste da Silva'}
-                level={viewModel.user?.level ?? 7}
-                totalPoints={viewModel.user?.totalPoints ?? 27}
-                onProfilePress={() => undefined}
-                onMenuPress={() => undefined}
-            />
+        <ScreenLayout
+            title={title}
+            subtitle={
+                <DaySelector
+                    weekDay={viewModel.weekDay}
+                    onChange={next =>
+                        viewModel.moveDay(next - viewModel.weekDay)
+                    }
+                />
+            }
+            userName={viewModel.user?.name ?? 'Teste da Silva'}
+            level={viewModel.user?.level ?? 7}
+            totalPoints={viewModel.user?.totalPoints ?? 27}
+            onProfilePress={() => undefined}
+            onMenuPress={() => undefined}
+        >
             <ScrollView
                 contentContainerStyle={{ paddingBottom: spacing.xl * scale }}
                 keyboardShouldPersistTaps="handled"
                 style={{ backgroundColor: colors.background }}
             >
-                <View
-                    style={{
-                        alignItems: 'center',
-                        backgroundColor: colors.surface,
-                        paddingTop: 32 * scale,
-                    }}
-                >
-                    <Text
-                        style={{
-                            color: colors.text,
-                            fontFamily: typography.fontFamily,
-                            fontSize: 56 * scale,
-                            fontWeight: '500',
-                        }}
-                    >
-                        Habits
-                    </Text>
-                    <DaySelector
-                        weekDay={viewModel.weekDay}
-                        onChange={next =>
-                            viewModel.moveDay(next - viewModel.weekDay)
-                        }
-                    />
-                </View>
                 <HabitToolbar
                     isSearchOpen={isSearchOpen}
                     sort={viewModel.sort}
@@ -291,6 +275,6 @@ export const HabitsDashboardScreen = ({
                 isVisible={isDoubleTapHintVisible}
                 onClose={onCloseDoubleTapHint}
             />
-        </View>
+        </ScreenLayout>
     )
 }
