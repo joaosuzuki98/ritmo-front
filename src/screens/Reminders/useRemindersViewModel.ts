@@ -74,6 +74,11 @@ export const useRemindersViewModel = () => {
         )
     }
 
+    const selectMonth = (month: Date) => {
+        setVisibleMonth(new Date(month.getFullYear(), month.getMonth(), 1))
+        setSelectedDate(new Date(month.getFullYear(), month.getMonth(), 1))
+    }
+
     const addEvent = async (data: AddScheduleItemFormData) => {
         const dateTime = new Date(selectedDate)
         dateTime.setHours(Number(data.startTime.slice(0, 2)), 0, 0, 0)
@@ -96,6 +101,7 @@ export const useRemindersViewModel = () => {
         eventsForSelectedDate,
         events,
         moveMonth,
+        selectMonth,
         selectDay,
         selectedDate,
         visibleMonth,

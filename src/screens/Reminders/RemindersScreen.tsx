@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
     Pressable,
     ScrollView,
@@ -15,6 +16,7 @@ import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { AddScheduleItemModal } from '../Schedule/components/AddScheduleItemModal'
+import { MonthYearModal } from './components/MonthYearModal'
 import { useRemindersViewModel } from './useRemindersViewModel'
 
 type RemindersScreenProps = {
@@ -55,6 +57,8 @@ export const RemindersScreen = ({
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const viewModel = useRemindersViewModel()
+    const [isMonthYearModalVisible, setIsMonthYearModalVisible] =
+        useState(false)
 
     return (
         <View style={globalStyles.screen}>
@@ -108,7 +112,17 @@ export const RemindersScreen = ({
                         </Pressable>
                     </View>
                     <View style={styles.yearRow}>
-                        <CalendarBlank color={colors.text} size={24 * scale} />
+                        <Pressable
+                            accessibilityLabel="Choose month and year"
+                            accessibilityRole="button"
+                            onPress={() => setIsMonthYearModalVisible(true)}
+                            style={styles.calendarButton}
+                        >
+                            <CalendarBlank
+                                color={colors.text}
+                                size={24 * scale}
+                            />
+                        </Pressable>
                         <Text style={[styles.year, { fontSize: 25 * scale }]}>
                             {viewModel.visibleMonth.getFullYear()}
                         </Text>
@@ -226,6 +240,15 @@ export const RemindersScreen = ({
                     </Text>
                 </View>
             </ScrollView>
+            <MonthYearModal
+                isVisible={isMonthYearModalVisible}
+                onClose={() => setIsMonthYearModalVisible(false)}
+                onSelectMonth={month => {
+                    viewModel.selectMonth(month)
+                    setIsMonthYearModalVisible(false)
+                }}
+                selectedMonth={viewModel.visibleMonth}
+            />
             <AddScheduleItemModal
                 initialStartHour={8}
                 isVisible={isAddEventModalVisible}
@@ -274,6 +297,12 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     yearRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+    calendarButton: {
+        alignItems: 'center',
+        height: spacing.touchTarget,
+        justifyContent: 'center',
+        width: spacing.touchTarget,
+    },
     year: {
         color: colors.text,
         fontFamily: typography.fontFamily,
