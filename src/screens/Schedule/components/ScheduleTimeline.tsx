@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
     ScrollView,
     StyleSheet,
@@ -14,6 +15,7 @@ import { typography } from '../../../styles/typography'
 type ScheduleTimelineProps = {
     entries: ScheduleEntry[]
     getHourLabel: (hour: number) => string
+    selectedDate: Date
 }
 
 const firstHour = 0
@@ -23,14 +25,26 @@ const baseHourHeight = 102
 export const ScheduleTimeline = ({
     entries,
     getHourLabel,
+    selectedDate,
 }: ScheduleTimelineProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const hourHeight = baseHourHeight * scale
+    const [currentTime, setCurrentTime] = useState(() => new Date())
+    const isSelectedDateToday =
+        selectedDate.getFullYear() === currentTime.getFullYear() &&
+        selectedDate.getMonth() === currentTime.getMonth() &&
+        selectedDate.getDate() === currentTime.getDate()
+    const currentHour = isSelectedDateToday ? currentTime.getHours() : -1
     const hours = Array.from(
         { length: lastHour - firstHour + 1 },
         (_, index) => firstHour + index,
     )
+
+    useEffect(() => {
+        const interval = setInterval(() => setCurrentTime(new Date()), 60_000)
+        return () => clearInterval(interval)
+    }, [])
 
     return (
         <ScrollView
@@ -47,6 +61,10 @@ export const ScheduleTimeline = ({
                             styles.hourRow,
                             {
                                 height: hourHeight,
+                                backgroundColor:
+                                    hour === currentHour
+                                        ? colors.scheduleCurrent
+                                        : 'transparent',
                             },
                         ]}
                     >
@@ -92,9 +110,7 @@ export const ScheduleTimeline = ({
                         style={[
                             styles.entry,
                             {
-                                backgroundColor: entry.isCurrent
-                                    ? colors.scheduleCurrent
-                                    : entry.habitId
+                                backgroundColor: entry.habitId
                                     ? colors.scheduleLinked
                                     : entry.isManual
                                     ? colors.scheduleManual

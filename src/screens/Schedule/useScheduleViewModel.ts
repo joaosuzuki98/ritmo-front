@@ -23,7 +23,6 @@ const baseEntries: ScheduleEntry[] = [
     {
         endHour: 8,
         id: 'wake-up',
-        isCurrent: true,
         startHour: 6,
         title: 'Wake up and brush\nmy teeth',
     },

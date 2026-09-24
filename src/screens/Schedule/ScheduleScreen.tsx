@@ -79,6 +79,7 @@ export const ScheduleScreen = ({
             <ScheduleTimeline
                 entries={viewModel.entries}
                 getHourLabel={viewModel.getHourLabel}
+                selectedDate={viewModel.selectedDate}
             />
             <CalendarModal
                 isVisible={isCalendarVisible}
