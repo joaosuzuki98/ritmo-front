@@ -1,4 +1,4 @@
-import { Pressable, Text, View, useWindowDimensions } from 'react-native'
+import { Pressable, View, useWindowDimensions } from 'react-native'
 import { CaretLeft, CaretRight } from 'phosphor-react-native'
 
 import {
@@ -6,9 +6,9 @@ import {
     weekDayLabels,
     type WeekDay,
 } from '../../../constants/weekDays'
+import { ScreenSubtitle } from '../../../components/ScreenSubtitle'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
-import { typography } from '../../../styles/typography'
 
 type DaySelectorProps = {
     weekDay: WeekDay
@@ -22,11 +22,10 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
         <View
             accessibilityRole="adjustable"
             style={{
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
-                paddingBottom: 30 * scale,
-                paddingTop: 8 * scale,
+                minHeight: 44 * scale,
                 width: 296 * scale,
             }}
         >
@@ -37,31 +36,19 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: 12 * scale,
+                    transform: [{ translateY: -12 * scale }],
                     width: 48 * scale,
                 }}
             >
                 <CaretLeft
-                    color={colors.text}
-                    size={34 * scale}
+                    color={colors.textMuted}
+                    size={24 * scale}
                     weight="regular"
                 />
             </Pressable>
-            <Text
-                accessibilityRole="header"
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-                numberOfLines={1}
-                style={{
-                    color: colors.text,
-                    fontFamily: typography.fontFamily,
-                    fontSize: typography.screenSubtitle.fontSize * scale,
-                    fontWeight: '300',
-                    textAlign: 'center',
-                    width: 216 * scale,
-                }}
-            >
-                {weekDayLabels[weekDay]}
-            </Text>
+            <View style={{ alignItems: 'center', flex: 1 }}>
+                <ScreenSubtitle>{weekDayLabels[weekDay]}</ScreenSubtitle>
+            </View>
             <Pressable
                 accessibilityLabel="Next day"
                 onPress={() => onChange(cycleWeekDay(weekDay + 1))}
@@ -69,12 +56,13 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: 12 * scale,
+                    transform: [{ translateY: -12 * scale }],
                     width: 48 * scale,
                 }}
             >
                 <CaretRight
-                    color={colors.text}
-                    size={34 * scale}
+                    color={colors.textMuted}
+                    size={24 * scale}
                     weight="regular"
                 />
             </Pressable>
