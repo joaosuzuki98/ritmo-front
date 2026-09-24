@@ -1,14 +1,9 @@
 import { useState } from 'react'
-import {
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-    useWindowDimensions,
-} from 'react-native'
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native'
 
 import { ScreenLayout } from '../../components/ScreenLayout'
+import { ScreenSubtitle } from '../../components/ScreenSubtitle'
 import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
@@ -42,7 +37,7 @@ export const ScheduleScreen = ({
                     onPress={() => setIsCalendarVisible(true)}
                     style={styles.calendarButton}
                 >
-                    <CalendarBlank color={colors.text} size={35 * scale} />
+                    <CalendarBlank color={colors.textMuted} size={24 * scale} />
                 </Pressable>
             }
             subtitle={
@@ -50,27 +45,52 @@ export const ScheduleScreen = ({
                     <Pressable
                         accessibilityLabel="Previous day"
                         onPress={() => viewModel.moveDate(-1)}
-                        style={styles.dateButton}
-                    >
-                        <CaretLeft color={colors.text} size={34 * scale} />
-                    </Pressable>
-                    <Text
                         style={[
-                            styles.dateText,
+                            styles.dateButton,
                             {
-                                fontSize:
-                                    typography.screenSubtitle.fontSize * scale,
+                                transform: [
+                                    {
+                                        translateY:
+                                            -(
+                                                spacing.touchTarget -
+                                                typography.screenSubtitle
+                                                    .fontSize *
+                                                    scale
+                                            ) / 2,
+                                    },
+                                ],
                             },
                         ]}
                     >
+                        <CaretLeft color={colors.textMuted} size={24 * scale} />
+                    </Pressable>
+                    <ScreenSubtitle>
                         {viewModel.formatScheduleDate(viewModel.selectedDate)}
-                    </Text>
+                    </ScreenSubtitle>
                     <Pressable
                         accessibilityLabel="Next day"
                         onPress={() => viewModel.moveDate(1)}
-                        style={styles.dateButton}
+                        style={[
+                            styles.dateButton,
+                            {
+                                transform: [
+                                    {
+                                        translateY:
+                                            -(
+                                                spacing.touchTarget -
+                                                typography.screenSubtitle
+                                                    .fontSize *
+                                                    scale
+                                            ) / 2,
+                                    },
+                                ],
+                            },
+                        ]}
                     >
-                        <CaretRight color={colors.text} size={34 * scale} />
+                        <CaretRight
+                            color={colors.textMuted}
+                            size={24 * scale}
+                        />
                     </Pressable>
                 </View>
             }
@@ -111,17 +131,16 @@ export const ScheduleScreen = ({
 
 const styles = StyleSheet.create({
     calendarButton: {
-        alignItems: 'center',
         height: spacing.touchTarget,
         justifyContent: 'center',
-        marginLeft: spacing.sm,
         width: spacing.touchTarget,
+        marginLeft: spacing.sm,
+        marginTop: 4,
     },
     dateRow: {
-        alignItems: 'center',
+        alignItems: 'flex-start',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: spacing.xs,
         width: 280,
     },
     dateButton: {
@@ -129,10 +148,5 @@ const styles = StyleSheet.create({
         height: spacing.touchTarget,
         justifyContent: 'center',
         width: spacing.touchTarget,
-    },
-    dateText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontWeight: '300',
     },
 })

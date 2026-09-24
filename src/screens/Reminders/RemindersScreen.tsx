@@ -10,6 +10,7 @@ import {
 import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native'
 
 import { ScreenLayout } from '../../components/ScreenLayout'
+import { ScreenSubtitle } from '../../components/ScreenSubtitle'
 import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
@@ -62,6 +63,9 @@ export const RemindersScreen = ({
     return (
         <ScreenLayout
             title="Reminders"
+            subtitle={
+                <ScreenSubtitle>Keep track of important dates</ScreenSubtitle>
+            }
             level={7}
             onMenuPress={() => undefined}
             onProfilePress={() => undefined}
@@ -91,7 +95,10 @@ export const RemindersScreen = ({
                             onPress={() => viewModel.moveMonth(-1)}
                             style={styles.monthArrow}
                         >
-                            <CaretLeft color={colors.text} size={24 * scale} />
+                            <CaretLeft
+                                color={colors.textMuted}
+                                size={24 * scale}
+                            />
                         </Pressable>
                         <Text
                             style={[
@@ -106,7 +113,10 @@ export const RemindersScreen = ({
                             onPress={() => viewModel.moveMonth(1)}
                             style={styles.monthArrow}
                         >
-                            <CaretRight color={colors.text} size={24 * scale} />
+                            <CaretRight
+                                color={colors.textMuted}
+                                size={24 * scale}
+                            />
                         </Pressable>
                     </View>
                     <View style={styles.yearRow}>
@@ -117,7 +127,7 @@ export const RemindersScreen = ({
                             style={styles.calendarButton}
                         >
                             <CalendarBlank
-                                color={colors.text}
+                                color={colors.textMuted}
                                 size={24 * scale}
                             />
                         </Pressable>

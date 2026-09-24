@@ -79,5 +79,5 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontWeight: '500',
     },
-    subtitle: { marginTop: 0 },
+    subtitle: { marginTop: spacing.xs },
 })
