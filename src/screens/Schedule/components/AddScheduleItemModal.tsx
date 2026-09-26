@@ -4,6 +4,7 @@ import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
+    Animated,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -20,6 +21,7 @@ import {
     addScheduleItemSchema,
     type AddScheduleItemFormData,
 } from '../addScheduleItemSchema'
+import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
@@ -53,6 +55,8 @@ export const AddScheduleItemModal = ({
     const { bottom } = useSafeAreaInsets()
     const { height, width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const { backdropOpacity, isModalMounted, sheetTranslateY } =
+        useBottomSheetAnimation(isVisible, height)
     const {
         control,
         formState: { errors },
@@ -79,31 +83,36 @@ export const AddScheduleItemModal = ({
 
     return (
         <Modal
-            animationType="slide"
+            animationType="none"
             onRequestClose={handleClose}
             statusBarTranslucent
             transparent
-            visible={isVisible}
+            visible={isModalMounted}
         >
             <View style={styles.overlay}>
-                <Pressable
-                    accessibilityLabel="Close add schedule item modal"
-                    onPress={handleClose}
-                    style={styles.backdrop}
-                />
+                <Animated.View
+                    style={[styles.backdrop, { opacity: backdropOpacity }]}
+                >
+                    <Pressable
+                        accessibilityLabel="Close add schedule item modal"
+                        onPress={handleClose}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={styles.sheetWrapper}
                 >
-                    <View
+                    <Animated.View
                         style={[
                             styles.sheet,
                             {
                                 borderTopLeftRadius: 28 * scale,
                                 borderTopRightRadius: 28 * scale,
-                                maxHeight: height * 0.78,
+                                height: height * 0.9,
                                 paddingBottom: bottom,
                                 paddingHorizontal: spacing.lg * scale,
+                                transform: [{ translateY: sheetTranslateY }],
                             },
                         ]}
                     >
@@ -112,7 +121,7 @@ export const AddScheduleItemModal = ({
                                 <Text
                                     style={[
                                         styles.title,
-                                        { fontSize: 30 * scale },
+                                        { fontSize: 34 * scale },
                                     ]}
                                 >
                                     {title}
@@ -132,101 +141,115 @@ export const AddScheduleItemModal = ({
                                 onPress={handleClose}
                                 style={styles.closeButton}
                             >
-                                <X color={colors.text} size={26 * scale} />
+                                <X color={colors.text} size={30 * scale} />
                             </Pressable>
                         </View>
                         <ScrollView
+                            style={styles.formScroll}
                             contentContainerStyle={styles.content}
                             keyboardShouldPersistTaps="handled"
                             showsVerticalScrollIndicator={false}
                         >
-                            <Text style={styles.label}>Item name</Text>
-                            <Controller
-                                control={control}
-                                name="title"
-                                render={({ field }) => (
-                                    <TextInput
-                                        accessibilityLabel="Schedule item name"
-                                        autoCapitalize="sentences"
-                                        onBlur={field.onBlur}
-                                        onChangeText={field.onChange}
-                                        placeholder="e.g. Team meeting"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={[
-                                            styles.input,
-                                            errors.title && styles.inputError,
-                                        ]}
-                                        value={field.value}
-                                    />
-                                )}
-                            />
-                            {errors.title ? (
-                                <Text style={styles.errorText}>
-                                    {errors.title.message}
-                                </Text>
-                            ) : null}
-                            <View style={styles.timeRow}>
-                                <View style={styles.timeColumn}>
-                                    <Text style={styles.label}>Starts at</Text>
-                                    <Controller
-                                        control={control}
-                                        name="startTime"
-                                        render={({ field }) => (
-                                            <TextInput
-                                                accessibilityLabel="Schedule item start time"
-                                                keyboardType="numbers-and-punctuation"
-                                                maxLength={5}
-                                                onBlur={field.onBlur}
-                                                onChangeText={field.onChange}
-                                                placeholder="08:00"
-                                                placeholderTextColor={
-                                                    colors.textMuted
-                                                }
-                                                style={[
-                                                    styles.input,
-                                                    errors.startTime &&
-                                                        styles.inputError,
-                                                ]}
-                                                value={field.value}
-                                            />
-                                        )}
-                                    />
-                                    {errors.startTime ? (
-                                        <Text style={styles.errorText}>
-                                            {errors.startTime.message}
+                            <View>
+                                <Text style={styles.label}>Item name</Text>
+                                <Controller
+                                    control={control}
+                                    name="title"
+                                    render={({ field }) => (
+                                        <TextInput
+                                            accessibilityLabel="Schedule item name"
+                                            autoCapitalize="sentences"
+                                            onBlur={field.onBlur}
+                                            onChangeText={field.onChange}
+                                            placeholder="e.g. Team meeting"
+                                            placeholderTextColor={
+                                                colors.textMuted
+                                            }
+                                            style={[
+                                                styles.input,
+                                                errors.title &&
+                                                    styles.inputError,
+                                            ]}
+                                            value={field.value}
+                                        />
+                                    )}
+                                />
+                                {errors.title ? (
+                                    <Text style={styles.errorText}>
+                                        {errors.title.message}
+                                    </Text>
+                                ) : null}
+                                <View style={styles.timeRow}>
+                                    <View style={styles.timeColumn}>
+                                        <Text style={styles.label}>
+                                            Starts at
                                         </Text>
-                                    ) : null}
-                                </View>
-                                <View style={styles.timeColumn}>
-                                    <Text style={styles.label}>Ends at</Text>
-                                    <Controller
-                                        control={control}
-                                        name="endTime"
-                                        render={({ field }) => (
-                                            <TextInput
-                                                accessibilityLabel="Schedule item end time"
-                                                keyboardType="numbers-and-punctuation"
-                                                maxLength={5}
-                                                onBlur={field.onBlur}
-                                                onChangeText={field.onChange}
-                                                placeholder="09:00"
-                                                placeholderTextColor={
-                                                    colors.textMuted
-                                                }
-                                                style={[
-                                                    styles.input,
-                                                    errors.endTime &&
-                                                        styles.inputError,
-                                                ]}
-                                                value={field.value}
-                                            />
-                                        )}
-                                    />
-                                    {errors.endTime ? (
-                                        <Text style={styles.errorText}>
-                                            {errors.endTime.message}
+                                        <Controller
+                                            control={control}
+                                            name="startTime"
+                                            render={({ field }) => (
+                                                <TextInput
+                                                    accessibilityLabel="Schedule item start time"
+                                                    keyboardType="numbers-and-punctuation"
+                                                    maxLength={5}
+                                                    onBlur={field.onBlur}
+                                                    onChangeText={
+                                                        field.onChange
+                                                    }
+                                                    placeholder="08:00"
+                                                    placeholderTextColor={
+                                                        colors.textMuted
+                                                    }
+                                                    style={[
+                                                        styles.input,
+                                                        errors.startTime &&
+                                                            styles.inputError,
+                                                    ]}
+                                                    value={field.value}
+                                                />
+                                            )}
+                                        />
+                                        {errors.startTime ? (
+                                            <Text style={styles.errorText}>
+                                                {errors.startTime.message}
+                                            </Text>
+                                        ) : null}
+                                    </View>
+                                    <View style={styles.timeColumn}>
+                                        <Text style={styles.label}>
+                                            Ends at
                                         </Text>
-                                    ) : null}
+                                        <Controller
+                                            control={control}
+                                            name="endTime"
+                                            render={({ field }) => (
+                                                <TextInput
+                                                    accessibilityLabel="Schedule item end time"
+                                                    keyboardType="numbers-and-punctuation"
+                                                    maxLength={5}
+                                                    onBlur={field.onBlur}
+                                                    onChangeText={
+                                                        field.onChange
+                                                    }
+                                                    placeholder="09:00"
+                                                    placeholderTextColor={
+                                                        colors.textMuted
+                                                    }
+                                                    style={[
+                                                        styles.input,
+                                                        errors.endTime &&
+                                                            styles.inputError,
+                                                    ]}
+                                                    value={field.value}
+                                                />
+                                            )}
+                                        />
+                                        {errors.endTime ? (
+                                            <Text style={styles.errorText}>
+                                                {errors.endTime.message}
+                                            </Text>
+                                        ) : null}
+                                    </View>
                                 </View>
                             </View>
                             <Pressable
@@ -240,7 +263,7 @@ export const AddScheduleItemModal = ({
                                 </Text>
                             </Pressable>
                         </ScrollView>
-                    </View>
+                    </Animated.View>
                 </KeyboardAvoidingView>
             </View>
         </Modal>
@@ -250,7 +273,7 @@ export const AddScheduleItemModal = ({
 const styles = StyleSheet.create({
     overlay: { flex: 1, justifyContent: 'flex-end' },
     backdrop: {
-        backgroundColor: 'rgba(0, 0, 0, 0.62)',
+        backgroundColor: 'rgba(0, 0, 0, 0.46)',
         bottom: 0,
         left: 0,
         position: 'absolute',
@@ -262,7 +285,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
         borderTopColor: colors.border,
         borderTopWidth: 1,
-        paddingTop: 22,
+        paddingTop: 20,
     },
     header: {
         alignItems: 'center',
@@ -272,7 +295,7 @@ const styles = StyleSheet.create({
     title: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontWeight: '400',
+        fontWeight: '300',
     },
     subtitle: {
         color: colors.textMuted,
@@ -285,11 +308,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: spacing.touchTarget,
     },
-    content: { paddingBottom: spacing.lg },
+    formScroll: { flex: 1 },
+    content: {
+        flexGrow: 1,
+        justifyContent: 'space-between',
+        paddingBottom: spacing.lg,
+    },
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '600',
         marginBottom: 8,
         marginTop: 20,
@@ -299,7 +327,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 16,
+        fontSize: 17,
         minHeight: 54,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,

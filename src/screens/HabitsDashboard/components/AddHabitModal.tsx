@@ -31,7 +31,7 @@ import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
 import type { HabitCardViewData } from '../habitDashboard.types'
-import { useHabitSheetAnimation } from '../useHabitSheetAnimation'
+import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
 
 type AddHabitModalProps = {
     isVisible: boolean
@@ -84,7 +84,7 @@ export const AddHabitModal = ({
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const { backdropOpacity, isModalMounted, sheetTranslateY } =
-        useHabitSheetAnimation(isVisible, height)
+        useBottomSheetAnimation(isVisible, height)
     const {
         control,
         formState: { errors },

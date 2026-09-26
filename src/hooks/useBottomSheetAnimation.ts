@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Animated, Easing } from 'react-native'
 
-export const useHabitSheetAnimation = (isVisible: boolean, height: number) => {
+export const useBottomSheetAnimation = (isVisible: boolean, height: number) => {
     const [isModalMounted, setIsModalMounted] = useState(false)
     const backdropOpacity = useRef(new Animated.Value(0)).current
     const sheetProgress = useRef(new Animated.Value(1)).current

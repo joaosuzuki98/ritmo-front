@@ -19,7 +19,7 @@ import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import type { HabitCardViewData } from '../habitDashboard.types'
-import { useHabitSheetAnimation } from '../useHabitSheetAnimation'
+import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
 
 type HabitDetailsModalProps = {
     habit: HabitCardViewData | null
@@ -75,7 +75,7 @@ export const HabitDetailsModal = ({
     const scale = getResponsiveScale(width)
     const [retainedHabit, setRetainedHabit] = useState(incomingHabit)
     const { backdropOpacity, isModalMounted, sheetTranslateY } =
-        useHabitSheetAnimation(isVisible, height)
+        useBottomSheetAnimation(isVisible, height)
     const habit = incomingHabit ?? retainedHabit
 
     useEffect(() => {

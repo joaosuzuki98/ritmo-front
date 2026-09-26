@@ -2,16 +2,20 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
+    Animated,
     KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     View,
+    useWindowDimensions,
 } from 'react-native'
 import { X } from 'phosphor-react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
     addTodoTaskSchema,
@@ -20,6 +24,8 @@ import {
 import { colors } from '../../../styles/colors'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
+import { getResponsiveScale } from '../../../styles/responsive'
+import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
 
 type AddTodoTaskModalProps = {
     category: string
@@ -34,6 +40,11 @@ export const AddTodoTaskModal = ({
     onClose,
     onCreateTask,
 }: AddTodoTaskModalProps) => {
+    const { height, width } = useWindowDimensions()
+    const { bottom } = useSafeAreaInsets()
+    const scale = getResponsiveScale(width)
+    const { backdropOpacity, isModalMounted, sheetTranslateY } =
+        useBottomSheetAnimation(isVisible, height)
     const {
         control,
         formState: { errors },
@@ -57,26 +68,57 @@ export const AddTodoTaskModal = ({
 
     return (
         <Modal
-            animationType="slide"
+            animationType="none"
             onRequestClose={onClose}
+            statusBarTranslucent
             transparent
-            visible={isVisible}
+            visible={isModalMounted}
         >
             <View style={styles.overlay}>
-                <Pressable
-                    accessibilityLabel="Fechar criação de tarefa"
-                    onPress={onClose}
-                    style={styles.backdrop}
-                />
+                <Animated.View
+                    style={[styles.backdrop, { opacity: backdropOpacity }]}
+                >
+                    <Pressable
+                        accessibilityLabel="Fechar criação de tarefa"
+                        onPress={onClose}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={styles.sheetWrapper}
                 >
-                    <View style={styles.sheet}>
+                    <Animated.View
+                        style={[
+                            styles.sheet,
+                            {
+                                borderTopLeftRadius: 28 * scale,
+                                borderTopRightRadius: 28 * scale,
+                                height: height * 0.9,
+                                paddingBottom: bottom,
+                                paddingHorizontal: spacing.lg * scale,
+                                transform: [{ translateY: sheetTranslateY }],
+                            },
+                        ]}
+                    >
                         <View style={styles.header}>
-                            <View>
-                                <Text style={styles.title}>Nova tarefa</Text>
-                                <Text style={styles.subtitle}>{category}</Text>
+                            <View style={styles.titleBlock}>
+                                <Text
+                                    style={[
+                                        styles.title,
+                                        { fontSize: 34 * scale },
+                                    ]}
+                                >
+                                    Nova tarefa
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.subtitle,
+                                        { fontSize: 14 * scale },
+                                    ]}
+                                >
+                                    {category}
+                                </Text>
                             </View>
                             <Pressable
                                 accessibilityLabel="Fechar criação de tarefa"
@@ -84,49 +126,66 @@ export const AddTodoTaskModal = ({
                                 onPress={onClose}
                                 style={styles.closeButton}
                             >
-                                <X color={colors.text} size={25} />
+                                <X color={colors.text} size={30 * scale} />
                             </Pressable>
                         </View>
-                        <Text style={styles.label}>
-                            O que você precisa fazer?
-                        </Text>
-                        <Controller
-                            control={control}
-                            name="title"
-                            render={({ field }) => (
-                                <TextInput
-                                    accessibilityLabel="Nome da tarefa"
-                                    autoCapitalize="sentences"
-                                    autoFocus
-                                    onBlur={field.onBlur}
-                                    onChangeText={field.onChange}
-                                    onSubmitEditing={submitTask}
-                                    placeholder="Ex.: Revisar anotações"
-                                    placeholderTextColor={colors.textMuted}
-                                    returnKeyType="done"
-                                    style={[
-                                        styles.input,
-                                        errors.title && styles.inputError,
-                                    ]}
-                                    value={field.value}
-                                />
-                            )}
-                        />
-                        {errors.title ? (
-                            <Text style={styles.errorText}>
-                                {errors.title.message}
-                            </Text>
-                        ) : null}
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={submitTask}
-                            style={styles.submitButton}
+                        <ScrollView
+                            contentContainerStyle={styles.content}
+                            keyboardShouldPersistTaps="handled"
+                            style={styles.formScroll}
                         >
-                            <Text style={styles.submitText}>
-                                Adicionar tarefa
-                            </Text>
-                        </Pressable>
-                    </View>
+                            <View>
+                                <Text
+                                    style={[
+                                        styles.label,
+                                        { fontSize: 17 * scale },
+                                    ]}
+                                >
+                                    O que você precisa fazer?
+                                </Text>
+                                <Controller
+                                    control={control}
+                                    name="title"
+                                    render={({ field }) => (
+                                        <TextInput
+                                            accessibilityLabel="Nome da tarefa"
+                                            autoCapitalize="sentences"
+                                            autoFocus
+                                            onBlur={field.onBlur}
+                                            onChangeText={field.onChange}
+                                            onSubmitEditing={submitTask}
+                                            placeholder="Ex.: Revisar anotações"
+                                            placeholderTextColor={
+                                                colors.textMuted
+                                            }
+                                            returnKeyType="done"
+                                            style={[
+                                                styles.input,
+                                                { fontSize: 17 * scale },
+                                                errors.title &&
+                                                    styles.inputError,
+                                            ]}
+                                            value={field.value}
+                                        />
+                                    )}
+                                />
+                                {errors.title ? (
+                                    <Text style={styles.errorText}>
+                                        {errors.title.message}
+                                    </Text>
+                                ) : null}
+                            </View>
+                            <Pressable
+                                accessibilityRole="button"
+                                onPress={submitTask}
+                                style={styles.submitButton}
+                            >
+                                <Text style={styles.submitText}>
+                                    Adicionar tarefa
+                                </Text>
+                            </Pressable>
+                        </ScrollView>
+                    </Animated.View>
                 </KeyboardAvoidingView>
             </View>
         </Modal>
@@ -136,7 +195,7 @@ export const AddTodoTaskModal = ({
 const styles = StyleSheet.create({
     overlay: { flex: 1, justifyContent: 'flex-end' },
     backdrop: {
-        backgroundColor: 'rgba(0, 0, 0, 0.62)',
+        backgroundColor: 'rgba(0, 0, 0, 0.46)',
         bottom: 0,
         left: 0,
         position: 'absolute',
@@ -146,23 +205,27 @@ const styles = StyleSheet.create({
     sheetWrapper: { flex: 1, justifyContent: 'flex-end' },
     sheet: {
         backgroundColor: colors.background,
-        borderTopLeftRadius: 26,
-        borderTopRightRadius: 26,
         borderTopColor: colors.border,
         borderTopWidth: 1,
-        padding: spacing.lg,
-        paddingBottom: spacing.xl,
+        paddingTop: 20,
     },
     header: {
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    titleBlock: { flex: 1 },
+    formScroll: { flex: 1 },
+    content: {
+        flexGrow: 1,
+        justifyContent: 'space-between',
+        paddingBottom: spacing.xl,
     },
     title: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 25,
-        fontWeight: '600',
+        fontWeight: '300',
     },
     subtitle: {
         color: colors.textMuted,
@@ -185,13 +248,11 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
     },
     input: {
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 12,
-        borderWidth: 1,
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 8,
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 16,
+        fontSize: 17,
         minHeight: 54,
         paddingHorizontal: spacing.md,
     },
@@ -205,7 +266,7 @@ const styles = StyleSheet.create({
     submitButton: {
         alignItems: 'center',
         backgroundColor: colors.accent,
-        borderRadius: 12,
+        borderRadius: 8,
         justifyContent: 'center',
         marginTop: spacing.lg,
         minHeight: 54,
