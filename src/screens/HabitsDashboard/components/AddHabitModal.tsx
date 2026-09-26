@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
@@ -29,31 +29,48 @@ import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
+import type { HabitCardViewData } from '../habitDashboard.types'
 
 type AddHabitModalProps = {
     isVisible: boolean
     initialWeekDay: WeekDay
+    habit?: HabitCardViewData | null
     onClose: () => void
     onCreateHabit: (data: AddHabitFormData) => Promise<void>
+    onUpdateHabit?: (habitId: string, data: AddHabitFormData) => Promise<void>
 }
 
-const getInitialValues = (initialWeekDay: WeekDay): AddHabitFormData => ({
-    name: '',
-    description: '',
-    categoryName: '',
-    frequencyType: 'daily',
-    weekDays: [initialWeekDay],
-    priority: 'medium',
-    estimatedDurationMinutes: '',
-    preferredTime: '',
-    isFocusOfDay: false,
+const getInitialValues = (
+    initialWeekDay: WeekDay,
+    habit?: HabitCardViewData | null,
+): AddHabitFormData => ({
+    name: habit?.title ?? '',
+    description: habit?.description ?? '',
+    categoryName: habit?.categoryLabel ?? '',
+    frequencyType: habit?.frequencyType === 'weekly' ? 'weekly' : 'daily',
+    weekDays: habit?.weekDays.length ? habit.weekDays : [initialWeekDay],
+    priority:
+        habit?.priority === 'low' || habit?.priority === 'high'
+            ? habit.priority
+            : 'medium',
+    estimatedDurationMinutes: habit?.estimatedDurationMinutes
+        ? String(habit.estimatedDurationMinutes)
+        : '',
+    preferredTime: habit?.preferredTime
+        ? `${String(habit.preferredTime.getHours()).padStart(2, '0')}:${String(
+              habit.preferredTime.getMinutes(),
+          ).padStart(2, '0')}`
+        : '',
+    isFocusOfDay: habit?.isFocusOfDay ?? false,
 })
 
 export const AddHabitModal = ({
     isVisible,
     initialWeekDay,
+    habit = null,
     onClose,
     onCreateHabit,
+    onUpdateHabit,
 }: AddHabitModalProps) => {
     const { height, width } = useWindowDimensions()
     const { bottom } = useSafeAreaInsets()
@@ -72,13 +89,17 @@ export const AddHabitModal = ({
         setValue,
         watch,
     } = useForm<AddHabitFormData>({
-        defaultValues: getInitialValues(initialWeekDay),
+        defaultValues: getInitialValues(initialWeekDay, habit),
         resolver: zodResolver(addHabitSchema),
     })
     const frequencyType = watch('frequencyType')
     const selectedWeekDays = watch('weekDays')
     const selectedPriority = watch('priority')
     const isFocusOfDay = watch('isFocusOfDay')
+
+    useEffect(() => {
+        if (isVisible) reset(getInitialValues(initialWeekDay, habit))
+    }, [habit, initialWeekDay, isVisible, reset])
 
     const handleClose = () => {
         if (isSubmitting) return
@@ -98,7 +119,8 @@ export const AddHabitModal = ({
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            await onCreateHabit(data)
+            if (habit && onUpdateHabit) await onUpdateHabit(habit.id, data)
+            else await onCreateHabit(data)
             reset(getInitialValues(initialWeekDay))
             onClose()
         } catch {
@@ -143,7 +165,7 @@ export const AddHabitModal = ({
                             <Text
                                 style={[styles.title, { fontSize: 34 * scale }]}
                             >
-                                Add habit
+                                {habit ? 'Edit habit' : 'Add habit'}
                             </Text>
                             <Pressable
                                 accessibilityLabel="Close add habit modal"
@@ -164,7 +186,9 @@ export const AddHabitModal = ({
                             showsVerticalScrollIndicator={false}
                         >
                             <Text style={styles.sectionTitle}>
-                                Create new habit
+                                {habit
+                                    ? 'Update habit details'
+                                    : 'Create new habit'}
                             </Text>
 
                             <Text style={styles.label}>Name</Text>
@@ -476,7 +500,11 @@ export const AddHabitModal = ({
                                 </Text>
                             ) : null}
                             <Pressable
-                                accessibilityLabel="Create habit"
+                                accessibilityLabel={
+                                    habit
+                                        ? 'Save habit changes'
+                                        : 'Create habit'
+                                }
                                 accessibilityRole="button"
                                 disabled={isSubmitting}
                                 onPress={handleFormSubmit}
@@ -489,7 +517,7 @@ export const AddHabitModal = ({
                                     <ActivityIndicator color={colors.text} />
                                 ) : (
                                     <Text style={styles.submitText}>
-                                        ADD HABIT
+                                        {habit ? 'SAVE CHANGES' : 'ADD HABIT'}
                                     </Text>
                                 )}
                             </Pressable>

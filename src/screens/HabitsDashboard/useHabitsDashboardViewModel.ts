@@ -472,6 +472,123 @@ export const useHabitsDashboardViewModel = (
         setReloadToken(current => current + 1)
     }
 
+    const updateHabit = async (habitId: string, formData: AddHabitFormData) => {
+        const categoryName = formData.categoryName?.trim()
+        const persistedHabit = await database
+            .get<Habit>('habits')
+            .find(habitId)
+            .catch(() => null)
+
+        if (persistedHabit && persistedHabit.userId !== currentUserId) return
+
+        const priority = getPriorityPresentation(formData.priority)
+        if (!persistedHabit) {
+            setData(current => ({
+                ...current,
+                cards: current.cards.map(card =>
+                    card.id === habitId
+                        ? {
+                              ...card,
+                              title: formData.name.trim(),
+                              description:
+                                  formData.description?.trim() || undefined,
+                              categoryLabel: categoryName ?? '',
+                              frequencyType: formData.frequencyType,
+                              weekDays:
+                                  formData.frequencyType === 'daily'
+                                      ? [1, 2, 3, 4, 5, 6, 7]
+                                      : formData.weekDays,
+                              priority: formData.priority,
+                              priorityLabel: priority.label,
+                              priorityAccessibleLabel: priority.accessibleLabel,
+                              priorityColor: priority.color,
+                              estimatedDurationMinutes:
+                                  formData.estimatedDurationMinutes.trim()
+                                      ? Number(
+                                            formData.estimatedDurationMinutes,
+                                        )
+                                      : undefined,
+                              preferredTime: parsePreferredTime(
+                                  formData.preferredTime,
+                              ),
+                              isFocusOfDay: formData.isFocusOfDay,
+                          }
+                        : card,
+                ),
+            }))
+            return
+        }
+
+        const categories = categoryName
+            ? await database.get<Category>('categories').query().fetch()
+            : []
+        const existingCategory = categories.find(
+            category =>
+                category.userId === currentUserId &&
+                category.name.toLocaleLowerCase() ===
+                    categoryName?.toLocaleLowerCase(),
+        )
+        let categoryId = existingCategory?.id
+        await database.write(async () => {
+            if (categoryName && !categoryId) {
+                const category = await database
+                    .get<Category>('categories')
+                    .create(record => {
+                        record.userId = currentUserId
+                        record.name = categoryName
+                    })
+                categoryId = category.id
+            }
+
+            await persistedHabit.update(record => {
+                record.categoryId = categoryId
+                record.name = formData.name.trim()
+                record.description = formData.description?.trim() || undefined
+                record.frequencyType = formData.frequencyType
+                record.weekDays =
+                    formData.frequencyType === 'daily'
+                        ? [1, 2, 3, 4, 5, 6, 7]
+                        : formData.weekDays
+                record.estimatedDurationMinutes =
+                    formData.estimatedDurationMinutes.trim()
+                        ? Number(formData.estimatedDurationMinutes)
+                        : undefined
+                record.preferredTime = parsePreferredTime(
+                    formData.preferredTime,
+                )
+                record.priority = formData.priority
+                record.isFocusOfDay = formData.isFocusOfDay
+            })
+        })
+
+        setReloadToken(current => current + 1)
+    }
+
+    const deleteHabit = async (habitId: string) => {
+        const persistedHabit = await database
+            .get<Habit>('habits')
+            .find(habitId)
+            .catch(() => null)
+
+        if (persistedHabit && persistedHabit.userId !== currentUserId) return
+
+        if (persistedHabit) {
+            await database.write(async () => {
+                await persistedHabit.markAsDeleted()
+            })
+            setReloadToken(current => current + 1)
+            return
+        }
+
+        setData(current => {
+            const cards = current.cards.filter(card => card.id !== habitId)
+            return {
+                ...current,
+                cards,
+            }
+        })
+    }
+
     const toggleHabitPause = async (habitId: string) => {
         const currentCard = data.cards.find(card => card.id === habitId)
         if (!currentCard) return
@@ -641,6 +758,8 @@ export const useHabitsDashboardViewModel = (
         clearSearch: () => setQuery(''),
         clearSort: () => setSort(null),
         createHabit,
+        updateHabit,
+        deleteHabit,
         toggleHabitPause,
         completeHabit,
         reorder: (sourceIndex: number, targetIndex: number) => {

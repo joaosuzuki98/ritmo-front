@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { PanGestureHandler } from 'react-native-gesture-handler'
 import type { PanGestureHandlerGestureEvent } from 'react-native-gesture-handler'
 import {
+    Alert,
     Pressable,
     ScrollView,
     Text,
@@ -48,6 +49,8 @@ export const HabitsDashboardScreen = ({
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [selectedHabit, setSelectedHabit] =
         useState<HabitCardViewData | null>(null)
+    const [habitBeingEdited, setHabitBeingEdited] =
+        useState<HabitCardViewData | null>(null)
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const draggedIndex = useSharedValue(-1)
@@ -88,6 +91,31 @@ export const HabitsDashboardScreen = ({
             finished => {
                 if (finished) runOnJS(finishDaySwipe)(delta, -exitTo)
             },
+        )
+    }
+
+    const handleDeleteHabit = (habit: HabitCardViewData) => {
+        Alert.alert(
+            'Delete habit?',
+            `“${habit.title}” will be removed from your habits.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => {
+                        viewModel
+                            .deleteHabit(habit.id)
+                            .then(() => setSelectedHabit(null))
+                            .catch(() =>
+                                Alert.alert(
+                                    'Unable to delete habit',
+                                    'Please try again.',
+                                ),
+                            )
+                    },
+                },
+            ],
         )
     }
 
@@ -262,14 +290,26 @@ export const HabitsDashboardScreen = ({
             </ScrollView>
             <AddHabitModal
                 initialWeekDay={viewModel.weekDay}
-                isVisible={isAddHabitModalVisible}
-                onClose={onCloseAddHabitModal}
+                habit={habitBeingEdited}
+                isVisible={isAddHabitModalVisible || habitBeingEdited !== null}
+                onClose={() => {
+                    setHabitBeingEdited(null)
+                    onCloseAddHabitModal()
+                }}
                 onCreateHabit={viewModel.createHabit}
+                onUpdateHabit={viewModel.updateHabit}
             />
             <HabitDetailsModal
                 habit={selectedHabit}
                 isVisible={selectedHabit !== null}
                 onClose={() => setSelectedHabit(null)}
+                onEdit={() => {
+                    setHabitBeingEdited(selectedHabit)
+                    setSelectedHabit(null)
+                }}
+                onDelete={() => {
+                    if (selectedHabit) handleDeleteHabit(selectedHabit)
+                }}
             />
             <DoubleTapHintModal
                 isVisible={isDoubleTapHintVisible}

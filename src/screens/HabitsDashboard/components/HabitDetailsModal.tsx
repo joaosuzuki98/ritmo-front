@@ -22,6 +22,8 @@ type HabitDetailsModalProps = {
     habit: HabitCardViewData | null
     isVisible: boolean
     onClose: () => void
+    onEdit: () => void
+    onDelete: () => void
 }
 
 const formatDate = (date?: Date) =>
@@ -59,6 +61,8 @@ export const HabitDetailsModal = ({
     habit,
     isVisible,
     onClose,
+    onEdit,
+    onDelete,
 }: HabitDetailsModalProps) => {
     const { height, width } = useWindowDimensions()
     const { bottom } = useSafeAreaInsets()
@@ -186,6 +190,29 @@ export const HabitDetailsModal = ({
                                     </Text>
                                 </View>
                             ) : null}
+                        </View>
+
+                        <View style={styles.actionsRow}>
+                            <Pressable
+                                accessibilityLabel={`Edit ${habit.title}`}
+                                accessibilityRole="button"
+                                onPress={onEdit}
+                                style={styles.editButton}
+                            >
+                                <Text style={styles.editButtonText}>
+                                    Edit habit
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                accessibilityLabel={`Delete ${habit.title}`}
+                                accessibilityRole="button"
+                                onPress={onDelete}
+                                style={styles.deleteButton}
+                            >
+                                <Text style={styles.deleteButtonText}>
+                                    Delete
+                                </Text>
+                            </Pressable>
                         </View>
 
                         {habit.description ? (
@@ -384,6 +411,41 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: 8,
         marginTop: 16,
+    },
+    actionsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 18,
+    },
+    editButton: {
+        alignItems: 'center',
+        backgroundColor: colors.accent,
+        borderRadius: 9,
+        flex: 1,
+        justifyContent: 'center',
+        minHeight: spacing.touchTarget,
+    },
+    editButtonText: {
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    deleteButton: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.danger,
+        borderRadius: 9,
+        borderWidth: 1,
+        flex: 1,
+        justifyContent: 'center',
+        minHeight: spacing.touchTarget,
+    },
+    deleteButtonText: {
+        color: colors.danger,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+        fontWeight: '600',
     },
     badge: {
         borderRadius: 8,
