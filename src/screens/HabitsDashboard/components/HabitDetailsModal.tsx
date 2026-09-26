@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { X, Flame } from 'phosphor-react-native'
 import {
+    Animated,
     Modal,
     Pressable,
     ScrollView,
@@ -17,6 +19,7 @@ import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import type { HabitCardViewData } from '../habitDashboard.types'
+import { useHabitSheetAnimation } from '../useHabitSheetAnimation'
 
 type HabitDetailsModalProps = {
     habit: HabitCardViewData | null
@@ -60,7 +63,7 @@ const getStatusColor = (status: string) => {
 }
 
 export const HabitDetailsModal = ({
-    habit,
+    habit: incomingHabit,
     isVisible,
     onClose,
     onEdit,
@@ -70,6 +73,15 @@ export const HabitDetailsModal = ({
     const { height, width } = useWindowDimensions()
     const { bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
+    const [retainedHabit, setRetainedHabit] = useState(incomingHabit)
+    const { backdropOpacity, isModalMounted, sheetTranslateY } =
+        useHabitSheetAnimation(isVisible, height)
+    const habit = incomingHabit ?? retainedHabit
+
+    useEffect(() => {
+        if (incomingHabit) setRetainedHabit(incomingHabit)
+        else if (!isVisible && !isModalMounted) setRetainedHabit(null)
+    }, [incomingHabit, isModalMounted, isVisible])
 
     if (!habit) return null
 
@@ -101,25 +113,30 @@ export const HabitDetailsModal = ({
 
     return (
         <Modal
-            animationType="slide"
+            animationType="none"
             onRequestClose={onClose}
             statusBarTranslucent
             transparent
-            visible={isVisible}
+            visible={isModalMounted}
         >
             <View style={styles.overlay}>
-                <Pressable
-                    accessibilityLabel="Close habit details"
-                    onPress={onClose}
-                    style={styles.backdrop}
-                />
-                <View
+                <Animated.View
+                    style={[styles.backdrop, { opacity: backdropOpacity }]}
+                >
+                    <Pressable
+                        accessibilityLabel="Close habit details"
+                        onPress={onClose}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
+                <Animated.View
                     style={[
                         styles.sheet,
                         {
                             height: Math.min(height * 0.9, 760 * scale),
                             paddingHorizontal: spacing.lg * scale,
                             paddingBottom: bottom,
+                            transform: [{ translateY: sheetTranslateY }],
                         },
                     ]}
                 >
@@ -380,7 +397,7 @@ export const HabitDetailsModal = ({
                             </Text>
                         ) : null}
                     </ScrollView>
-                </View>
+                </Animated.View>
             </View>
         </Modal>
     )

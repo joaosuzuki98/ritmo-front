@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ActivityIndicator,
+    Animated,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -30,6 +31,7 @@ import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
 import type { HabitCardViewData } from '../habitDashboard.types'
+import { useHabitSheetAnimation } from '../useHabitSheetAnimation'
 
 type AddHabitModalProps = {
     isVisible: boolean
@@ -81,6 +83,8 @@ export const AddHabitModal = ({
     )
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
+    const { backdropOpacity, isModalMounted, sheetTranslateY } =
+        useHabitSheetAnimation(isVisible, height)
     const {
         control,
         formState: { errors },
@@ -133,23 +137,27 @@ export const AddHabitModal = ({
 
     return (
         <Modal
-            animationType="slide"
+            animationType="none"
             onRequestClose={handleClose}
             statusBarTranslucent
             transparent
-            visible={isVisible}
+            visible={isModalMounted}
         >
             <View style={styles.overlay}>
-                <Pressable
-                    accessibilityLabel="Close add habit modal"
-                    onPress={handleClose}
-                    style={styles.backdrop}
-                />
+                <Animated.View
+                    style={[styles.backdrop, { opacity: backdropOpacity }]}
+                >
+                    <Pressable
+                        accessibilityLabel="Close add habit modal"
+                        onPress={handleClose}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={styles.sheetWrapper}
                 >
-                    <View
+                    <Animated.View
                         style={[
                             styles.sheet,
                             {
@@ -158,6 +166,7 @@ export const AddHabitModal = ({
                                 maxHeight: height * 0.9,
                                 paddingHorizontal: spacing.lg * scale,
                                 paddingBottom: bottom,
+                                transform: [{ translateY: sheetTranslateY }],
                             },
                         ]}
                     >
@@ -522,7 +531,7 @@ export const AddHabitModal = ({
                                 )}
                             </Pressable>
                         </ScrollView>
-                    </View>
+                    </Animated.View>
                 </KeyboardAvoidingView>
             </View>
         </Modal>
