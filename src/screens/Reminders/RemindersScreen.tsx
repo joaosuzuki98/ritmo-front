@@ -21,6 +21,7 @@ import { useRemindersViewModel } from './useRemindersViewModel'
 
 type RemindersScreenProps = {
     isAddEventModalVisible: boolean
+    onMenuPress?: () => void
     onCloseAddEventModal: () => void
 }
 
@@ -52,6 +53,7 @@ const formatEventDate = (date: Date): string => {
 
 export const RemindersScreen = ({
     isAddEventModalVisible,
+    onMenuPress = () => undefined,
     onCloseAddEventModal,
 }: RemindersScreenProps) => {
     const { width } = useWindowDimensions()
@@ -67,7 +69,7 @@ export const RemindersScreen = ({
                 <ScreenSubtitle>Keep track of important dates</ScreenSubtitle>
             }
             level={7}
-            onMenuPress={() => undefined}
+            onMenuPress={onMenuPress}
             onProfilePress={() => undefined}
             totalPoints={27}
             userName="Teste da Silva"

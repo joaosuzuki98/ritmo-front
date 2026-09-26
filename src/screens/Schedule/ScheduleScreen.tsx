@@ -15,11 +15,13 @@ import { useScheduleViewModel } from './useScheduleViewModel'
 
 type ScheduleScreenProps = {
     isAddItemModalVisible: boolean
+    onMenuPress?: () => void
     onCloseAddItemModal: () => void
 }
 
 export const ScheduleScreen = ({
     isAddItemModalVisible,
+    onMenuPress = () => undefined,
     onCloseAddItemModal,
 }: ScheduleScreenProps) => {
     const { width } = useWindowDimensions()
@@ -111,7 +113,7 @@ export const ScheduleScreen = ({
                 </View>
             }
             level={7}
-            onMenuPress={() => undefined}
+            onMenuPress={onMenuPress}
             onProfilePress={() => undefined}
             totalPoints={27}
             userName="Teste da Silva"

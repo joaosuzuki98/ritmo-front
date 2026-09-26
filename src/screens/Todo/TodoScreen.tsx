@@ -73,11 +73,13 @@ const initialTasks: TodoTask[] = [
 
 type TodoScreenProps = {
     isAddTaskModalVisible: boolean
+    onMenuPress?: () => void
     onCloseAddTaskModal: () => void
 }
 
 export const TodoScreen = ({
     isAddTaskModalVisible,
+    onMenuPress = () => undefined,
     onCloseAddTaskModal,
 }: TodoScreenProps) => {
     const { width } = useWindowDimensions()
@@ -122,7 +124,7 @@ export const TodoScreen = ({
             level={7}
             totalPoints={27}
             onProfilePress={() => undefined}
-            onMenuPress={() => undefined}
+            onMenuPress={onMenuPress}
         >
             <ScrollView
                 contentContainerStyle={[

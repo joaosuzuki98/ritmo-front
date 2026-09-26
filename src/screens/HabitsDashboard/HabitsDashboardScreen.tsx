@@ -41,6 +41,7 @@ export const HabitsDashboardScreen = ({
     title = 'Habits',
     initialWeekDay,
     isAddHabitModalVisible = false,
+    onMenuPress = () => undefined,
     onOpenAddHabitModal = () => undefined,
     onCloseAddHabitModal = () => undefined,
     isDoubleTapHintVisible = true,
@@ -136,7 +137,7 @@ export const HabitsDashboardScreen = ({
             level={viewModel.user?.level ?? 7}
             totalPoints={viewModel.user?.totalPoints ?? 27}
             onProfilePress={() => undefined}
-            onMenuPress={() => undefined}
+            onMenuPress={onMenuPress}
         >
             <ScrollView
                 contentContainerStyle={{ paddingBottom: spacing.xl * scale }}

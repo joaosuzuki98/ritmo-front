@@ -8,6 +8,13 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
         Screen: ({ children }: { children: () => unknown }) => children(),
     }),
 }))
+jest.mock('@react-navigation/drawer', () => ({
+    createDrawerNavigator: () => ({
+        Navigator: ({ children }: { children: unknown }) => children,
+        Screen: () => null,
+    }),
+    DrawerContentScrollView: ({ children }: { children: unknown }) => children,
+}))
 
 import App from '../App'
 

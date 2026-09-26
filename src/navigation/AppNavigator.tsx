@@ -1,16 +1,19 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { useNavigation } from '@react-navigation/native'
 import { useState } from 'react'
+import type { DrawerNavigationProp } from '@react-navigation/drawer'
 
 import { BottomBar } from '../components/BottomBar'
 import { HabitsDashboardScreen } from '../screens/HabitsDashboard/HabitsDashboardScreen'
 import { RemindersScreen } from '../screens/Reminders/RemindersScreen'
 import { ScheduleScreen } from '../screens/Schedule/ScheduleScreen'
 import { TodoScreen } from '../screens/Todo/TodoScreen'
-import type { AppTabParamList } from './types'
+import type { AppTabParamList, RootParamList } from './types'
 
 const Tab = createBottomTabNavigator<AppTabParamList>()
 
 export const AppNavigator = () => {
+    const navigation = useNavigation<DrawerNavigationProp<RootParamList>>()
     const [isAddHabitModalVisible, setIsAddHabitModalVisible] = useState(false)
     const [isAddScheduleItemModalVisible, setIsAddScheduleItemModalVisible] =
         useState(false)
@@ -51,6 +54,7 @@ export const AppNavigator = () => {
                     <HabitsDashboardScreen
                         currentUserId="local-user"
                         isAddHabitModalVisible={isAddHabitModalVisible}
+                        onMenuPress={() => navigation.openDrawer()}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}
                         isDoubleTapHintVisible={isDoubleTapHintVisible}
@@ -64,6 +68,7 @@ export const AppNavigator = () => {
                 {() => (
                     <ScheduleScreen
                         isAddItemModalVisible={isAddScheduleItemModalVisible}
+                        onMenuPress={() => navigation.openDrawer()}
                         onCloseAddItemModal={() =>
                             setIsAddScheduleItemModalVisible(false)
                         }
@@ -74,6 +79,7 @@ export const AppNavigator = () => {
                 {() => (
                     <RemindersScreen
                         isAddEventModalVisible={isAddReminderEventModalVisible}
+                        onMenuPress={() => navigation.openDrawer()}
                         onCloseAddEventModal={() =>
                             setIsAddReminderEventModalVisible(false)
                         }
@@ -84,6 +90,7 @@ export const AppNavigator = () => {
                 {() => (
                     <TodoScreen
                         isAddTaskModalVisible={isAddTodoTaskModalVisible}
+                        onMenuPress={() => navigation.openDrawer()}
                         onCloseAddTaskModal={() =>
                             setIsAddTodoTaskModalVisible(false)
                         }

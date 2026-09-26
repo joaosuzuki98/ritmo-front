@@ -6,8 +6,8 @@ import { useState } from 'react'
 
 import type { RootParamList } from './types'
 
-import { AppNavigator } from './AppNavigator'
 import { AuthNavigator } from './AuthNavigator'
+import { AppDrawerNavigator } from './AppDrawerNavigator'
 
 export const navigationRef = createNavigationContainerRef<RootParamList>()
 
@@ -17,7 +17,9 @@ export const RootNavigator = () => {
     return (
         <NavigationContainer ref={navigationRef}>
             {isAuthenticated ? (
-                <AppNavigator />
+                <AppDrawerNavigator
+                    onLogout={() => setIsAuthenticated(false)}
+                />
             ) : (
                 <AuthNavigator
                     onAuthenticated={() => setIsAuthenticated(true)}
