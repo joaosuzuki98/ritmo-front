@@ -28,6 +28,8 @@ export const ScheduleScreen = ({
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
     const calendarButtonSize = 24 * scale
     const calendarButtonHitSlop = (spacing.touchTarget - calendarButtonSize) / 2
+    const dateButtonOffset =
+        ((typography.screenSubtitle.fontSize - spacing.touchTarget) * scale) / 2
 
     return (
         <ScreenLayout
@@ -58,7 +60,12 @@ export const ScheduleScreen = ({
                 </Pressable>
             }
             subtitle={
-                <View style={styles.dateRow}>
+                <View
+                    style={[
+                        styles.dateRow,
+                        { width: spacing.dateNavigationWidth * scale },
+                    ]}
+                >
                     <Pressable
                         accessibilityLabel="Previous day"
                         onPress={() => viewModel.moveDate(-1)}
@@ -66,12 +73,10 @@ export const ScheduleScreen = ({
                             styles.dateButton,
                             styles.previousDateButton,
                             {
-                                top:
-                                    -(
-                                        spacing.touchTarget -
-                                        typography.screenSubtitle.fontSize *
-                                            scale
-                                    ) / 2,
+                                height: spacing.touchTarget * scale,
+                                top: dateButtonOffset,
+                                width:
+                                    spacing.dateNavigationButtonWidth * scale,
                             },
                         ]}
                     >
@@ -91,12 +96,10 @@ export const ScheduleScreen = ({
                             styles.dateButton,
                             styles.nextDateButton,
                             {
-                                top:
-                                    -(
-                                        spacing.touchTarget -
-                                        typography.screenSubtitle.fontSize *
-                                            scale
-                                    ) / 2,
+                                height: spacing.touchTarget * scale,
+                                top: dateButtonOffset,
+                                width:
+                                    spacing.dateNavigationButtonWidth * scale,
                             },
                         ]}
                     >
@@ -151,15 +154,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: 280,
     },
     dateSubtitle: { alignItems: 'center', flex: 1 },
     dateButton: {
         alignItems: 'center',
-        height: spacing.touchTarget,
         justifyContent: 'center',
         position: 'absolute',
-        width: spacing.touchTarget,
     },
     previousDateButton: { left: 0 },
     nextDateButton: { right: 0 },

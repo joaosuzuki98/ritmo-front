@@ -23,7 +23,10 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
     return (
         <View
             accessibilityRole="adjustable"
-            style={[styles.container, { width: 296 * scale }]}
+            style={[
+                styles.container,
+                { width: spacing.dateNavigationWidth * scale },
+            ]}
         >
             <Pressable
                 accessibilityLabel="Previous day"
@@ -40,7 +43,7 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
                             ) *
                                 scale) /
                             2,
-                        width: 48 * scale,
+                        width: spacing.dateNavigationButtonWidth * scale,
                     },
                 ]}
             >
@@ -68,7 +71,7 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
                             ) *
                                 scale) /
                             2,
-                        width: 48 * scale,
+                        width: spacing.dateNavigationButtonWidth * scale,
                     },
                 ]}
             >
