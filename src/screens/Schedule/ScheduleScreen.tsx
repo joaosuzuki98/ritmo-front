@@ -47,43 +47,39 @@ export const ScheduleScreen = ({
                         onPress={() => viewModel.moveDate(-1)}
                         style={[
                             styles.dateButton,
+                            styles.previousDateButton,
                             {
-                                transform: [
-                                    {
-                                        translateY:
-                                            -(
-                                                spacing.touchTarget -
-                                                typography.screenSubtitle
-                                                    .fontSize *
-                                                    scale
-                                            ) / 2,
-                                    },
-                                ],
+                                top:
+                                    -(
+                                        spacing.touchTarget -
+                                        typography.screenSubtitle.fontSize *
+                                            scale
+                                    ) / 2,
                             },
                         ]}
                     >
                         <CaretLeft color={colors.textMuted} size={24 * scale} />
                     </Pressable>
-                    <ScreenSubtitle>
-                        {viewModel.formatScheduleDate(viewModel.selectedDate)}
-                    </ScreenSubtitle>
+                    <View style={styles.dateSubtitle}>
+                        <ScreenSubtitle>
+                            {viewModel.formatScheduleDate(
+                                viewModel.selectedDate,
+                            )}
+                        </ScreenSubtitle>
+                    </View>
                     <Pressable
                         accessibilityLabel="Next day"
                         onPress={() => viewModel.moveDate(1)}
                         style={[
                             styles.dateButton,
+                            styles.nextDateButton,
                             {
-                                transform: [
-                                    {
-                                        translateY:
-                                            -(
-                                                spacing.touchTarget -
-                                                typography.screenSubtitle
-                                                    .fontSize *
-                                                    scale
-                                            ) / 2,
-                                    },
-                                ],
+                                top:
+                                    -(
+                                        spacing.touchTarget -
+                                        typography.screenSubtitle.fontSize *
+                                            scale
+                                    ) / 2,
                             },
                         ]}
                     >
@@ -138,15 +134,19 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     dateRow: {
-        alignItems: 'flex-start',
+        alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: 280,
     },
+    dateSubtitle: { alignItems: 'center', flex: 1 },
     dateButton: {
         alignItems: 'center',
         height: spacing.touchTarget,
         justifyContent: 'center',
+        position: 'absolute',
         width: spacing.touchTarget,
     },
+    previousDateButton: { left: 0 },
+    nextDateButton: { right: 0 },
 })
