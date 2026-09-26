@@ -16,6 +16,10 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import {
+    incompletionReasonOptions,
+    type IncompletionReasonCode,
+} from '../../../constants/incompletionReasons'
 import { localDateKey } from '../../../utils/normalizeLocalDate'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
@@ -43,6 +47,9 @@ const getInitialValues = (
     )
     const time = record?.completionTime ?? new Date()
     const status = record?.status
+    const reason = incompletionReasonOptions.find(
+        option => option.label === record?.incompletionReason,
+    )?.value
 
     return {
         status:
@@ -50,6 +57,7 @@ const getInitialValues = (
         time: `${String(time.getHours()).padStart(2, '0')}:${String(
             time.getMinutes(),
         ).padStart(2, '0')}`,
+        reason: reason ?? (record?.incompletionReason ? 'other' : undefined),
         note: record?.note ?? '',
     }
 }
@@ -83,6 +91,7 @@ export const LogHabitProgressModal = ({
         resolver: zodResolver(logHabitProgressSchema),
     })
     const selectedStatus = watch('status')
+    const selectedReason = watch('reason')
 
     useEffect(() => {
         if (isVisible) {
@@ -182,6 +191,63 @@ export const LogHabitProgressModal = ({
                                     )
                                 })}
                             </View>
+
+                            {selectedStatus !== 'completed' ? (
+                                <>
+                                    <Text style={styles.label}>
+                                        What got in the way?
+                                    </Text>
+                                    <View style={styles.statusOptions}>
+                                        {incompletionReasonOptions.map(
+                                            option => {
+                                                const isSelected =
+                                                    selectedReason ===
+                                                    option.value
+                                                return (
+                                                    <Pressable
+                                                        accessibilityRole="radio"
+                                                        accessibilityState={{
+                                                            selected:
+                                                                isSelected,
+                                                        }}
+                                                        key={option.value}
+                                                        onPress={() =>
+                                                            setValue(
+                                                                'reason',
+                                                                option.value as IncompletionReasonCode,
+                                                                {
+                                                                    shouldValidate:
+                                                                        true,
+                                                                },
+                                                            )
+                                                        }
+                                                        style={[
+                                                            styles.statusOption,
+                                                            isSelected &&
+                                                                styles.statusOptionSelected,
+                                                        ]}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.statusOptionText,
+                                                                isSelected &&
+                                                                    styles.statusOptionTextSelected,
+                                                            ]}
+                                                        >
+                                                            {option.label}
+                                                        </Text>
+                                                    </Pressable>
+                                                )
+                                            },
+                                        )}
+                                    </View>
+                                    {errors.reason ? (
+                                        <Text style={styles.errorText}>
+                                            {errors.reason.message}
+                                        </Text>
+                                    ) : null}
+                                </>
+                            ) : null}
 
                             <Text style={styles.label}>Time</Text>
                             <Controller

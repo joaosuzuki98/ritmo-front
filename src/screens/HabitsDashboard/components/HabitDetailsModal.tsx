@@ -343,6 +343,12 @@ export const HabitDetailsModal = ({
                                                 )}
                                             </Text>
                                         ) : null}
+                                        {record.incompletionReason ? (
+                                            <Text style={styles.historyDetail}>
+                                                Reason:{' '}
+                                                {record.incompletionReason}
+                                            </Text>
+                                        ) : null}
                                         {record.note ? (
                                             <Text style={styles.historyDetail}>
                                                 {record.note}

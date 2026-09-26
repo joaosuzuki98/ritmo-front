@@ -80,11 +80,15 @@ describe('dashboard transformations', () => {
                     habitId: 'habit-1',
                     date: new Date(2026, 8, 19),
                     status: 'skipped',
+                    incompletionReasonId: 'reason-1',
                 },
             ] as never,
             'user-1',
             1,
             new Date(2026, 8, 21),
+            [],
+            [],
+            [{ id: 'reason-1', description: 'Not enough time' }],
         )
 
         expect(cards[0]).toMatchObject({
@@ -93,6 +97,12 @@ describe('dashboard transformations', () => {
             skippedCount: 1,
             successRate: 50,
         })
+        expect(cards[0].completionHistory).toContainEqual(
+            expect.objectContaining({
+                status: 'skipped',
+                incompletionReason: 'Not enough time',
+            }),
+        )
     })
 
     it('filters case-insensitively and restores manual order when sorting clears', () => {

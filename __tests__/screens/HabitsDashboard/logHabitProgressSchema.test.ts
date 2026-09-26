@@ -8,6 +8,8 @@ describe('logHabitProgressSchema', () => {
                 logHabitProgressSchema.parse({
                     status,
                     time: '09:35',
+                    reason:
+                        status === 'completed' ? undefined : 'not_enough_time',
                     note: 'Made progress this morning.',
                 }),
             ).toMatchObject({ status, time: '09:35' })
@@ -26,8 +28,27 @@ describe('logHabitProgressSchema', () => {
             logHabitProgressSchema.safeParse({
                 status: 'partial',
                 time: '09:35',
+                reason: 'not_enough_time',
                 note: 'a'.repeat(1001),
             }).success,
         ).toBe(false)
+    })
+
+    it('requires a reason when the habit was not completed', () => {
+        expect(
+            logHabitProgressSchema.safeParse({
+                status: 'skipped',
+                time: '09:35',
+                note: '',
+            }).success,
+        ).toBe(false)
+        expect(
+            logHabitProgressSchema.safeParse({
+                status: 'partial',
+                time: '09:35',
+                reason: 'other',
+                note: '',
+            }).success,
+        ).toBe(true)
     })
 })

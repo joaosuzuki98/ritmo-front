@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AccessibilityInfo } from 'react-native'
 
 import { getHabitStatusPresentation } from '../../constants/habitStatuses'
+import { getIncompletionReasonLabel } from '../../constants/incompletionReasons'
 import { getPriorityPresentation } from '../../constants/priorities'
 import {
     clampWeekDay,
@@ -14,6 +15,7 @@ import {
     type CompletionRecord,
     type Habit,
     type HabitDisplayPreference,
+    type IncompletionReason,
     type Streak,
     type User,
 } from '../../database'
@@ -50,12 +52,14 @@ type CompletionSource = Pick<
     | 'date'
     | 'status'
     | 'completionTime'
+    | 'incompletionReasonId'
     | 'note'
     | 'distractionLockEnabled'
     | 'updatedAt'
 >
 type CategorySource = Pick<Category, 'id' | 'userId' | 'name'>
 type StreakSource = Pick<Streak, 'habitId' | 'currentStreak' | 'longestStreak'>
+type IncompletionReasonSource = Pick<IncompletionReason, 'id' | 'description'>
 
 const mockCategories: CategorySource[] = [
     { id: 'mock-category', userId: 'local-user', name: 'Categoria ABC' },
@@ -112,6 +116,7 @@ export const composeHabitCards = (
     selectedDate: Date,
     orderedHabitIds: readonly string[] = [],
     streaks: readonly StreakSource[] = [],
+    incompletionReasons: readonly IncompletionReasonSource[] = [],
 ): HabitCardViewData[] => {
     const categoryById = new Map(
         categories
@@ -119,6 +124,9 @@ export const composeHabitCards = (
             .map(category => [category.id, category.name]),
     )
     const dateKey = localDateKey(selectedDate)
+    const reasonById = new Map(
+        incompletionReasons.map(reason => [reason.id, reason.description]),
+    )
     const completionByHabit = new Map<string, CompletionSource>()
     const completionHistoryByHabit = new Map<string, CompletionSource[]>()
 
@@ -215,6 +223,9 @@ export const composeHabitCards = (
                     date: record.date,
                     status: record.status,
                     completionTime: record.completionTime,
+                    incompletionReason: record.incompletionReasonId
+                        ? reasonById.get(record.incompletionReasonId)
+                        : undefined,
                     note: record.note,
                     distractionLockEnabled: record.distractionLockEnabled,
                 })),
@@ -342,6 +353,7 @@ export const useHabitsDashboardViewModel = (
                     categories,
                     completions,
                     streaks,
+                    incompletionReasons,
                     preferences,
                 ] = await Promise.all([
                     database
@@ -355,6 +367,10 @@ export const useHabitsDashboardViewModel = (
                         .query()
                         .fetch(),
                     database.get<Streak>('streaks').query().fetch(),
+                    database
+                        .get<IncompletionReason>('incompletion_reasons')
+                        .query()
+                        .fetch(),
                     database
                         .get<HabitDisplayPreference>(
                             'habit_display_preferences',
@@ -381,6 +397,7 @@ export const useHabitsDashboardViewModel = (
                     new Date(),
                     preference?.orderedHabitIds ?? [],
                     streaks,
+                    incompletionReasons,
                 )
                 setData({ user, cards, preference })
                 setState(cards.length === 0 ? 'empty' : 'success')
@@ -653,6 +670,7 @@ export const useHabitsDashboardViewModel = (
                             ...record,
                             status: 'completed',
                             completionTime,
+                            incompletionReason: undefined,
                         }
                       : record,
               )
@@ -723,6 +741,7 @@ export const useHabitsDashboardViewModel = (
                 await currentRecord.update(record => {
                     record.status = 'completed'
                     record.completionTime = completionTime
+                    record.incompletionReasonId = undefined
                 })
             } else {
                 await database
@@ -766,6 +785,10 @@ export const useHabitsDashboardViewModel = (
         completionTime.setHours(hours, minutes, 0, 0)
         const dateKey = localDateKey(date)
         const note = formData.note.trim() || undefined
+        const reasonDescription =
+            formData.status === 'completed'
+                ? undefined
+                : getIncompletionReasonLabel(formData.reason)
         const persistedHabit = await database
             .get<Habit>('habits')
             .find(habitId)
@@ -791,18 +814,38 @@ export const useHabitsDashboardViewModel = (
         if (persistedHabit && persistedHabit.userId !== currentUserId) return
 
         if (persistedHabit) {
+            const reasons = reasonDescription
+                ? await database
+                      .get<IncompletionReason>('incompletion_reasons')
+                      .query()
+                      .fetch()
+                : []
+            const existingReason = reasons.find(
+                reason => reason.description === reasonDescription,
+            )
             const streaks =
                 formData.status === 'completed'
                     ? await database.get<Streak>('streaks').query().fetch()
                     : []
             const streak = streaks.find(item => item.habitId === habitId)
+            let incompletionReasonId = existingReason?.id
 
             await database.write(async () => {
+                if (reasonDescription && !incompletionReasonId) {
+                    const reason = await database
+                        .get<IncompletionReason>('incompletion_reasons')
+                        .create(record => {
+                            record.description = reasonDescription
+                        })
+                    incompletionReasonId = reason.id
+                }
+
                 if (currentRecord) {
                     await currentRecord.update(record => {
                         record.date = date
                         record.status = formData.status
                         record.completionTime = completionTime
+                        record.incompletionReasonId = incompletionReasonId
                         record.note = note
                     })
                 } else {
@@ -813,6 +856,7 @@ export const useHabitsDashboardViewModel = (
                             record.date = date
                             record.status = formData.status
                             record.completionTime = completionTime
+                            record.incompletionReasonId = incompletionReasonId
                             record.note = note
                             record.distractionLockEnabled = false
                         })
@@ -843,6 +887,7 @@ export const useHabitsDashboardViewModel = (
                             date,
                             status: formData.status,
                             completionTime,
+                            incompletionReason: reasonDescription,
                             note,
                         }
                       : record,
@@ -852,6 +897,7 @@ export const useHabitsDashboardViewModel = (
                       date,
                       status: formData.status,
                       completionTime,
+                      incompletionReason: reasonDescription,
                       note,
                       distractionLockEnabled: false,
                   },

@@ -22,6 +22,7 @@ export type HabitCompletionViewData = {
     date: Date
     status: string
     completionTime?: Date
+    incompletionReason?: string
     note?: string
     distractionLockEnabled?: boolean
 }
