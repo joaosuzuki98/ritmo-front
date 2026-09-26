@@ -28,6 +28,7 @@ import { HabitCard } from './components/HabitCard'
 import { HabitToolbar } from './components/HabitToolbar'
 import { HabitDetailsModal } from './components/HabitDetailsModal'
 import { DoubleTapHintModal } from './components/DoubleTapHintModal'
+import { LogHabitProgressModal } from './components/LogHabitProgressModal'
 import { SearchInput } from './components/SearchInput'
 import type {
     HabitsDashboardScreenProps,
@@ -51,6 +52,7 @@ export const HabitsDashboardScreen = ({
         useState<HabitCardViewData | null>(null)
     const [habitBeingEdited, setHabitBeingEdited] =
         useState<HabitCardViewData | null>(null)
+    const [habitToLog, setHabitToLog] = useState<HabitCardViewData | null>(null)
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const draggedIndex = useSharedValue(-1)
@@ -310,6 +312,16 @@ export const HabitsDashboardScreen = ({
                 onDelete={() => {
                     if (selectedHabit) handleDeleteHabit(selectedHabit)
                 }}
+                onLogProgress={() => {
+                    setHabitToLog(selectedHabit)
+                    setSelectedHabit(null)
+                }}
+            />
+            <LogHabitProgressModal
+                habit={habitToLog}
+                isVisible={habitToLog !== null}
+                onClose={() => setHabitToLog(null)}
+                onSave={viewModel.recordHabitProgress}
             />
             <DoubleTapHintModal
                 isVisible={isDoubleTapHintVisible}

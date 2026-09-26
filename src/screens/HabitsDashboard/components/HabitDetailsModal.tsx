@@ -24,6 +24,7 @@ type HabitDetailsModalProps = {
     onClose: () => void
     onEdit: () => void
     onDelete: () => void
+    onLogProgress: () => void
 }
 
 const formatDate = (date?: Date) =>
@@ -54,6 +55,7 @@ const formatDuration = (minutes?: number) => {
 const getStatusColor = (status: string) => {
     if (status === 'completed') return colors.success
     if (status === 'skipped') return colors.danger
+    if (status === 'partial') return colors.priorityMedium
     return colors.textMuted
 }
 
@@ -63,6 +65,7 @@ export const HabitDetailsModal = ({
     onClose,
     onEdit,
     onDelete,
+    onLogProgress,
 }: HabitDetailsModalProps) => {
     const { height, width } = useWindowDimensions()
     const { bottom } = useSafeAreaInsets()
@@ -87,6 +90,7 @@ export const HabitDetailsModal = ({
             : 'Not set'
     const stats = [
         { label: 'Completed', value: String(habit.completedCount ?? 0) },
+        { label: 'Partial', value: String(habit.partialCount ?? 0) },
         { label: 'Not done', value: String(habit.skippedCount ?? 0) },
         {
             label: 'Success rate',
@@ -191,6 +195,17 @@ export const HabitDetailsModal = ({
                                 </View>
                             ) : null}
                         </View>
+
+                        <Pressable
+                            accessibilityLabel={`Record today's progress for ${habit.title}`}
+                            accessibilityRole="button"
+                            onPress={onLogProgress}
+                            style={styles.logProgressButton}
+                        >
+                            <Text style={styles.logProgressButtonText}>
+                                Record today’s progress
+                            </Text>
+                        </Pressable>
 
                         <View style={styles.actionsRow}>
                             <Pressable
@@ -321,6 +336,18 @@ export const HabitDetailsModal = ({
                                                 ).label
                                             }
                                         </Text>
+                                        {record.completionTime ? (
+                                            <Text style={styles.historyDetail}>
+                                                {formatTime(
+                                                    record.completionTime,
+                                                )}
+                                            </Text>
+                                        ) : null}
+                                        {record.note ? (
+                                            <Text style={styles.historyDetail}>
+                                                {record.note}
+                                            </Text>
+                                        ) : null}
                                     </View>
                                 ))}
                             </View>
@@ -416,6 +443,20 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 10,
         marginTop: 18,
+    },
+    logProgressButton: {
+        alignItems: 'center',
+        backgroundColor: colors.priorityLow,
+        borderRadius: 9,
+        justifyContent: 'center',
+        marginTop: 18,
+        minHeight: spacing.touchTarget,
+    },
+    logProgressButtonText: {
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+        fontWeight: '600',
     },
     editButton: {
         alignItems: 'center',
@@ -595,6 +636,12 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 13,
         marginTop: 3,
+    },
+    historyDetail: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+        marginTop: 4,
     },
     emptyHistory: {
         color: colors.textMuted,

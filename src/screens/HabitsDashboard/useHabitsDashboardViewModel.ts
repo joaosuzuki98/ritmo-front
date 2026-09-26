@@ -24,6 +24,7 @@ import type {
     SortCriterion,
 } from './habitDashboard.types'
 import type { AddHabitFormData } from './addHabitSchema'
+import type { LogHabitProgressFormData } from './logHabitProgressSchema'
 
 type HabitSource = Pick<
     Habit,
@@ -169,10 +170,13 @@ export const composeHabitCards = (
             const completedCount = history.filter(
                 record => record.status === 'completed',
             ).length
+            const partialCount = history.filter(
+                record => record.status === 'partial',
+            ).length
             const skippedCount = history.filter(
                 record => record.status === 'skipped',
             ).length
-            const attempts = completedCount + skippedCount
+            const attempts = completedCount + partialCount + skippedCount
             const streak = streakByHabit.get(habit.id)
             const card: HabitCardViewData = {
                 id: habit.id,
@@ -200,8 +204,11 @@ export const composeHabitCards = (
                 seasonalEnd: habit.seasonalEnd,
                 createdAt: habit.createdAt,
                 completedCount,
+                partialCount,
                 skippedCount,
-                successRate: attempts ? (completedCount / attempts) * 100 : 0,
+                successRate: attempts
+                    ? ((completedCount + partialCount / 2) / attempts) * 100
+                    : 0,
                 currentStreak: streak?.current ?? 0,
                 longestStreak: streak?.longest ?? 0,
                 completionHistory: history.map(record => ({
@@ -635,7 +642,8 @@ export const useHabitsDashboardViewModel = (
         const completedCount = alreadyCompleted
             ? currentCard.completedCount
             : currentCard.completedCount + 1
-        const attempts = completedCount + currentCard.skippedCount
+        const attempts =
+            completedCount + currentCard.partialCount + currentCard.skippedCount
         const completionHistory = currentCard.completionHistory.some(
             record => localDateKey(record.date) === dateKey,
         )
@@ -669,7 +677,10 @@ export const useHabitsDashboardViewModel = (
                               completionTime,
                               completedCount,
                               successRate: attempts
-                                  ? (completedCount / attempts) * 100
+                                  ? ((completedCount +
+                                        currentCard.partialCount / 2) /
+                                        attempts) *
+                                    100
                                   : 0,
                               currentStreak: Math.max(1, card.currentStreak),
                               longestStreak: Math.max(1, card.longestStreak),
@@ -741,6 +752,155 @@ export const useHabitsDashboardViewModel = (
         setReloadToken(current => current + 1)
     }
 
+    const recordHabitProgress = async (
+        habitId: string,
+        formData: LogHabitProgressFormData,
+    ) => {
+        const currentCard = data.cards.find(card => card.id === habitId)
+        if (!currentCard || currentCard.isPaused) return
+
+        const [hours, minutes] = formData.time.split(':').map(Number)
+        const date = new Date()
+        date.setHours(0, 0, 0, 0)
+        const completionTime = new Date(date)
+        completionTime.setHours(hours, minutes, 0, 0)
+        const dateKey = localDateKey(date)
+        const note = formData.note.trim() || undefined
+        const persistedHabit = await database
+            .get<Habit>('habits')
+            .find(habitId)
+            .catch(() => null)
+        const records = persistedHabit
+            ? await database
+                  .get<CompletionRecord>('completion_records')
+                  .query()
+                  .fetch()
+            : []
+        const currentRecord = records
+            .filter(
+                record =>
+                    record.habitId === habitId &&
+                    localDateKey(record.date) === dateKey,
+            )
+            .sort(
+                (left, right) =>
+                    (right.updatedAt?.getTime() ?? right.date.getTime()) -
+                    (left.updatedAt?.getTime() ?? left.date.getTime()),
+            )[0]
+
+        if (persistedHabit && persistedHabit.userId !== currentUserId) return
+
+        if (persistedHabit) {
+            const streaks =
+                formData.status === 'completed'
+                    ? await database.get<Streak>('streaks').query().fetch()
+                    : []
+            const streak = streaks.find(item => item.habitId === habitId)
+
+            await database.write(async () => {
+                if (currentRecord) {
+                    await currentRecord.update(record => {
+                        record.date = date
+                        record.status = formData.status
+                        record.completionTime = completionTime
+                        record.note = note
+                    })
+                } else {
+                    await database
+                        .get<CompletionRecord>('completion_records')
+                        .create(record => {
+                            record.habitId = habitId
+                            record.date = date
+                            record.status = formData.status
+                            record.completionTime = completionTime
+                            record.note = note
+                            record.distractionLockEnabled = false
+                        })
+                }
+
+                if (streak) {
+                    await streak.update(record => {
+                        record.currentStreak = Math.max(1, record.currentStreak)
+                        record.longestStreak = Math.max(1, record.longestStreak)
+                    })
+                } else if (formData.status === 'completed') {
+                    await database.get<Streak>('streaks').create(record => {
+                        record.habitId = habitId
+                        record.currentStreak = 1
+                        record.longestStreak = 1
+                    })
+                }
+            })
+        }
+
+        const history = currentCard.completionHistory.some(
+            record => localDateKey(record.date) === dateKey,
+        )
+            ? currentCard.completionHistory.map(record =>
+                  localDateKey(record.date) === dateKey
+                      ? {
+                            ...record,
+                            date,
+                            status: formData.status,
+                            completionTime,
+                            note,
+                        }
+                      : record,
+              )
+            : [
+                  {
+                      date,
+                      status: formData.status,
+                      completionTime,
+                      note,
+                      distractionLockEnabled: false,
+                  },
+                  ...currentCard.completionHistory,
+              ]
+        const completedCount = history.filter(
+            record => record.status === 'completed',
+        ).length
+        const partialCount = history.filter(
+            record => record.status === 'partial',
+        ).length
+        const skippedCount = history.filter(
+            record => record.status === 'skipped',
+        ).length
+        const attempts = completedCount + partialCount + skippedCount
+        const status = getHabitStatusPresentation(formData.status)
+
+        setData(current => ({
+            ...current,
+            cards: current.cards.map(card =>
+                card.id === habitId
+                    ? {
+                          ...card,
+                          status: formData.status,
+                          statusLabel: status.label,
+                          completionTime,
+                          completedCount,
+                          partialCount,
+                          skippedCount,
+                          successRate: attempts
+                              ? ((completedCount + partialCount / 2) /
+                                    attempts) *
+                                100
+                              : 0,
+                          currentStreak:
+                              formData.status === 'completed'
+                                  ? Math.max(1, card.currentStreak)
+                                  : card.currentStreak,
+                          longestStreak:
+                              formData.status === 'completed'
+                                  ? Math.max(1, card.longestStreak)
+                                  : card.longestStreak,
+                          completionHistory: history,
+                      }
+                    : card,
+            ),
+        }))
+    }
+
     return {
         ...data,
         state:
@@ -762,6 +922,7 @@ export const useHabitsDashboardViewModel = (
         deleteHabit,
         toggleHabitPause,
         completeHabit,
+        recordHabitProgress,
         reorder: (sourceIndex: number, targetIndex: number) => {
             const sourceId = visibleCards[sourceIndex]?.id
             const targetId = visibleCards[targetIndex]?.id

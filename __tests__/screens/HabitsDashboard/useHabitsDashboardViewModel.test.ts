@@ -61,6 +61,40 @@ describe('dashboard transformations', () => {
         })
     })
 
+    it('includes partial records in habit progress totals and rate', () => {
+        const cards = composeHabitCards(
+            [habit()],
+            [],
+            [
+                {
+                    habitId: 'habit-1',
+                    date: new Date(2026, 8, 21),
+                    status: 'completed',
+                },
+                {
+                    habitId: 'habit-1',
+                    date: new Date(2026, 8, 20),
+                    status: 'partial',
+                },
+                {
+                    habitId: 'habit-1',
+                    date: new Date(2026, 8, 19),
+                    status: 'skipped',
+                },
+            ] as never,
+            'user-1',
+            1,
+            new Date(2026, 8, 21),
+        )
+
+        expect(cards[0]).toMatchObject({
+            completedCount: 1,
+            partialCount: 1,
+            skippedCount: 1,
+            successRate: 50,
+        })
+    })
+
     it('filters case-insensitively and restores manual order when sorting clears', () => {
         const cards = [
             {

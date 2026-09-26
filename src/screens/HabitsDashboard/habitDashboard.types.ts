@@ -48,6 +48,7 @@ export type HabitCardViewData = {
     seasonalEnd?: Date
     createdAt?: Date
     completedCount: number
+    partialCount: number
     skippedCount: number
     successRate: number
     currentStreak: number
