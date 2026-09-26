@@ -26,6 +26,8 @@ export const ScheduleScreen = ({
     const scale = getResponsiveScale(width)
     const viewModel = useScheduleViewModel()
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
+    const calendarButtonSize = 24 * scale
+    const calendarButtonHitSlop = (spacing.touchTarget - calendarButtonSize) / 2
 
     return (
         <ScreenLayout
@@ -35,9 +37,24 @@ export const ScheduleScreen = ({
                     accessibilityLabel="Open calendar"
                     accessibilityRole="button"
                     onPress={() => setIsCalendarVisible(true)}
-                    style={styles.calendarButton}
+                    hitSlop={{
+                        top: calendarButtonHitSlop,
+                        right: calendarButtonHitSlop * 2,
+                        bottom: calendarButtonHitSlop,
+                        left: 0,
+                    }}
+                    style={[
+                        styles.calendarButton,
+                        {
+                            height: calendarButtonSize,
+                            width: calendarButtonSize,
+                        },
+                    ]}
                 >
-                    <CalendarBlank color={colors.textMuted} size={24 * scale} />
+                    <CalendarBlank
+                        color={colors.textMuted}
+                        size={calendarButtonSize}
+                    />
                 </Pressable>
             }
             subtitle={
@@ -127,11 +144,8 @@ export const ScheduleScreen = ({
 
 const styles = StyleSheet.create({
     calendarButton: {
-        height: spacing.touchTarget,
         justifyContent: 'center',
-        width: spacing.touchTarget,
         marginLeft: spacing.sm,
-        marginTop: 4,
     },
     dateRow: {
         alignItems: 'center',
