@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { database, type Habit } from '../../database'
+import { database, type Event, type Habit } from '../../database'
 import type { AddScheduleItemFormData } from './addScheduleItemSchema'
 import type { ScheduleEntry } from './schedule.types'
+import { getEventScheduleEntries } from './schedule.utils'
 
 const monthNames = [
     'January',
@@ -17,27 +18,6 @@ const monthNames = [
     'October',
     'November',
     'December',
-]
-
-const baseEntries: ScheduleEntry[] = [
-    {
-        endHour: 8,
-        id: 'wake-up',
-        startHour: 6,
-        title: 'Wake up and brush\nmy teeth',
-    },
-    {
-        endHour: 13,
-        id: 'work',
-        startHour: 11,
-        title: 'Work',
-    },
-    {
-        endHour: 16,
-        id: 'clean-house',
-        startHour: 15,
-        title: 'Clean my house',
-    },
 ]
 
 const startOfDay = (date: Date): Date => {
@@ -98,6 +78,7 @@ export const useScheduleViewModel = () => {
         new Date(today.getFullYear(), today.getMonth(), 1),
     )
     const [habits, setHabits] = useState<Habit[]>([])
+    const [events, setEvents] = useState<Event[]>([])
     const [manualItems, setManualItems] = useState<
         Record<string, ScheduleEntry[]>
     >({})
@@ -129,8 +110,30 @@ export const useScheduleViewModel = () => {
         }
     }, [])
 
+    useEffect(() => {
+        let isActive = true
+        const subscription = database
+            .get<Event>('events')
+            .query()
+            .observe()
+            .subscribe({
+                next: records => {
+                    if (isActive) setEvents(records)
+                },
+                error: () => {
+                    if (isActive) setEvents([])
+                },
+            })
+
+        return () => {
+            isActive = false
+            subscription.unsubscribe()
+        }
+    }, [])
+
     const entries = useMemo(() => {
         const weekDay = selectedDate.getDay() || 7
+        const eventEntries = getEventScheduleEntries(events, selectedDate)
         const linkedEntries = habits.flatMap(habit => {
             if (
                 habit.status === 'paused' ||
@@ -157,11 +160,11 @@ export const useScheduleViewModel = () => {
             ]
         })
         return [
-            ...baseEntries,
             ...(manualItems[dateKey(selectedDate)] ?? []),
+            ...eventEntries,
             ...linkedEntries,
         ].sort((left, right) => left.startHour - right.startHour)
-    }, [habits, manualItems, selectedDate])
+    }, [events, habits, manualItems, selectedDate])
 
     const moveDate = (delta: number) => {
         setSelectedDate(current => {

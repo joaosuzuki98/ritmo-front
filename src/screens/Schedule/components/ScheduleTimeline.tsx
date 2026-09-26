@@ -112,6 +112,8 @@ export const ScheduleTimeline = ({
                             {
                                 backgroundColor: entry.habitId
                                     ? colors.scheduleLinked
+                                    : entry.isEvent
+                                    ? colors.scheduleManual
                                     : entry.isManual
                                     ? colors.scheduleManual
                                     : colors.scheduleBackground,
