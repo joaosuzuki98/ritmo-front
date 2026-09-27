@@ -2,16 +2,17 @@ import type { ReactNode } from 'react'
 import {
     KeyboardAvoidingView,
     Platform,
-    Pressable,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
     View,
+    useWindowDimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { ArrowLeft, MusicNotes } from 'phosphor-react-native'
 
+import RitmoLogo from '../../assets/images/ritmo-logo.svg'
+import Star from '../../assets/images/star.svg'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -20,17 +21,33 @@ export type AuthScreenLayoutProps = {
     children: ReactNode
     description: string
     footer?: ReactNode
-    onBack?: () => void
     title: string
 }
+
+const authStars = [
+    { left: 7, top: 13, size: 31 },
+    { left: 73, top: 4, size: 30 },
+    { left: 45, top: 12, size: 21 },
+    { left: 61, top: 29, size: 54 },
+    { left: 85, top: 36, size: 28 },
+    { left: 24, top: 43, size: 38 },
+    { left: 46, top: 52, size: 27 },
+    { left: 76, top: 56, size: 23 },
+    { left: 7, top: 73, size: 31 },
+    { left: 82, top: 76, size: 32 },
+    { left: 52, top: 86, size: 30 },
+    { left: 18, top: 92, size: 37 },
+] as const
 
 export const AuthScreenLayout = ({
     children,
     description,
     footer,
-    onBack,
     title,
 }: AuthScreenLayoutProps) => {
+    const { height, width } = useWindowDimensions()
+    const logoWidth = Math.min(width * 0.6, 228)
+
     return (
         <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
@@ -38,47 +55,43 @@ export const AuthScreenLayout = ({
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={styles.keyboardView}
             >
-                <View pointerEvents="none" style={styles.backgroundGlow} />
+                <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                    {authStars.map(star => (
+                        <View
+                            key={`${star.left}-${star.top}`}
+                            style={[
+                                styles.star,
+                                {
+                                    height: star.size,
+                                    left: `${star.left}%`,
+                                    top: `${star.top}%`,
+                                    width: star.size,
+                                },
+                            ]}
+                        >
+                            <Star height="100%" width="100%" />
+                        </View>
+                    ))}
+                </View>
                 <ScrollView
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.content}>
-                        {onBack ? (
-                            <Pressable
-                                accessibilityLabel="Voltar"
-                                accessibilityRole="button"
-                                hitSlop={8}
-                                onPress={onBack}
-                                style={styles.backButton}
-                            >
-                                <ArrowLeft
-                                    color={colors.textMuted}
-                                    size={20}
-                                    weight="bold"
-                                />
-                                <Text style={styles.backText}>Voltar</Text>
-                            </Pressable>
-                        ) : null}
-
-                        <View style={styles.brandRow}>
-                            <View style={styles.brandMark}>
-                                <MusicNotes
-                                    color={colors.white}
-                                    size={25}
-                                    weight="fill"
-                                />
-                            </View>
-                            <View>
-                                <Text style={styles.brandName}>ritmo</Text>
-                                <Text style={styles.brandCaption}>
-                                    UM PASSO DE CADA VEZ
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.heading}>
+                        <View
+                            style={[
+                                styles.heading,
+                                {
+                                    marginBottom: Math.min(height * 0.06, 60),
+                                    paddingTop: Math.min(height * 0.075, 72),
+                                },
+                            ]}
+                        >
+                            <RitmoLogo
+                                height={(logoWidth * 52) / 228}
+                                width={logoWidth}
+                            />
                             <Text style={styles.title}>{title}</Text>
                             <Text style={styles.description}>
                                 {description}
@@ -97,87 +110,52 @@ export const AuthScreenLayout = ({
 }
 
 const styles = StyleSheet.create({
-    safeArea: { backgroundColor: colors.background, flex: 1 },
+    safeArea: { backgroundColor: colors.onboardingBackground, flex: 1 },
     keyboardView: { flex: 1 },
     scrollContent: {
         flexGrow: 1,
-        justifyContent: 'center',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.xl,
+        paddingHorizontal: spacing.md,
     },
     content: {
         alignSelf: 'center',
+        flexGrow: 1,
         maxWidth: 440,
         width: '100%',
     },
-    backgroundGlow: {
-        backgroundColor: colors.accent,
-        borderRadius: 160,
-        height: 320,
-        opacity: 0.12,
+    star: {
         position: 'absolute',
-        right: -180,
-        top: -200,
-        width: 320,
     },
-    backButton: {
+    heading: {
         alignItems: 'center',
-        alignSelf: 'flex-start',
-        flexDirection: 'row',
-        marginBottom: spacing.lg,
-        minHeight: spacing.touchTarget,
+        width: '100%',
     },
-    backText: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 14,
-        marginLeft: spacing.xs,
-    },
-    brandRow: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        marginBottom: spacing.xl,
-    },
-    brandMark: {
-        alignItems: 'center',
-        backgroundColor: colors.accentStrong,
-        borderRadius: 17,
-        height: 52,
-        justifyContent: 'center',
-        marginRight: spacing.md,
-        width: 52,
-    },
-    brandName: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 25,
-        fontWeight: '700',
-        letterSpacing: -0.6,
-        lineHeight: 28,
-    },
-    brandCaption: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 9,
-        fontWeight: '600',
-        letterSpacing: 1.1,
-        marginTop: 2,
-    },
-    heading: { marginBottom: spacing.lg },
     title: {
         color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 31,
-        fontWeight: '700',
-        letterSpacing: -0.7,
-        lineHeight: 38,
+        fontFamily:
+            Platform.OS === 'android'
+                ? 'quattrocento-sans'
+                : typography.onboardingFontFamily,
+        fontSize: 22,
+        lineHeight: 32,
+        marginTop: spacing.lg,
+        textAlign: 'center',
     },
     description: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        lineHeight: 22,
-        marginTop: spacing.xs,
+        color: colors.onboardingPurple,
+        fontFamily:
+            Platform.OS === 'android'
+                ? 'quattrocento-sans'
+                : typography.onboardingFontFamily,
+        fontSize: 16,
+        lineHeight: 40,
+        marginTop: spacing.md,
+        textAlign: 'center',
+        width: '100%',
     },
-    footer: { alignItems: 'center', marginTop: spacing.lg },
+    footer: {
+        alignItems: 'center',
+        marginBottom: spacing.xl,
+        marginTop: 'auto',
+        paddingTop: spacing.md,
+    },
 })

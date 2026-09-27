@@ -11,7 +11,7 @@ type AuthNavigatorProps = {
 }
 
 export const AuthNavigator = ({ onAuthenticated }: AuthNavigatorProps) => {
-    const [route, setRoute] = useState<AuthRoute>('Login')
+    const [route, setRoute] = useState<AuthRoute>('Register')
 
     if (route === 'Register') {
         return (

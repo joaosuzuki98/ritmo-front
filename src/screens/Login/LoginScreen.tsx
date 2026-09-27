@@ -1,6 +1,4 @@
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { EnvelopeSimple, Eye, EyeSlash, LockKey } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
@@ -23,7 +21,6 @@ export const LoginScreen = ({
     onLoginSuccess,
     onRegisterPress,
 }: LoginScreenProps) => {
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false)
     const {
         control,
         formState: { errors },
@@ -60,12 +57,6 @@ export const LoginScreen = ({
                         <AuthTextInput
                             autoComplete="email"
                             error={errors.email?.message}
-                            icon={
-                                <EnvelopeSimple
-                                    color={colors.textMuted}
-                                    size={20}
-                                />
-                            }
                             keyboardType="email-address"
                             label="E-mail"
                             onBlur={field.onBlur}
@@ -84,41 +75,11 @@ export const LoginScreen = ({
                         <AuthTextInput
                             autoComplete="current-password"
                             error={errors.password?.message}
-                            icon={
-                                <LockKey color={colors.textMuted} size={20} />
-                            }
                             label="Senha"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
                             placeholder="Sua senha"
-                            rightAccessory={
-                                <Pressable
-                                    accessibilityLabel={
-                                        isPasswordVisible
-                                            ? 'Ocultar senha'
-                                            : 'Mostrar senha'
-                                    }
-                                    accessibilityRole="button"
-                                    hitSlop={8}
-                                    onPress={() =>
-                                        setIsPasswordVisible(value => !value)
-                                    }
-                                    style={styles.visibilityButton}
-                                >
-                                    {isPasswordVisible ? (
-                                        <EyeSlash
-                                            color={colors.textMuted}
-                                            size={20}
-                                        />
-                                    ) : (
-                                        <Eye
-                                            color={colors.textMuted}
-                                            size={20}
-                                        />
-                                    )}
-                                </Pressable>
-                            }
-                            secureTextEntry={!isPasswordVisible}
+                            secureTextEntry
                             textContentType="password"
                             value={field.value}
                         />
@@ -141,26 +102,25 @@ export const LoginScreen = ({
 }
 
 const styles = StyleSheet.create({
-    visibilityButton: { marginLeft: spacing.sm, padding: spacing.xxs },
     forgotButton: {
-        alignSelf: 'flex-end',
-        marginBottom: spacing.lg,
-        marginTop: -spacing.xs,
+        alignSelf: 'flex-start',
+        marginBottom: 16,
+        marginTop: -16,
         minHeight: spacing.touchTarget,
         justifyContent: 'center',
     },
     forgotText: {
-        color: colors.accentStrong,
+        color: colors.onboardingPurple,
         fontFamily: typography.fontFamily,
         fontSize: 13,
         fontWeight: '700',
     },
     footerText: {
-        color: colors.textMuted,
+        color: colors.onboardingMuted,
         fontFamily: typography.fontFamily,
         fontSize: 13,
         lineHeight: 20,
         textAlign: 'center',
     },
-    footerLink: { color: colors.text, fontWeight: '700' },
+    footerLink: { color: colors.white, fontWeight: '700' },
 })

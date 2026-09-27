@@ -1,20 +1,11 @@
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-    EnvelopeSimple,
-    Eye,
-    EyeSlash,
-    LockKey,
-    User,
-} from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 
 import { AuthButton } from '../../components/AuthButton/AuthButton'
 import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLayout'
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
 import { colors } from '../../styles/colors'
-import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { registerSchema, type RegisterFormData } from './registerSchema'
 
@@ -27,8 +18,6 @@ export const RegisterScreen = ({
     onBack,
     onRegisterSuccess,
 }: RegisterScreenProps) => {
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-    const [isConfirmationVisible, setIsConfirmationVisible] = useState(false)
     const {
         control,
         formState: { errors },
@@ -60,7 +49,6 @@ export const RegisterScreen = ({
                     </Text>
                 </Text>
             }
-            onBack={onBack}
             title="Crie sua conta"
         >
             <View>
@@ -72,11 +60,10 @@ export const RegisterScreen = ({
                             autoCapitalize="words"
                             autoComplete="name"
                             error={errors.name?.message}
-                            icon={<User color={colors.textMuted} size={20} />}
                             label="Nome"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Como podemos te chamar?"
+                            placeholder="John Doe"
                             returnKeyType="next"
                             textContentType="name"
                             value={field.value}
@@ -90,12 +77,6 @@ export const RegisterScreen = ({
                         <AuthTextInput
                             autoComplete="email"
                             error={errors.email?.message}
-                            icon={
-                                <EnvelopeSimple
-                                    color={colors.textMuted}
-                                    size={20}
-                                />
-                            }
                             keyboardType="email-address"
                             label="E-mail"
                             onBlur={field.onBlur}
@@ -114,41 +95,11 @@ export const RegisterScreen = ({
                         <AuthTextInput
                             autoComplete="new-password"
                             error={errors.password?.message}
-                            icon={
-                                <LockKey color={colors.textMuted} size={20} />
-                            }
                             label="Senha"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Pelo menos 8 caracteres"
-                            rightAccessory={
-                                <Pressable
-                                    accessibilityLabel={
-                                        isPasswordVisible
-                                            ? 'Ocultar senha'
-                                            : 'Mostrar senha'
-                                    }
-                                    accessibilityRole="button"
-                                    hitSlop={8}
-                                    onPress={() =>
-                                        setIsPasswordVisible(value => !value)
-                                    }
-                                    style={styles.visibilityButton}
-                                >
-                                    {isPasswordVisible ? (
-                                        <EyeSlash
-                                            color={colors.textMuted}
-                                            size={20}
-                                        />
-                                    ) : (
-                                        <Eye
-                                            color={colors.textMuted}
-                                            size={20}
-                                        />
-                                    )}
-                                </Pressable>
-                            }
-                            secureTextEntry={!isPasswordVisible}
+                            placeholder=""
+                            secureTextEntry
                             textContentType="newPassword"
                             value={field.value}
                         />
@@ -161,43 +112,11 @@ export const RegisterScreen = ({
                         <AuthTextInput
                             autoComplete="new-password"
                             error={errors.confirmPassword?.message}
-                            icon={
-                                <LockKey color={colors.textMuted} size={20} />
-                            }
                             label="Confirmar senha"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Digite sua senha novamente"
-                            rightAccessory={
-                                <Pressable
-                                    accessibilityLabel={
-                                        isConfirmationVisible
-                                            ? 'Ocultar confirmação de senha'
-                                            : 'Mostrar confirmação de senha'
-                                    }
-                                    accessibilityRole="button"
-                                    hitSlop={8}
-                                    onPress={() =>
-                                        setIsConfirmationVisible(
-                                            value => !value,
-                                        )
-                                    }
-                                    style={styles.visibilityButton}
-                                >
-                                    {isConfirmationVisible ? (
-                                        <EyeSlash
-                                            color={colors.textMuted}
-                                            size={20}
-                                        />
-                                    ) : (
-                                        <Eye
-                                            color={colors.textMuted}
-                                            size={20}
-                                        />
-                                    )}
-                                </Pressable>
-                            }
-                            secureTextEntry={!isConfirmationVisible}
+                            placeholder=""
+                            secureTextEntry
                             textContentType="newPassword"
                             value={field.value}
                         />
@@ -213,13 +132,12 @@ export const RegisterScreen = ({
 }
 
 const styles = StyleSheet.create({
-    visibilityButton: { marginLeft: spacing.sm, padding: spacing.xxs },
     footerText: {
-        color: colors.textMuted,
+        color: colors.onboardingMuted,
         fontFamily: typography.fontFamily,
         fontSize: 13,
         lineHeight: 20,
         textAlign: 'center',
     },
-    footerLink: { color: colors.text, fontWeight: '700' },
+    footerLink: { color: colors.white, fontWeight: '700' },
 })

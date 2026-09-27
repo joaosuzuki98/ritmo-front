@@ -1,5 +1,4 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { ArrowRight } from 'phosphor-react-native'
 
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
@@ -27,10 +26,9 @@ export const AuthButton = ({
                 pressed && !disabled ? styles.pressed : null,
             ]}
         >
-            <View style={styles.buttonTextWrap}>
-                <Text style={styles.buttonText}>{title}</Text>
+            <View style={styles.buttonSurface}>
+                <Text style={styles.buttonText}>{title.toUpperCase()}</Text>
             </View>
-            <ArrowRight color={colors.white} size={20} weight="bold" />
         </Pressable>
     )
 }
@@ -38,20 +36,23 @@ export const AuthButton = ({
 const styles = StyleSheet.create({
     button: {
         alignItems: 'center',
-        backgroundColor: colors.accentStrong,
-        borderRadius: 15,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        minHeight: 56,
-        paddingHorizontal: spacing.lg,
+        justifyContent: 'center',
+        minHeight: spacing.touchTarget,
+        width: '100%',
     },
-    buttonTextWrap: { alignItems: 'center', flex: 1 },
+    buttonSurface: {
+        alignItems: 'center',
+        backgroundColor: colors.accent,
+        borderRadius: 4,
+        height: 32,
+        justifyContent: 'center',
+        width: '100%',
+    },
     buttonText: {
         color: colors.white,
         fontFamily: typography.fontFamily,
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '700',
-        marginLeft: 20,
     },
     disabled: { opacity: 0.55 },
     pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },

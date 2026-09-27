@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { StyleSheet, Text, TextInput, View } from 'react-native'
 import type { TextInputProps } from 'react-native'
 
@@ -17,12 +16,10 @@ type AuthTextInputProps = Pick<
     | 'textContentType'
 > & {
     error?: string
-    icon: ReactNode
     label: string
     onBlur: () => void
     onChangeText: (value: string) => void
     placeholder: string
-    rightAccessory?: ReactNode
     value: string
 }
 
@@ -31,14 +28,12 @@ export const AuthTextInput = ({
     autoComplete,
     autoCorrect = false,
     error,
-    icon,
     keyboardType,
     label,
     onBlur,
     onChangeText,
     placeholder,
     returnKeyType,
-    rightAccessory,
     secureTextEntry,
     textContentType,
     value,
@@ -52,7 +47,6 @@ export const AuthTextInput = ({
                     error ? styles.inputError : null,
                 ]}
             >
-                <View style={styles.leadingIcon}>{icon}</View>
                 <TextInput
                     accessibilityLabel={label}
                     autoCapitalize={autoCapitalize}
@@ -62,7 +56,7 @@ export const AuthTextInput = ({
                     onBlur={onBlur}
                     onChangeText={onChangeText}
                     placeholder={placeholder}
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.inputPlaceholder}
                     returnKeyType={returnKeyType}
                     secureTextEntry={secureTextEntry}
                     selectionColor={colors.accentStrong}
@@ -71,7 +65,6 @@ export const AuthTextInput = ({
                     underlineColorAndroid="transparent"
                     value={value}
                 />
-                {rightAccessory}
             </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
@@ -79,34 +72,31 @@ export const AuthTextInput = ({
 }
 
 const styles = StyleSheet.create({
-    field: { marginBottom: spacing.md },
+    field: { marginBottom: spacing.xl },
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 13,
-        fontWeight: '600',
-        marginBottom: spacing.xs,
+        fontSize: 15,
+        fontWeight: '500',
+        marginBottom: spacing.xxs,
     },
     inputContainer: {
         alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: 15,
-        borderWidth: 1,
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 4,
         flexDirection: 'row',
-        minHeight: 56,
-        paddingHorizontal: spacing.md,
+        minHeight: 40,
+        paddingHorizontal: spacing.sm,
     },
-    inputError: { borderColor: colors.danger },
-    leadingIcon: { marginRight: spacing.sm },
+    inputError: { borderColor: colors.danger, borderWidth: 1 },
     input: {
-        color: colors.text,
+        color: colors.white,
         flex: 1,
         fontFamily: typography.fontFamily,
-        fontSize: 15,
+        fontSize: 14,
         minWidth: 0,
         paddingHorizontal: 0,
-        paddingVertical: spacing.sm,
+        paddingVertical: spacing.xs,
     },
     error: {
         color: colors.danger,

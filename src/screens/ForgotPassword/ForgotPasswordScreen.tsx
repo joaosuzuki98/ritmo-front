@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CheckCircle, EnvelopeSimple } from 'phosphor-react-native'
+import { CheckCircle } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { StyleSheet, Text, View } from 'react-native'
 
@@ -41,7 +41,17 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                     ? 'Se este endereço estiver cadastrado, você receberá as instruções para redefinir sua senha.'
                     : 'Tudo bem. Informe seu e-mail e vamos ajudar você a recuperar o acesso.'
             }
-            onBack={onBack}
+            footer={
+                submittedEmail ? undefined : (
+                    <Text
+                        accessibilityRole="link"
+                        onPress={onBack}
+                        style={styles.footerLink}
+                    >
+                        Voltar para entrar
+                    </Text>
+                )
+            }
             title={submittedEmail ? 'Confira seu e-mail' : 'Recuperar senha'}
         >
             {submittedEmail ? (
@@ -65,12 +75,6 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                             <AuthTextInput
                                 autoComplete="email"
                                 error={errors.email?.message}
-                                icon={
-                                    <EnvelopeSimple
-                                        color={colors.textMuted}
-                                        size={20}
-                                    />
-                                }
                                 keyboardType="email-address"
                                 label="E-mail cadastrado"
                                 onBlur={field.onBlur}
@@ -95,14 +99,18 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
 const styles = StyleSheet.create({
     successCard: {
         alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: 15,
-        borderWidth: 1,
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 4,
         flexDirection: 'row',
         marginBottom: spacing.lg,
         minHeight: 58,
         paddingHorizontal: spacing.md,
+    },
+    footerLink: {
+        color: colors.onboardingPurple,
+        fontFamily: typography.onboardingFontFamily,
+        fontSize: typography.onboardingAction.fontSize,
+        textDecorationLine: 'underline',
     },
     successText: {
         color: colors.text,
