@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import {
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+    useWindowDimensions,
+} from 'react-native'
 import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native'
 
 import { ScreenLayout } from '../../components/ScreenLayout'
@@ -8,26 +14,28 @@ import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
-import type { Event } from '../../database'
+import type { Event, User } from '../../database'
 import { CalendarModal } from './components/CalendarModal'
 import { AddScheduleItemModal } from './components/AddScheduleItemModal'
 import { ScheduleTimeline } from './components/ScheduleTimeline'
 import { useScheduleViewModel } from './useScheduleViewModel'
 
 type ScheduleScreenProps = {
+    currentUser: User
     isAddItemModalVisible: boolean
     onMenuPress?: () => void
     onCloseAddItemModal: () => void
 }
 
 export const ScheduleScreen = ({
+    currentUser,
     isAddItemModalVisible,
     onMenuPress = () => undefined,
     onCloseAddItemModal,
 }: ScheduleScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
-    const viewModel = useScheduleViewModel()
+    const viewModel = useScheduleViewModel(currentUser.id)
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
     const [editingEvent, setEditingEvent] = useState<Event | null>(null)
     const calendarButtonSize = 24 * scale
@@ -114,23 +122,32 @@ export const ScheduleScreen = ({
                     </Pressable>
                 </View>
             }
-            level={7}
+            level={currentUser.level}
             onMenuPress={onMenuPress}
             onProfilePress={() => undefined}
-            totalPoints={27}
-            userName="Teste da Silva"
+            totalPoints={currentUser.totalPoints}
+            userName={currentUser.name}
         >
-            <ScheduleTimeline
-                entries={viewModel.entries}
-                getHourLabel={viewModel.getHourLabel}
-                onEventPress={eventId => {
-                    const event = viewModel.events.find(
-                        item => item.id === eventId,
-                    )
-                    if (event) setEditingEvent(event)
-                }}
-                selectedDate={viewModel.selectedDate}
-            />
+            <View style={styles.timeline}>
+                <ScheduleTimeline
+                    entries={viewModel.entries}
+                    getHourLabel={viewModel.getHourLabel}
+                    onEventPress={eventId => {
+                        const event = viewModel.events.find(
+                            item => item.id === eventId,
+                        )
+                        if (event) setEditingEvent(event)
+                    }}
+                    selectedDate={viewModel.selectedDate}
+                />
+                {viewModel.entries.length === 0 ? (
+                    <View pointerEvents="none" style={styles.emptyOverlay}>
+                        <Text style={styles.emptyText}>
+                            No schedule items for this day yet.
+                        </Text>
+                    </View>
+                ) : null}
+            </View>
             <CalendarModal
                 isVisible={isCalendarVisible}
                 month={viewModel.calendarMonth}
@@ -167,6 +184,21 @@ export const ScheduleScreen = ({
 }
 
 const styles = StyleSheet.create({
+    timeline: { flex: 1 },
+    emptyOverlay: {
+        alignItems: 'center',
+        left: 0,
+        padding: spacing.lg,
+        position: 'absolute',
+        right: 0,
+        top: '40%',
+    },
+    emptyText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+        textAlign: 'center',
+    },
     calendarButton: {
         justifyContent: 'center',
         marginLeft: spacing.sm,

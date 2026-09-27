@@ -37,7 +37,7 @@ import type {
 import { useHabitsDashboardViewModel } from './useHabitsDashboardViewModel'
 
 export const HabitsDashboardScreen = ({
-    currentUserId,
+    currentUser,
     title = 'Habits',
     initialWeekDay,
     isAddHabitModalVisible = false,
@@ -47,7 +47,10 @@ export const HabitsDashboardScreen = ({
     isDoubleTapHintVisible = true,
     onCloseDoubleTapHint = () => undefined,
 }: HabitsDashboardScreenProps) => {
-    const viewModel = useHabitsDashboardViewModel(currentUserId, initialWeekDay)
+    const viewModel = useHabitsDashboardViewModel(
+        currentUser.id,
+        initialWeekDay,
+    )
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [selectedHabit, setSelectedHabit] =
         useState<HabitCardViewData | null>(null)
@@ -133,9 +136,9 @@ export const HabitsDashboardScreen = ({
                     }
                 />
             }
-            userName={viewModel.user?.name ?? 'Teste da Silva'}
-            level={viewModel.user?.level ?? 7}
-            totalPoints={viewModel.user?.totalPoints ?? 27}
+            userName={currentUser.name}
+            level={currentUser.level}
+            totalPoints={currentUser.totalPoints}
             onProfilePress={() => undefined}
             onMenuPress={onMenuPress}
         >
@@ -216,7 +219,9 @@ export const HabitsDashboardScreen = ({
                                         paddingVertical: 24,
                                     }}
                                 >
-                                    No habits for this day.
+                                    {viewModel.hasAnyHabits
+                                        ? 'No habits for this day.'
+                                        : 'No habits yet. Create your first habit to get started.'}
                                 </Text>
                                 <Pressable
                                     accessibilityLabel="Add a habit"

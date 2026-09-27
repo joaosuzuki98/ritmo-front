@@ -15,12 +15,13 @@ import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
-import type { Event } from '../../database'
+import type { Event, User } from '../../database'
 import { AddScheduleItemModal } from '../Schedule/components/AddScheduleItemModal'
 import { MonthYearModal } from './components/MonthYearModal'
 import { useRemindersViewModel } from './useRemindersViewModel'
 
 type RemindersScreenProps = {
+    currentUser: User
     isAddEventModalVisible: boolean
     onMenuPress?: () => void
     onCloseAddEventModal: () => void
@@ -53,13 +54,14 @@ const formatEventDate = (date: Date): string => {
 }
 
 export const RemindersScreen = ({
+    currentUser,
     isAddEventModalVisible,
     onMenuPress = () => undefined,
     onCloseAddEventModal,
 }: RemindersScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
-    const viewModel = useRemindersViewModel()
+    const viewModel = useRemindersViewModel(currentUser.id)
     const [editingEvent, setEditingEvent] = useState<Event | null>(null)
     const [isMonthYearModalVisible, setIsMonthYearModalVisible] =
         useState(false)
@@ -70,11 +72,11 @@ export const RemindersScreen = ({
             subtitle={
                 <ScreenSubtitle>Keep track of important dates</ScreenSubtitle>
             }
-            level={7}
+            level={currentUser.level}
             onMenuPress={onMenuPress}
             onProfilePress={() => undefined}
-            totalPoints={27}
-            userName="Teste da Silva"
+            totalPoints={currentUser.totalPoints}
+            userName={currentUser.name}
         >
             <ScrollView
                 contentContainerStyle={[
@@ -257,7 +259,9 @@ export const RemindersScreen = ({
                         <Text
                             style={[styles.emptyText, { fontSize: 15 * scale }]}
                         >
-                            No events for this day.
+                            {viewModel.events.length === 0
+                                ? 'No events yet.'
+                                : 'No events for this day.'}
                         </Text>
                     ) : null}
                 </View>

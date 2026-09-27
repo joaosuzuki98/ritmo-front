@@ -88,52 +88,6 @@ const getConditionStatus = (
     return habitRequirementStatuses.find(value => value === status)
 }
 
-const mockCategories: CategorySource[] = [
-    { id: 'mock-category', userId: 'local-user', name: 'Categoria ABC' },
-]
-
-const mockHabits: HabitSource[] = [
-    {
-        id: 'mock-high',
-        userId: 'local-user',
-        categoryId: 'mock-category',
-        name: 'Tarefa 2',
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ac hendrerit lacus. Lorem ipsum dolor sit amet Lorem',
-        weekDays: [1, 2, 3, 4, 5, 6, 7],
-        frequencyType: 'daily',
-        priority: 'high',
-        status: 'pending',
-        isFocusOfDay: true,
-    },
-    {
-        id: 'mock-medium',
-        userId: 'local-user',
-        categoryId: 'mock-category',
-        name: 'Tarefa 2',
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ac hendrerit lacus. Lorem ipsum dolor sit amet Lorem',
-        weekDays: [1, 2, 3, 4, 5, 6, 7],
-        frequencyType: 'daily',
-        priority: 'medium',
-        status: 'pending',
-        isFocusOfDay: false,
-    },
-    {
-        id: 'mock-low',
-        userId: 'local-user',
-        categoryId: 'mock-category',
-        name: 'Tarefa 2',
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ac hendrerit lacus. Lorem ipsum dolor sit amet Lorem',
-        weekDays: [1, 2, 3, 4, 5, 6, 7],
-        frequencyType: 'daily',
-        priority: 'low',
-        status: 'pending',
-        isFocusOfDay: false,
-    },
-]
-
 export const composeHabitCards = (
     habits: readonly HabitSource[],
     categories: readonly CategorySource[],
@@ -455,10 +409,13 @@ const validateHabitRequirements = async (
         database.get<HabitDependency>('habit_dependencies').query().fetch(),
         database.get<HabitCondition>('habit_conditions').query().fetch(),
     ])
+    const ownedHabitIds = new Set(validHabitIds)
     const existingEdges = [
         ...dependencies
             .filter(
                 dependency =>
+                    ownedHabitIds.has(dependency.habitId) &&
+                    ownedHabitIds.has(dependency.triggerHabitId) &&
                     dependency.habitId !== habitId &&
                     dependency.type === 'after_completion',
             )
@@ -468,6 +425,11 @@ const validateHabitRequirements = async (
             })),
         ...conditions
             .filter(condition => condition.habitId !== habitId)
+            .filter(
+                condition =>
+                    ownedHabitIds.has(condition.habitId) &&
+                    ownedHabitIds.has(condition.conditionHabitId),
+            )
             .map(condition => ({
                 habitId: condition.habitId,
                 requiredHabitId: condition.conditionHabitId,
@@ -569,8 +531,8 @@ const assertNoHabitScheduleConflict = async (
                 ? Number(formData.estimatedDurationMinutes)
                 : undefined,
         },
-        habits,
-        events,
+        habits.filter(habit => habit.userId === userId),
+        events.filter(event => event.userId === userId),
     )
 
     if (conflict)
@@ -582,6 +544,7 @@ type DashboardData = {
     cards: HabitCardViewData[]
     habitOptions: HabitOption[]
     preference: HabitDisplayPreference | null
+    hasAnyHabits: boolean
 }
 
 export const useHabitsDashboardViewModel = (
@@ -598,6 +561,7 @@ export const useHabitsDashboardViewModel = (
         cards: [],
         habitOptions: [],
         preference: null,
+        hasAnyHabits: false,
     })
     const [state, setState] = useState<DashboardRenderState>('loading')
     const [isReducedMotion, setIsReducedMotion] = useState(false)
@@ -664,12 +628,9 @@ export const useHabitsDashboardViewModel = (
                             item.userId === currentUserId &&
                             item.weekDay === weekDay,
                     ) ?? null
-                const sourceHabits = habits.length > 0 ? habits : mockHabits
-                const sourceCategories =
-                    categories.length > 0 ? categories : mockCategories
                 const cards = composeHabitCards(
-                    sourceHabits,
-                    sourceCategories,
+                    habits,
+                    categories,
                     completions,
                     currentUserId,
                     weekDay,
@@ -691,6 +652,11 @@ export const useHabitsDashboardViewModel = (
                         )
                         .map(habit => ({ id: habit.id, title: habit.name })),
                     preference,
+                    hasAnyHabits: habits.some(
+                        habit =>
+                            habit.userId === currentUserId &&
+                            habit.status !== 'deleted',
+                    ),
                 })
                 setState(cards.length === 0 ? 'empty' : 'success')
             } catch {

@@ -10,18 +10,20 @@ import {
     Stack,
     UserCircle,
 } from 'phosphor-react-native'
-import { useContext, useEffect, useState } from 'react'
+import { useContext } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { database, type User } from '../database'
+import type { User } from '../database'
 import { colors } from '../styles/colors'
 import { spacing } from '../styles/spacing'
 import { typography } from '../styles/typography'
 import { AppDrawerLogoutContext } from './AppDrawerLogoutContext'
 import type { AppTabParamList } from './types'
 
-type AppDrawerContentProps = DrawerContentComponentProps
+type AppDrawerContentProps = DrawerContentComponentProps & {
+    currentUser: User
+}
 
 const menuItems = [
     { label: 'Habits', route: 'Habits', icon: 'habits', isAvailable: true },
@@ -68,30 +70,14 @@ const getMenuIcon = (name: MenuIconName, color: string) => {
 export const AppDrawerContent = ({
     state,
     navigation,
+    currentUser,
 }: AppDrawerContentProps) => {
     const onLogout = useContext(AppDrawerLogoutContext)
     const { bottom } = useSafeAreaInsets()
-    const [user, setUser] = useState<User | null>(null)
     const mainRoute = state.routes.find(route => route.name === 'Main')
     const mainState = mainRoute?.state
     const activeRouteName =
         mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
-
-    useEffect(() => {
-        let isActive = true
-
-        database
-            .get<User>('users')
-            .find('local-user')
-            .then(profile => {
-                if (isActive) setUser(profile)
-            })
-            .catch(() => undefined)
-
-        return () => {
-            isActive = false
-        }
-    }, [])
 
     const onSelectRoute = (route: keyof AppTabParamList) => {
         navigation.navigate('Main', { screen: route })
@@ -113,10 +99,10 @@ export const AppDrawerContent = ({
                     </View>
                     <View style={styles.profileIdentity}>
                         <Text numberOfLines={1} style={styles.profileName}>
-                            {user?.name ?? 'Teste da Silva'}
+                            {currentUser.name}
                         </Text>
                         <Text numberOfLines={1} style={styles.profileEmail}>
-                            {user?.email ?? 'teste@email.com'}
+                            {currentUser.email}
                         </Text>
                     </View>
                 </View>

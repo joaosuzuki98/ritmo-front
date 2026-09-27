@@ -44,7 +44,7 @@ describe('useRemindersViewModel event persistence', () => {
     }
 
     const Harness = () => {
-        viewModel = useRemindersViewModel()
+        viewModel = useRemindersViewModel('local-user')
         return null
     }
 

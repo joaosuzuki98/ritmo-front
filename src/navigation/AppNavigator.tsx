@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native'
 import { useState } from 'react'
 import type { DrawerNavigationProp } from '@react-navigation/drawer'
 
+import type { User } from '../database'
 import { BottomBar } from '../components/BottomBar'
 import { HabitsDashboardScreen } from '../screens/HabitsDashboard/HabitsDashboardScreen'
 import { RemindersScreen } from '../screens/Reminders/RemindersScreen'
@@ -10,9 +11,13 @@ import { ScheduleScreen } from '../screens/Schedule/ScheduleScreen'
 import { TodoScreen } from '../screens/Todo/TodoScreen'
 import type { AppTabParamList, RootParamList } from './types'
 
+type AppNavigatorProps = {
+    currentUser: User
+}
+
 const Tab = createBottomTabNavigator<AppTabParamList>()
 
-export const AppNavigator = () => {
+export const AppNavigator = ({ currentUser }: AppNavigatorProps) => {
     const navigation = useNavigation<DrawerNavigationProp<RootParamList>>()
     const [isAddHabitModalVisible, setIsAddHabitModalVisible] = useState(false)
     const [isAddScheduleItemModalVisible, setIsAddScheduleItemModalVisible] =
@@ -52,7 +57,7 @@ export const AppNavigator = () => {
             <Tab.Screen name="Habits">
                 {() => (
                     <HabitsDashboardScreen
-                        currentUserId="local-user"
+                        currentUser={currentUser}
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onOpenAddHabitModal={openAddHabitModal}
@@ -67,6 +72,7 @@ export const AppNavigator = () => {
             <Tab.Screen name="Schedule">
                 {() => (
                     <ScheduleScreen
+                        currentUser={currentUser}
                         isAddItemModalVisible={isAddScheduleItemModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onCloseAddItemModal={() =>
@@ -78,6 +84,7 @@ export const AppNavigator = () => {
             <Tab.Screen name="Reminders">
                 {() => (
                     <RemindersScreen
+                        currentUser={currentUser}
                         isAddEventModalVisible={isAddReminderEventModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onCloseAddEventModal={() =>
@@ -89,6 +96,7 @@ export const AppNavigator = () => {
             <Tab.Screen name="Todo">
                 {() => (
                     <TodoScreen
+                        currentUser={currentUser}
                         isAddTaskModalVisible={isAddTodoTaskModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onCloseAddTaskModal={() =>

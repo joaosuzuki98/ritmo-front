@@ -1,3 +1,4 @@
+import { Q } from '@nozbe/watermelondb'
 import { useEffect, useMemo, useState } from 'react'
 
 import { database, type Event, type Habit } from '../../database'
@@ -11,7 +12,7 @@ const startOfDay = (date: Date): Date => {
     return value
 }
 
-export const useRemindersViewModel = () => {
+export const useRemindersViewModel = (currentUserId: string) => {
     const [events, setEvents] = useState<Event[]>([])
     const [visibleMonth, setVisibleMonth] = useState(() => {
         const today = new Date()
@@ -23,7 +24,7 @@ export const useRemindersViewModel = () => {
     useEffect(() => {
         const subscription = database
             .get<Event>('events')
-            .query()
+            .query(Q.where('user_id', currentUserId))
             .observeWithColumns([
                 'title',
                 'date_time',
@@ -37,7 +38,7 @@ export const useRemindersViewModel = () => {
             })
 
         return () => subscription.unsubscribe()
-    }, [])
+    }, [currentUserId])
 
     const calendarDays = useMemo(() => {
         const firstWeekday = new Date(
@@ -99,8 +100,14 @@ export const useRemindersViewModel = () => {
             data.endPeriod,
         )
         const [existingEvents, existingHabits] = await Promise.all([
-            database.get<Event>('events').query().fetch(),
-            database.get<Habit>('habits').query().fetch(),
+            database
+                .get<Event>('events')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+            database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
         ])
         const conflict = findEventScheduleConflict(
             { dateTime, endTime },
@@ -112,7 +119,7 @@ export const useRemindersViewModel = () => {
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {
-                event.userId = 'local-user'
+                event.userId = currentUserId
                 event.title = data.title.trim()
                 event.dateTime = dateTime
                 event.endTime = endTime
@@ -130,6 +137,7 @@ export const useRemindersViewModel = () => {
         data: AddScheduleItemFormData,
     ) => {
         const event = await database.get<Event>('events').find(eventId)
+        if (event.userId !== currentUserId) return
         const dateTime = getScheduleDateTime(
             selectedDate,
             data.startHour,
@@ -141,8 +149,14 @@ export const useRemindersViewModel = () => {
             data.endPeriod,
         )
         const [existingEvents, existingHabits] = await Promise.all([
-            database.get<Event>('events').query().fetch(),
-            database.get<Habit>('habits').query().fetch(),
+            database
+                .get<Event>('events')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+            database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
         ])
         const conflict = findEventScheduleConflict(
             { id: eventId, dateTime, endTime },
@@ -166,6 +180,7 @@ export const useRemindersViewModel = () => {
 
     const deleteEvent = async (eventId: string) => {
         const event = await database.get<Event>('events').find(eventId)
+        if (event.userId !== currentUserId) return
         await database.write(async () => event.markAsDeleted())
     }
 

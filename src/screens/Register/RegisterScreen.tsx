@@ -1,23 +1,28 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { StyleSheet, Text, View } from 'react-native'
 
 import { AuthButton } from '../../components/AuthButton/AuthButton'
 import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLayout'
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
+import type { User } from '../../database'
+import { registerLocalUser } from '../../database/localAuth'
 import { colors } from '../../styles/colors'
 import { typography } from '../../styles/typography'
 import { registerSchema, type RegisterFormData } from './registerSchema'
 
 type RegisterScreenProps = {
     onBack: () => void
-    onRegisterSuccess: () => void
+    onRegisterSuccess: (user: User) => void
 }
 
 export const RegisterScreen = ({
     onBack,
     onRegisterSuccess,
 }: RegisterScreenProps) => {
+    const [submitError, setSubmitError] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const {
         control,
         formState: { errors },
@@ -32,7 +37,23 @@ export const RegisterScreen = ({
         resolver: zodResolver(registerSchema),
     })
 
-    const handleRegister = (_data: RegisterFormData) => onRegisterSuccess()
+    const handleRegister = async (data: RegisterFormData) => {
+        if (isSubmitting) return
+        setIsSubmitting(true)
+        setSubmitError('')
+        try {
+            const user = await registerLocalUser(data)
+            onRegisterSuccess(user)
+        } catch (error) {
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : 'Não foi possível criar sua conta. Tente novamente.',
+            )
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
     return (
         <AuthScreenLayout
@@ -63,7 +84,7 @@ export const RegisterScreen = ({
                             label="Nome"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="John Doe"
+                            placeholder="Seu nome"
                             returnKeyType="next"
                             textContentType="name"
                             value={field.value}
@@ -98,7 +119,7 @@ export const RegisterScreen = ({
                             label="Senha"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder=""
+                            placeholder="Mínimo de 8 caracteres"
                             secureTextEntry
                             textContentType="newPassword"
                             value={field.value}
@@ -115,16 +136,22 @@ export const RegisterScreen = ({
                             label="Confirmar senha"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder=""
+                            placeholder="Digite a senha novamente"
                             secureTextEntry
                             textContentType="newPassword"
                             value={field.value}
                         />
                     )}
                 />
+                {submitError ? (
+                    <Text accessibilityLiveRegion="polite" style={styles.error}>
+                        {submitError}
+                    </Text>
+                ) : null}
                 <AuthButton
+                    disabled={isSubmitting}
                     onPress={handleSubmit(handleRegister)}
-                    title="Criar conta"
+                    title={isSubmitting ? 'Criando conta…' : 'Criar conta'}
                 />
             </View>
         </AuthScreenLayout>
@@ -140,4 +167,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     footerLink: { color: colors.white, fontWeight: '700' },
+    error: {
+        color: colors.danger,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+        marginBottom: 16,
+    },
 })

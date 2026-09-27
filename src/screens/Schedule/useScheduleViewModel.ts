@@ -1,3 +1,4 @@
+import { Q } from '@nozbe/watermelondb'
 import { useEffect, useMemo, useState } from 'react'
 
 import { database, type Event, type Habit } from '../../database'
@@ -83,7 +84,7 @@ export const parseScheduleHour = (time: string): number =>
 const getScheduleConflictError = (title: string): Error =>
     new Error(`This time overlaps with “${title}”.`)
 
-export const useScheduleViewModel = () => {
+export const useScheduleViewModel = (currentUserId: string) => {
     const today = startOfDay(new Date())
     const [selectedDate, setSelectedDate] = useState(today)
     const [calendarMonth, setCalendarMonth] = useState(
@@ -102,7 +103,7 @@ export const useScheduleViewModel = () => {
         let isActive = true
         const subscription = database
             .get<Habit>('habits')
-            .query()
+            .query(Q.where('user_id', currentUserId))
             .observeWithColumns([
                 'name',
                 'status',
@@ -123,13 +124,13 @@ export const useScheduleViewModel = () => {
             isActive = false
             subscription.unsubscribe()
         }
-    }, [])
+    }, [currentUserId])
 
     useEffect(() => {
         let isActive = true
         const subscription = database
             .get<Event>('events')
-            .query()
+            .query(Q.where('user_id', currentUserId))
             .observeWithColumns([
                 'title',
                 'date_time',
@@ -150,7 +151,7 @@ export const useScheduleViewModel = () => {
             isActive = false
             subscription.unsubscribe()
         }
-    }, [])
+    }, [currentUserId])
 
     const entries = useMemo(() => {
         const eventEntries = getEventScheduleEntries(events, selectedDate)
@@ -199,8 +200,14 @@ export const useScheduleViewModel = () => {
             endPeriod,
         )
         const [existingEvents, existingHabits] = await Promise.all([
-            database.get<Event>('events').query().fetch(),
-            database.get<Habit>('habits').query().fetch(),
+            database
+                .get<Event>('events')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+            database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
         ])
         const conflict = findEventScheduleConflict(
             { dateTime, endTime: scheduledEndTime },
@@ -211,7 +218,7 @@ export const useScheduleViewModel = () => {
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {
-                event.userId = 'local-user'
+                event.userId = currentUserId
                 event.title = title.trim()
                 event.dateTime = dateTime
                 event.endTime = scheduledEndTime
@@ -237,6 +244,7 @@ export const useScheduleViewModel = () => {
         }: AddScheduleItemFormData,
     ) => {
         const event = await database.get<Event>('events').find(eventId)
+        if (event.userId !== currentUserId) return
         const dateTime = getScheduleDateTime(
             selectedDate,
             startHour,
@@ -248,8 +256,14 @@ export const useScheduleViewModel = () => {
             endPeriod,
         )
         const [existingEvents, existingHabits] = await Promise.all([
-            database.get<Event>('events').query().fetch(),
-            database.get<Habit>('habits').query().fetch(),
+            database
+                .get<Event>('events')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+            database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
         ])
         const conflict = findEventScheduleConflict(
             { id: eventId, dateTime, endTime: scheduledEndTime },
@@ -272,6 +286,7 @@ export const useScheduleViewModel = () => {
 
     const deleteScheduleItem = async (eventId: string) => {
         const event = await database.get<Event>('events').find(eventId)
+        if (event.userId !== currentUserId) return
         await database.write(async () => event.markAsDeleted())
     }
 

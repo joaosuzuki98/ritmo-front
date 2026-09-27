@@ -1,38 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { database, type TodoCategory } from '../../database'
 
-const initialCategories = ['College', 'Work']
-
 export const useTodoCategoriesViewModel = (currentUserId: string) => {
     const [categories, setCategories] = useState<TodoCategory[]>([])
-    const hasSeededCategories = useRef(false)
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
         const collection = database.get<TodoCategory>('todo_categories')
-        const seedCategories = async () => {
-            await database.write(async () => {
-                const existingCategories = await collection.query().fetch()
-                const userCategories = existingCategories.filter(
-                    category => category.userId === currentUserId,
-                )
-                const names = new Set(
-                    userCategories.map(category => category.name.toLowerCase()),
-                )
-
-                for (const name of initialCategories) {
-                    if (names.has(name.toLowerCase())) continue
-                    const now = new Date()
-                    await collection.create(record => {
-                        record.userId = currentUserId
-                        record.name = name
-                        record.createdAt = now
-                        record.updatedAt = now
-                    })
-                }
-            })
-        }
-
         const subscription = collection
             .query()
             .observe()
@@ -46,15 +21,12 @@ export const useTodoCategoriesViewModel = (currentUserId: string) => {
                                 (right.createdAt?.getTime() ?? 0),
                         )
                     setCategories(userCategories)
-
-                    if (!hasSeededCategories.current) {
-                        hasSeededCategories.current = true
-                        seedCategories().catch(() => {
-                            hasSeededCategories.current = false
-                        })
-                    }
+                    setIsLoading(false)
                 },
-                error: () => setCategories([]),
+                error: () => {
+                    setCategories([])
+                    setIsLoading(false)
+                },
             })
 
         return () => subscription.unsubscribe()
@@ -82,5 +54,5 @@ export const useTodoCategoriesViewModel = (currentUserId: string) => {
         })
     }
 
-    return { categories, createCategory }
+    return { categories, createCategory, isLoading }
 }

@@ -1,6 +1,7 @@
 import type { PriorityCode } from '../../constants/priorities'
 import type { HabitStatusCode } from '../../constants/habitStatuses'
 import type { WeekDay } from '../../constants/weekDays'
+import type { User } from '../../database'
 
 export type SortCriterion = 'title' | 'priority' | 'status'
 export type DashboardRenderState =
@@ -73,7 +74,7 @@ export type HabitCardViewData = {
 }
 
 export type HabitsDashboardScreenProps = {
-    currentUserId: string
+    currentUser: User
     title?: string
     initialWeekDay?: WeekDay
     isAddHabitModalVisible?: boolean

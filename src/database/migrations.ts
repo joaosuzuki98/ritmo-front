@@ -219,5 +219,47 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 8,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'users',
+                    columns: [
+                        {
+                            name: 'password',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                        {
+                            name: 'is_logged_in',
+                            type: 'boolean',
+                            isOptional: true,
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            toVersion: 9,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'users',
+                    columns: [
+                        {
+                            name: 'password_hash',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                        {
+                            name: 'password_salt',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 })

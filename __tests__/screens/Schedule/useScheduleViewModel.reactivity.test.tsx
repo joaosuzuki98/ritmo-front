@@ -20,7 +20,7 @@ describe('useScheduleViewModel reactivity', () => {
     let renderer: ReturnType<typeof create> | undefined
 
     const Harness = () => {
-        viewModel = useScheduleViewModel()
+        viewModel = useScheduleViewModel('local-user')
         return null
     }
 

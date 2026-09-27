@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     Pressable,
     ScrollView,
@@ -16,6 +16,7 @@ import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
+import type { User } from '../../database'
 import { AddTodoTaskModal } from './components/AddTodoTaskModal'
 import { AddTodoCategoryModal } from './components/AddTodoCategoryModal'
 import { GoalsSection } from './components/GoalsSection'
@@ -25,47 +26,83 @@ import { useTodoCategoriesViewModel } from './useTodoCategoriesViewModel'
 import { useTodoTasksViewModel } from './useTodoTasksViewModel'
 
 type TodoScreenProps = {
+    currentUser: User
     isAddTaskModalVisible: boolean
     onMenuPress?: () => void
     onCloseAddTaskModal: () => void
 }
 
 export const TodoScreen = ({
+    currentUser,
     isAddTaskModalVisible,
     onMenuPress = () => undefined,
     onCloseAddTaskModal,
 }: TodoScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
-    const [category, setCategory] = useState<TodoTaskCategory>('College')
+    const [category, setCategory] = useState<TodoTaskCategory | null>(null)
     const [isCategoryPickerVisible, setIsCategoryPickerVisible] =
         useState(false)
     const [isAddCategoryModalVisible, setIsAddCategoryModalVisible] =
         useState(false)
-    const goalsViewModel = useTodoGoalsViewModel('local-user')
-    const tasksViewModel = useTodoTasksViewModel('local-user')
-    const categoriesViewModel = useTodoCategoriesViewModel('local-user')
+    const goalsViewModel = useTodoGoalsViewModel(currentUser.id)
+    const tasksViewModel = useTodoTasksViewModel(currentUser.id)
+    const categoriesViewModel = useTodoCategoriesViewModel(currentUser.id)
     const categoryTasks = tasksViewModel.tasks.filter(
-        task => task.category === category,
+        task => category !== null && task.category === category,
     )
     const completedCount = categoryTasks.filter(task => task.isComplete).length
     const progress = categoryTasks.length
         ? Math.round((completedCount / categoryTasks.length) * 100)
         : 0
-    const addTask = (title: string) =>
-        tasksViewModel.createTask(title, category)
+    const tasksSubtitle = category
+        ? `${categoryTasks.length - completedCount} left to do`
+        : categoriesViewModel.isLoading
+        ? 'Loading categories…'
+        : 'Create a category to get started'
+    const addTask = (title: string) => {
+        if (!category)
+            return Promise.reject(new Error('Choose a category first.'))
+        return tasksViewModel.createTask(title, category)
+    }
     const addCategory = async (name: string) => {
         await categoriesViewModel.createCategory(name)
         setCategory(name.trim())
     }
 
+    useEffect(() => {
+        if (!categoriesViewModel.isLoading && !category) {
+            setCategory(categoriesViewModel.categories[0]?.name ?? null)
+        }
+    }, [
+        categoriesViewModel.categories,
+        categoriesViewModel.isLoading,
+        category,
+    ])
+
+    useEffect(() => {
+        if (
+            !isAddTaskModalVisible ||
+            categoriesViewModel.isLoading ||
+            categoriesViewModel.categories.length > 0
+        )
+            return
+        onCloseAddTaskModal()
+        setIsAddCategoryModalVisible(true)
+    }, [
+        categoriesViewModel.categories.length,
+        categoriesViewModel.isLoading,
+        isAddTaskModalVisible,
+        onCloseAddTaskModal,
+    ])
+
     return (
         <ScreenLayout
             title="To-do"
             subtitle={<ScreenSubtitle>Organize your next steps</ScreenSubtitle>}
-            userName="Teste da Silva"
-            level={7}
-            totalPoints={27}
+            userName={currentUser.name}
+            level={currentUser.level}
+            totalPoints={currentUser.totalPoints}
             onProfilePress={() => undefined}
             onMenuPress={onMenuPress}
         >
@@ -94,7 +131,9 @@ export const TodoScreen = ({
                     <View style={styles.progressHeader}>
                         <View>
                             <Text style={styles.progressEyebrow}>PROGRESS</Text>
-                            <Text style={styles.progressTitle}>{category}</Text>
+                            <Text style={styles.progressTitle}>
+                                {category ?? 'No category selected'}
+                            </Text>
                         </View>
                         <Text style={styles.progressPercent}>{progress}%</Text>
                     </View>
@@ -126,7 +165,7 @@ export const TodoScreen = ({
                     <View>
                         <Text style={styles.tasksTitle}>Your tasks</Text>
                         <Text style={styles.tasksSubtitle}>
-                            {categoryTasks.length - completedCount} left to do
+                            {tasksSubtitle}
                         </Text>
                     </View>
                 </View>
@@ -182,10 +221,16 @@ export const TodoScreen = ({
                     ) : (
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyTitle}>
-                                All clear for now
+                                {category
+                                    ? 'No tasks yet'
+                                    : categoriesViewModel.isLoading
+                                    ? 'Loading categories…'
+                                    : 'No category yet'}
                             </Text>
                             <Text style={styles.emptyText}>
-                                Add a task when something comes up.
+                                {category
+                                    ? 'Add your first task to get started.'
+                                    : 'Create a category to organize your tasks.'}
                             </Text>
                         </View>
                     )}
@@ -198,7 +243,7 @@ export const TodoScreen = ({
                 />
             </ScrollView>
             <AddTodoTaskModal
-                category={category}
+                category={category ?? ''}
                 isVisible={isAddTaskModalVisible}
                 onClose={onCloseAddTaskModal}
                 onCreateTask={addTask}
@@ -257,6 +302,13 @@ export const TodoScreen = ({
                                 </Pressable>
                             )
                         })}
+                        {categoriesViewModel.categories.length === 0 ? (
+                            <Text style={styles.categoryEmptyText}>
+                                {categoriesViewModel.isLoading
+                                    ? 'Loading categories…'
+                                    : 'No categories yet. Create one to organize your tasks.'}
+                            </Text>
+                        ) : null}
                         <Pressable
                             accessibilityRole="button"
                             onPress={() => {
@@ -355,6 +407,14 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 14,
         fontWeight: '600',
+    },
+    categoryEmptyText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+        lineHeight: 19,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
     },
     progressCard: {
         backgroundColor: colors.surface,

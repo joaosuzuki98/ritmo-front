@@ -1,75 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { database, type TodoTask } from '../../database'
-import type { TodoTaskCategory, TodoTaskSeed } from './todoTask.types'
-
-const initialTasks: TodoTaskSeed[] = [
-    {
-        title: 'Finish calculator project',
-        category: 'College',
-        isComplete: false,
-    },
-    {
-        title: 'Study SOLID principles',
-        category: 'College',
-        isComplete: false,
-    },
-    {
-        title: 'Read “Learn Calculus Fast — The Indian Way”',
-        category: 'College',
-        isComplete: false,
-    },
-    {
-        title: 'Get an A in the exam',
-        category: 'College',
-        isComplete: true,
-    },
-    {
-        title: 'Prepare the weekly report',
-        category: 'Work',
-        isComplete: false,
-    },
-    {
-        title: 'Review project feedback',
-        category: 'Work',
-        isComplete: false,
-    },
-    {
-        title: 'Plan the next sprint',
-        category: 'Work',
-        isComplete: true,
-    },
-]
+import type { TodoTaskCategory } from './todoTask.types'
 
 export const useTodoTasksViewModel = (currentUserId: string) => {
     const [tasks, setTasks] = useState<TodoTask[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState('')
-    const hasSeededInitialTasks = useRef(false)
 
     useEffect(() => {
         const collection = database.get<TodoTask>('todo_tasks')
-        const seedInitialTasks = async () => {
-            await database.write(async () => {
-                const existingTasks = await collection.query().fetch()
-                if (existingTasks.some(task => task.userId === currentUserId))
-                    return
-
-                const createdAt = new Date()
-                for (const [index, task] of initialTasks.entries()) {
-                    const taskDate = new Date(createdAt.getTime() + index)
-                    await collection.create(record => {
-                        record.userId = currentUserId
-                        record.title = task.title
-                        record.category = task.category
-                        record.isComplete = task.isComplete
-                        record.createdAt = taskDate
-                        record.updatedAt = taskDate
-                    })
-                }
-            })
-        }
-
         const subscription = collection
             .query()
             .observeWithColumns(['is_complete'])
@@ -85,16 +25,6 @@ export const useTodoTasksViewModel = (currentUserId: string) => {
                     setTasks(userTasks)
                     setIsLoading(false)
                     setLoadError('')
-
-                    if (!userTasks.length && !hasSeededInitialTasks.current) {
-                        hasSeededInitialTasks.current = true
-                        seedInitialTasks().catch(() => {
-                            hasSeededInitialTasks.current = false
-                            setLoadError(
-                                'Unable to load tasks. Please try again.',
-                            )
-                        })
-                    }
                 },
                 error: () => {
                     setIsLoading(false)
@@ -123,6 +53,7 @@ export const useTodoTasksViewModel = (currentUserId: string) => {
     }
 
     const createTask = async (title: string, category: TodoTaskCategory) => {
+        if (!category.trim()) throw new Error('Choose a category first.')
         const createdAt = new Date()
         await database.write(async () => {
             await database.get<TodoTask>('todo_tasks').create(record => {

@@ -16,15 +16,19 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 7,
+    version: 9,
     tables: [
         tableSchema({
             name: 'users',
             columns: [
                 { name: 'name', type: 'string' },
                 { name: 'email', type: 'string', isIndexed: true },
+                { name: 'password', type: 'string', isOptional: true },
+                { name: 'password_hash', type: 'string', isOptional: true },
+                { name: 'password_salt', type: 'string', isOptional: true },
                 { name: 'total_points', type: 'number' },
                 { name: 'level', type: 'number' },
+                { name: 'is_logged_in', type: 'boolean', isOptional: true },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],

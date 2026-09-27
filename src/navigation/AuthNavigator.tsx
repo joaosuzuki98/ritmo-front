@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import type { User } from '../database'
 import { ForgotPasswordScreen } from '../screens/ForgotPassword/ForgotPasswordScreen'
 import { LoginScreen } from '../screens/Login/LoginScreen'
 import { RegisterScreen } from '../screens/Register/RegisterScreen'
@@ -7,11 +8,11 @@ import { RegisterScreen } from '../screens/Register/RegisterScreen'
 type AuthRoute = 'Login' | 'Register' | 'ForgotPassword'
 
 type AuthNavigatorProps = {
-    onAuthenticated: () => void
+    onAuthenticated: (user: User) => void
 }
 
 export const AuthNavigator = ({ onAuthenticated }: AuthNavigatorProps) => {
-    const [route, setRoute] = useState<AuthRoute>('Register')
+    const [route, setRoute] = useState<AuthRoute>('Login')
 
     if (route === 'Register') {
         return (
