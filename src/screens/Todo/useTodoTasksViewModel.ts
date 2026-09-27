@@ -72,7 +72,7 @@ export const useTodoTasksViewModel = (currentUserId: string) => {
 
         const subscription = collection
             .query()
-            .observe()
+            .observeWithColumns(['is_complete'])
             .subscribe({
                 next: records => {
                     const userTasks = records

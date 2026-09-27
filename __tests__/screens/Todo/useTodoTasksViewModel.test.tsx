@@ -1,5 +1,6 @@
 import React from 'react'
 import { act, create } from 'react-test-renderer'
+import { Text } from 'react-native'
 
 import { database } from '../../../src/database'
 import { useTodoTasksViewModel } from '../../../src/screens/Todo/useTodoTasksViewModel'
@@ -40,7 +41,7 @@ describe('useTodoTasksViewModel', () => {
 
     const Harness = () => {
         viewModel = useTodoTasksViewModel('local-user')
-        return null
+        return <Text>{viewModel.tasks[0]?.isComplete ? 'done' : 'todo'}</Text>
     }
 
     const createTaskRecord = (): TaskRecord => {
@@ -54,6 +55,7 @@ describe('useTodoTasksViewModel', () => {
             updatedAt: new Date(2026, 8, 26),
             update: async mutate => {
                 mutate(record)
+                observerNext?.([record])
                 return record
             },
         }
@@ -69,7 +71,7 @@ describe('useTodoTasksViewModel', () => {
             create: jest.fn(),
             find: jest.fn(),
         }
-        const observe = jest.fn(() => ({
+        const observeWithColumns = jest.fn(() => ({
             subscribe: jest.fn((observer: unknown) => {
                 observerNext = (
                     observer as { next: (tasks: TaskRecord[]) => void }
@@ -78,7 +80,7 @@ describe('useTodoTasksViewModel', () => {
             }),
         }))
         collection.query.mockReturnValue({
-            observe,
+            observeWithColumns,
             fetch: jest.fn().mockResolvedValue([]),
         })
         collection.create.mockImplementation(
@@ -129,12 +131,17 @@ describe('useTodoTasksViewModel', () => {
         act(() => observerNext?.([task]))
 
         expect(viewModel.tasks).toEqual([task])
+        expect(renderer?.root.findByType(Text).props.children).toBe('todo')
         await act(async () => {
             await viewModel.toggleTask(task.id)
         })
 
         expect(mockedWrite).toHaveBeenCalledTimes(1)
         expect(collection.find).toHaveBeenCalledWith(task.id)
+        expect(collection.query().observeWithColumns).toHaveBeenCalledWith([
+            'is_complete',
+        ])
         expect(task.isComplete).toBe(true)
+        expect(renderer?.root.findByType(Text).props.children).toBe('done')
     })
 })
