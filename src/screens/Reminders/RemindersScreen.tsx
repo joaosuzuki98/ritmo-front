@@ -15,6 +15,7 @@ import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
+import type { Event } from '../../database'
 import { AddScheduleItemModal } from '../Schedule/components/AddScheduleItemModal'
 import { MonthYearModal } from './components/MonthYearModal'
 import { useRemindersViewModel } from './useRemindersViewModel'
@@ -59,6 +60,7 @@ export const RemindersScreen = ({
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const viewModel = useRemindersViewModel()
+    const [editingEvent, setEditingEvent] = useState<Event | null>(null)
     const [isMonthYearModalVisible, setIsMonthYearModalVisible] =
         useState(false)
 
@@ -213,12 +215,43 @@ export const RemindersScreen = ({
                         Upcoming events
                     </Text>
                     {viewModel.eventsForSelectedDate.map(event => (
-                        <Text
+                        <Pressable
+                            accessibilityLabel={`Edit event ${event.title}`}
+                            accessibilityRole="button"
                             key={event.id}
-                            style={[styles.eventText, { fontSize: 16 * scale }]}
+                            onPress={() => setEditingEvent(event)}
+                            style={styles.eventCard}
                         >
-                            {formatEventDate(event.dateTime)} - {event.title}
-                        </Text>
+                            <Text
+                                style={[
+                                    styles.eventText,
+                                    { fontSize: 16 * scale },
+                                ]}
+                            >
+                                {formatEventDate(event.dateTime)} -{' '}
+                                {event.title}
+                            </Text>
+                            {event.location ? (
+                                <Text
+                                    style={[
+                                        styles.eventDetail,
+                                        { fontSize: 14 * scale },
+                                    ]}
+                                >
+                                    {event.location}
+                                </Text>
+                            ) : null}
+                            {event.description ? (
+                                <Text
+                                    style={[
+                                        styles.eventDetail,
+                                        { fontSize: 14 * scale },
+                                    ]}
+                                >
+                                    {event.description}
+                                </Text>
+                            ) : null}
+                        </Pressable>
                     ))}
                     {viewModel.eventsForSelectedDate.length === 0 ? (
                         <Text
@@ -261,12 +294,31 @@ export const RemindersScreen = ({
             />
             <AddScheduleItemModal
                 initialStartHour={8}
-                isVisible={isAddEventModalVisible}
-                onClose={onCloseAddEventModal}
-                title="Add event"
-                subtitle="Choose a time for this reminder."
-                submitLabel="ADD EVENT"
+                isVisible={isAddEventModalVisible || Boolean(editingEvent)}
+                item={editingEvent}
+                onClose={() => {
+                    if (editingEvent) setEditingEvent(null)
+                    else onCloseAddEventModal()
+                }}
+                title={editingEvent ? 'Edit event' : 'Add event'}
+                subtitle={
+                    editingEvent
+                        ? 'Update or remove this reminder.'
+                        : 'Choose a time for this reminder.'
+                }
+                submitLabel={editingEvent ? 'SAVE EVENT' : 'ADD EVENT'}
+                showEventDetails
                 onCreateItem={viewModel.addEvent}
+                onUpdateItem={data =>
+                    editingEvent
+                        ? viewModel.updateEvent(editingEvent.id, data)
+                        : Promise.resolve()
+                }
+                onDeleteItem={() =>
+                    editingEvent
+                        ? viewModel.deleteEvent(editingEvent.id)
+                        : Promise.resolve()
+                }
             />
         </ScreenLayout>
     )
@@ -350,8 +402,18 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginBottom: 2,
     },
+    eventCard: {
+        backgroundColor: colors.surfaceMuted,
+        borderRadius: 8,
+        gap: spacing.xxs,
+        padding: spacing.sm,
+    },
     eventText: {
         color: colors.text,
+        fontFamily: typography.fontFamily,
+    },
+    eventDetail: {
+        color: colors.textMuted,
         fontFamily: typography.fontFamily,
     },
     emptyText: {

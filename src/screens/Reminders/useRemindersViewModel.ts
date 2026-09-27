@@ -24,7 +24,13 @@ export const useRemindersViewModel = () => {
         const subscription = database
             .get<Event>('events')
             .query()
-            .observeWithColumns(['title', 'date_time', 'end_time'])
+            .observeWithColumns([
+                'title',
+                'date_time',
+                'end_time',
+                'location',
+                'description',
+            ])
             .subscribe({
                 next: setEvents,
                 error: () => setEvents([]),
@@ -110,6 +116,8 @@ export const useRemindersViewModel = () => {
                 event.title = data.title.trim()
                 event.dateTime = dateTime
                 event.endTime = endTime
+                event.location = data.location?.trim() || undefined
+                event.description = data.description?.trim() || undefined
                 event.recurrence = 'none'
                 event.countdownEnabled = false
                 event.conversionOrigin = 'reminders'
@@ -117,8 +125,54 @@ export const useRemindersViewModel = () => {
         })
     }
 
+    const updateEvent = async (
+        eventId: string,
+        data: AddScheduleItemFormData,
+    ) => {
+        const event = await database.get<Event>('events').find(eventId)
+        const dateTime = getScheduleDateTime(
+            selectedDate,
+            data.startHour,
+            data.startPeriod,
+        )
+        const endTime = getScheduleDateTime(
+            selectedDate,
+            data.endHour,
+            data.endPeriod,
+        )
+        const [existingEvents, existingHabits] = await Promise.all([
+            database.get<Event>('events').query().fetch(),
+            database.get<Habit>('habits').query().fetch(),
+        ])
+        const conflict = findEventScheduleConflict(
+            { id: eventId, dateTime, endTime },
+            existingEvents,
+            existingHabits,
+        )
+        if (conflict)
+            throw new Error(`This time overlaps with “${conflict.title}”.`)
+
+        await database.write(async () => {
+            await event.update(record => {
+                record.title = data.title.trim()
+                record.dateTime = dateTime
+                record.endTime = endTime
+                record.location = data.location?.trim() || undefined
+                record.description = data.description?.trim() || undefined
+                record.updatedAt = new Date()
+            })
+        })
+    }
+
+    const deleteEvent = async (eventId: string) => {
+        const event = await database.get<Event>('events').find(eventId)
+        await database.write(async () => event.markAsDeleted())
+    }
+
     return {
         addEvent,
+        updateEvent,
+        deleteEvent,
         calendarDays,
         eventsForSelectedDate,
         events,
