@@ -1,11 +1,5 @@
 import { useState } from 'react'
-import {
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-    useWindowDimensions,
-} from 'react-native'
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native'
 
 import { ScreenLayout } from '../../components/ScreenLayout'
@@ -140,13 +134,6 @@ export const ScheduleScreen = ({
                     }}
                     selectedDate={viewModel.selectedDate}
                 />
-                {viewModel.entries.length === 0 ? (
-                    <View pointerEvents="none" style={styles.emptyOverlay}>
-                        <Text style={styles.emptyText}>
-                            No schedule items for this day yet.
-                        </Text>
-                    </View>
-                ) : null}
             </View>
             <CalendarModal
                 isVisible={isCalendarVisible}
@@ -185,20 +172,6 @@ export const ScheduleScreen = ({
 
 const styles = StyleSheet.create({
     timeline: { flex: 1 },
-    emptyOverlay: {
-        alignItems: 'center',
-        left: 0,
-        padding: spacing.lg,
-        position: 'absolute',
-        right: 0,
-        top: '40%',
-    },
-    emptyText: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        textAlign: 'center',
-    },
     calendarButton: {
         justifyContent: 'center',
         marginLeft: spacing.sm,
