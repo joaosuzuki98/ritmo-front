@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 3,
+    version: 4,
     tables: [
         tableSchema({
             name: 'users',
@@ -181,6 +181,7 @@ export const databaseSchema = appSchema({
             columns: [
                 { name: 'user_id', type: 'string', isIndexed: true },
                 { name: 'target_percentage', type: 'number' },
+                { name: 'description', type: 'string', isOptional: true },
                 { name: 'included_habit_ids', type: 'string' },
                 { name: 'period_start', type: 'number' },
                 { name: 'period_end', type: 'number' },

@@ -78,5 +78,21 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 4,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'group_consistency_goals',
+                    columns: [
+                        {
+                            name: 'description',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 })

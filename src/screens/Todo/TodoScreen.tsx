@@ -17,6 +17,8 @@ import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { AddTodoTaskModal } from './components/AddTodoTaskModal'
+import { GoalsSection } from './components/GoalsSection'
+import { useTodoGoalsViewModel } from './useTodoGoalsViewModel'
 
 type TodoCategory = 'College' | 'Work'
 type TodoTask = {
@@ -88,6 +90,7 @@ export const TodoScreen = ({
     const [category, setCategory] = useState<TodoCategory>('College')
     const [isCategoryPickerVisible, setIsCategoryPickerVisible] =
         useState(false)
+    const goalsViewModel = useTodoGoalsViewModel('local-user')
     const categories: TodoCategory[] = ['College', 'Work']
     const categoryTasks = tasks.filter(task => task.category === category)
     const completedCount = categoryTasks.filter(task => task.isComplete).length
@@ -235,6 +238,12 @@ export const TodoScreen = ({
                         </View>
                     )}
                 </View>
+                <GoalsSection
+                    goals={goalsViewModel.goalCards}
+                    habitOptions={goalsViewModel.habitOptions}
+                    onCreateGoal={goalsViewModel.createGoal}
+                    onDeleteGoal={goalsViewModel.deleteGoal}
+                />
             </ScrollView>
             <AddTodoTaskModal
                 category={category}
