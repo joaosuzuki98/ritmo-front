@@ -105,6 +105,108 @@ describe('dashboard transformations', () => {
         )
     })
 
+    it('blocks chained habits until their prerequisite is completed that day', () => {
+        const dependent = habit({
+            id: 'dependent',
+            name: 'Journal',
+        })
+        const prerequisite = habit({
+            id: 'prerequisite',
+            name: 'Meditate',
+            weekDays: [2],
+        })
+        const options = [dependent, prerequisite] as never
+        const dependency = [
+            {
+                habitId: 'dependent',
+                triggerHabitId: 'prerequisite',
+                type: 'after_completion',
+            },
+        ] as never
+
+        const blockedCards = composeHabitCards(
+            options,
+            [],
+            [],
+            'user-1',
+            1,
+            new Date(2026, 8, 21),
+            [],
+            [],
+            [],
+            dependency,
+        )
+        expect(
+            blockedCards.find(card => card.id === 'dependent'),
+        ).toMatchObject({
+            isBlocked: true,
+            blockingHabitTitles: ['Meditate'],
+        })
+        expect(
+            blockedCards.find(card => card.id === 'prerequisite')
+                ?.isPrerequisiteOnly,
+        ).toBe(true)
+
+        const unblockedCards = composeHabitCards(
+            options,
+            [],
+            [
+                {
+                    habitId: 'prerequisite',
+                    date: new Date(2026, 8, 21),
+                    status: 'completed',
+                },
+            ] as never,
+            'user-1',
+            1,
+            new Date(2026, 8, 21),
+            [],
+            [],
+            [],
+            dependency,
+        )
+        expect(
+            unblockedCards.find(card => card.id === 'dependent')?.isBlocked,
+        ).toBe(false)
+    })
+
+    it('blocks a habit until another habit reaches the configured condition status', () => {
+        const cards = composeHabitCards(
+            [
+                habit({ id: 'dependent', name: 'Go outside' }),
+                habit({ id: 'condition', name: 'Exercise', weekDays: [2] }),
+            ] as never,
+            [],
+            [
+                {
+                    habitId: 'condition',
+                    date: new Date(2026, 8, 21),
+                    status: 'partial',
+                },
+            ] as never,
+            'user-1',
+            1,
+            new Date(2026, 8, 21),
+            [],
+            [],
+            [],
+            [],
+            [
+                {
+                    habitId: 'dependent',
+                    conditionHabitId: 'condition',
+                    conditionType: 'habit_status',
+                    conditionRule: { status: 'completed' },
+                },
+            ] as never,
+        )
+
+        expect(cards.find(card => card.id === 'dependent')).toMatchObject({
+            isBlocked: true,
+            blockingHabitTitles: ['Exercise'],
+        })
+    })
+
     it('filters case-insensitively and restores manual order when sorting clears', () => {
         const cards = [
             {

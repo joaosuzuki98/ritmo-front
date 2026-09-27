@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { getHabitStatusPresentation } from '../../../constants/habitStatuses'
+import { habitRequirementStatusLabels } from '../../../constants/habitRequirementStatuses'
 import { weekDayLabels, type WeekDay } from '../../../constants/weekDays'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
@@ -216,11 +217,17 @@ export const HabitDetailsModal = ({
                         <Pressable
                             accessibilityLabel={`Record today's progress for ${habit.title}`}
                             accessibilityRole="button"
+                            disabled={habit.isBlocked}
                             onPress={onLogProgress}
-                            style={styles.logProgressButton}
+                            style={[
+                                styles.logProgressButton,
+                                habit.isBlocked && styles.disabledButton,
+                            ]}
                         >
                             <Text style={styles.logProgressButtonText}>
-                                Record today’s progress
+                                {habit.isBlocked
+                                    ? 'Complete requirements first'
+                                    : 'Record today’s progress'}
                             </Text>
                         </Pressable>
 
@@ -251,6 +258,36 @@ export const HabitDetailsModal = ({
                             <Text style={styles.description}>
                                 {habit.description}
                             </Text>
+                        ) : null}
+
+                        {habit.dependencyHabitTitle ||
+                        habit.conditionHabitTitle ? (
+                            <>
+                                <Text style={styles.sectionTitle}>
+                                    Requirements
+                                </Text>
+                                <View style={styles.requirementsBox}>
+                                    {habit.dependencyHabitTitle ? (
+                                        <Text style={styles.requirementText}>
+                                            Complete “
+                                            {habit.dependencyHabitTitle}” first
+                                            today.
+                                        </Text>
+                                    ) : null}
+                                    {habit.conditionHabitTitle ? (
+                                        <Text style={styles.requirementText}>
+                                            “{habit.conditionHabitTitle}” must
+                                            be marked as{' '}
+                                            {habit.conditionStatus
+                                                ? habitRequirementStatusLabels[
+                                                      habit.conditionStatus as keyof typeof habitRequirementStatusLabels
+                                                  ]
+                                                : 'the required status'}
+                                            .
+                                        </Text>
+                                    ) : null}
+                                </View>
+                            </>
                         ) : null}
 
                         <Text style={styles.sectionTitle}>Schedule</Text>
@@ -481,6 +518,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
     },
+    disabledButton: { opacity: 0.5 },
     editButton: {
         alignItems: 'center',
         backgroundColor: colors.accent,
@@ -563,6 +601,19 @@ const styles = StyleSheet.create({
         fontSize: 18,
         lineHeight: 27,
         marginTop: 22,
+    },
+    requirementsBox: {
+        backgroundColor: colors.surfaceMuted,
+        borderRadius: 10,
+        gap: 7,
+        paddingHorizontal: 13,
+        paddingVertical: 11,
+    },
+    requirementText: {
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+        lineHeight: 21,
     },
     sectionTitle: {
         color: colors.text,

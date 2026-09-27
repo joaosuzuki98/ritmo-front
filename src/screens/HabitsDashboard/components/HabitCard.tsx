@@ -95,7 +95,8 @@ export const HabitCard = ({
             if (tapTimeout.current) clearTimeout(tapTimeout.current)
             tapTimeout.current = null
             lastTapAt.current = 0
-            onComplete()
+            if (habit.isBlocked) onPress()
+            else onComplete()
             return
         }
         lastTapAt.current = now
@@ -214,6 +215,13 @@ export const HabitCard = ({
             ) : null}
             <Pressable
                 accessibilityLabel={`Open details for ${habit.title}`}
+                accessibilityHint={
+                    habit.isBlocked
+                        ? `Requirement not met: ${habit.blockingHabitTitles.join(
+                              ', ',
+                          )}.`
+                        : undefined
+                }
                 accessibilityRole="button"
                 onPress={handleCardPress}
                 style={{ flex: 1 }}
@@ -273,6 +281,17 @@ export const HabitCard = ({
                         </Pressable>
                     </View>
                 </View>
+                {habit.isPrerequisiteOnly ? (
+                    <Text style={styles.requirementBadge}>
+                        Required for another habit
+                    </Text>
+                ) : null}
+                {habit.isBlocked ? (
+                    <Text style={styles.blockedText}>
+                        Requirement not met:{' '}
+                        {habit.blockingHabitTitles.join(', ')}
+                    </Text>
+                ) : null}
                 {habit.description ? (
                     <Text
                         style={{
@@ -337,6 +356,20 @@ const styles = StyleSheet.create({
         right: 0,
         top: 0,
         zIndex: 3,
+    },
+    requirementBadge: {
+        color: colors.priorityText,
+        fontFamily: typography.fontFamily,
+        fontSize: 12,
+        fontWeight: '600',
+        marginTop: 10,
+    },
+    blockedText: {
+        color: colors.priorityText,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+        fontWeight: '600',
+        marginTop: 8,
     },
     headerActions: {
         alignItems: 'center',

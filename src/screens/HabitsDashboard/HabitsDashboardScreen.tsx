@@ -292,6 +292,7 @@ export const HabitsDashboardScreen = ({
                 </PanGestureHandler>
             </ScrollView>
             <AddHabitModal
+                habitOptions={viewModel.habitOptions}
                 initialWeekDay={viewModel.weekDay}
                 habit={habitBeingEdited}
                 isVisible={isAddHabitModalVisible || habitBeingEdited !== null}

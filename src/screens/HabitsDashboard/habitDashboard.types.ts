@@ -27,6 +27,11 @@ export type HabitCompletionViewData = {
     distractionLockEnabled?: boolean
 }
 
+export type HabitOption = {
+    id: string
+    title: string
+}
+
 export type HabitCardViewData = {
     id: string
     title: string
@@ -41,6 +46,14 @@ export type HabitCardViewData = {
     isPaused: boolean
     completionTime?: Date
     isFocusOfDay: boolean
+    dependencyHabitId?: string
+    dependencyHabitTitle?: string
+    conditionHabitId?: string
+    conditionHabitTitle?: string
+    conditionStatus?: string
+    isPrerequisiteOnly: boolean
+    isBlocked: boolean
+    blockingHabitTitles: string[]
     frequencyType?: string
     weekDays: number[]
     estimatedDurationMinutes?: number

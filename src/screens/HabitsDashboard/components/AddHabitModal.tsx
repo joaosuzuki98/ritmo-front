@@ -30,13 +30,18 @@ import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
-import type { HabitCardViewData } from '../habitDashboard.types'
+import {
+    habitRequirementStatuses,
+    habitRequirementStatusLabels,
+} from '../../../constants/habitRequirementStatuses'
+import type { HabitCardViewData, HabitOption } from '../habitDashboard.types'
 import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
 
 type AddHabitModalProps = {
     isVisible: boolean
     initialWeekDay: WeekDay
     habit?: HabitCardViewData | null
+    habitOptions: readonly HabitOption[]
     onClose: () => void
     onCreateHabit: (data: AddHabitFormData) => Promise<void>
     onUpdateHabit?: (habitId: string, data: AddHabitFormData) => Promise<void>
@@ -64,12 +69,17 @@ const getInitialValues = (
           ).padStart(2, '0')}`
         : '',
     isFocusOfDay: habit?.isFocusOfDay ?? false,
+    dependencyHabitId: habit?.dependencyHabitId ?? '',
+    conditionHabitId: habit?.conditionHabitId ?? '',
+    conditionStatus:
+        (habit?.conditionStatus as AddHabitFormData['conditionStatus']) ?? '',
 })
 
 export const AddHabitModal = ({
     isVisible,
     initialWeekDay,
     habit = null,
+    habitOptions,
     onClose,
     onCreateHabit,
     onUpdateHabit,
@@ -100,6 +110,9 @@ export const AddHabitModal = ({
     const selectedWeekDays = watch('weekDays')
     const selectedPriority = watch('priority')
     const isFocusOfDay = watch('isFocusOfDay')
+    const dependencyHabitId = watch('dependencyHabitId')
+    const conditionHabitId = watch('conditionHabitId')
+    const conditionStatus = watch('conditionStatus')
 
     useEffect(() => {
         if (isVisible) reset(getInitialValues(initialWeekDay, habit))
@@ -361,6 +374,179 @@ export const AddHabitModal = ({
                             {errors.weekDays ? (
                                 <Text style={styles.errorText}>
                                     {errors.weekDays.message}
+                                </Text>
+                            ) : null}
+
+                            <Text style={styles.sectionTitle}>
+                                Habit requirements
+                            </Text>
+                            <Text style={styles.label}>Complete after</Text>
+                            <View style={styles.requirementOptions}>
+                                {[
+                                    { id: '', title: 'No prerequisite' },
+                                    ...habitOptions.filter(
+                                        option =>
+                                            option.id !== conditionHabitId,
+                                    ),
+                                ].map(option => {
+                                    const isSelected =
+                                        dependencyHabitId === option.id
+                                    return (
+                                        <Pressable
+                                            accessibilityRole="radio"
+                                            accessibilityState={{
+                                                selected: isSelected,
+                                            }}
+                                            key={option.id || 'no-prerequisite'}
+                                            onPress={() =>
+                                                setValue(
+                                                    'dependencyHabitId',
+                                                    option.id,
+                                                    { shouldValidate: true },
+                                                )
+                                            }
+                                            style={[
+                                                styles.requirementOption,
+                                                isSelected &&
+                                                    styles.optionSelected,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.optionText,
+                                                    isSelected &&
+                                                        styles.optionTextSelected,
+                                                ]}
+                                            >
+                                                {option.title}
+                                            </Text>
+                                        </Pressable>
+                                    )
+                                })}
+                                {habitOptions.length === 0 ? (
+                                    <Text style={styles.helperText}>
+                                        Create another habit first to add a
+                                        prerequisite.
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            <Text style={styles.label}>
+                                Only when another habit is
+                            </Text>
+                            <View style={styles.requirementOptions}>
+                                {[
+                                    { id: '', title: 'No condition' },
+                                    ...habitOptions.filter(
+                                        option =>
+                                            option.id !== dependencyHabitId,
+                                    ),
+                                ].map(option => {
+                                    const isSelected =
+                                        conditionHabitId === option.id
+                                    return (
+                                        <Pressable
+                                            accessibilityRole="radio"
+                                            accessibilityState={{
+                                                selected: isSelected,
+                                            }}
+                                            key={option.id || 'no-condition'}
+                                            onPress={() => {
+                                                setValue(
+                                                    'conditionHabitId',
+                                                    option.id,
+                                                    { shouldValidate: true },
+                                                )
+                                                setValue(
+                                                    'conditionStatus',
+                                                    option.id
+                                                        ? conditionStatus ||
+                                                              'completed'
+                                                        : '',
+                                                    { shouldValidate: true },
+                                                )
+                                            }}
+                                            style={[
+                                                styles.requirementOption,
+                                                isSelected &&
+                                                    styles.optionSelected,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.optionText,
+                                                    isSelected &&
+                                                        styles.optionTextSelected,
+                                                ]}
+                                            >
+                                                {option.title}
+                                            </Text>
+                                        </Pressable>
+                                    )
+                                })}
+                            </View>
+                            {conditionHabitId ? (
+                                <>
+                                    <Text style={styles.label}>
+                                        Must be marked as
+                                    </Text>
+                                    <View style={styles.optionRow}>
+                                        {habitRequirementStatuses.map(
+                                            status => {
+                                                const isSelected =
+                                                    conditionStatus === status
+                                                return (
+                                                    <Pressable
+                                                        accessibilityRole="radio"
+                                                        accessibilityState={{
+                                                            selected:
+                                                                isSelected,
+                                                        }}
+                                                        key={status}
+                                                        onPress={() =>
+                                                            setValue(
+                                                                'conditionStatus',
+                                                                status,
+                                                                {
+                                                                    shouldValidate:
+                                                                        true,
+                                                                },
+                                                            )
+                                                        }
+                                                        style={[
+                                                            styles.option,
+                                                            isSelected &&
+                                                                styles.optionSelected,
+                                                        ]}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.optionText,
+                                                                isSelected &&
+                                                                    styles.optionTextSelected,
+                                                            ]}
+                                                        >
+                                                            {
+                                                                habitRequirementStatusLabels[
+                                                                    status
+                                                                ]
+                                                            }
+                                                        </Text>
+                                                    </Pressable>
+                                                )
+                                            },
+                                        )}
+                                    </View>
+                                </>
+                            ) : null}
+                            {errors.conditionHabitId ? (
+                                <Text style={styles.errorText}>
+                                    {errors.conditionHabitId.message}
+                                </Text>
+                            ) : null}
+                            {errors.conditionStatus ? (
+                                <Text style={styles.errorText}>
+                                    {errors.conditionStatus.message}
                                 </Text>
                             ) : null}
 
@@ -631,6 +817,26 @@ const styles = StyleSheet.create({
     },
     optionTextSelected: { color: colors.text },
     daysRow: { flexDirection: 'row', gap: 7, marginTop: 10 },
+    requirementOptions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    requirementOption: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        justifyContent: 'center',
+        minHeight: 44,
+        paddingHorizontal: 12,
+    },
+    helperText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+    },
     dayButton: {
         alignItems: 'center',
         backgroundColor: colors.surfaceMuted,

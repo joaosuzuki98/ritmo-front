@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { AccessibilityInfo } from 'react-native'
 
 import { getHabitStatusPresentation } from '../../constants/habitStatuses'
+import {
+    habitRequirementStatuses,
+    type HabitRequirementStatus,
+} from '../../constants/habitRequirementStatuses'
 import { getIncompletionReasonLabel } from '../../constants/incompletionReasons'
 import { getPriorityPresentation } from '../../constants/priorities'
 import {
@@ -14,6 +18,8 @@ import {
     type Category,
     type CompletionRecord,
     type Habit,
+    type HabitCondition,
+    type HabitDependency,
     type HabitDisplayPreference,
     type IncompletionReason,
     type Streak,
@@ -23,10 +29,12 @@ import { localDateKey } from '../../utils/normalizeLocalDate'
 import type {
     DashboardRenderState,
     HabitCardViewData,
+    HabitOption,
     SortCriterion,
 } from './habitDashboard.types'
 import type { AddHabitFormData } from './addHabitSchema'
 import type { LogHabitProgressFormData } from './logHabitProgressSchema'
+import { wouldCreateHabitRequirementCycle } from './habitRequirementUtils'
 
 type HabitSource = Pick<
     Habit,
@@ -60,6 +68,22 @@ type CompletionSource = Pick<
 type CategorySource = Pick<Category, 'id' | 'userId' | 'name'>
 type StreakSource = Pick<Streak, 'habitId' | 'currentStreak' | 'longestStreak'>
 type IncompletionReasonSource = Pick<IncompletionReason, 'id' | 'description'>
+type HabitDependencySource = Pick<
+    HabitDependency,
+    'habitId' | 'triggerHabitId' | 'type'
+>
+type HabitConditionSource = Pick<
+    HabitCondition,
+    'habitId' | 'conditionHabitId' | 'conditionRule' | 'conditionType'
+>
+
+const getConditionStatus = (
+    rule: unknown,
+): HabitRequirementStatus | undefined => {
+    if (!rule || typeof rule !== 'object') return undefined
+    const status = (rule as Record<string, unknown>).status
+    return habitRequirementStatuses.find(value => value === status)
+}
 
 const mockCategories: CategorySource[] = [
     { id: 'mock-category', userId: 'local-user', name: 'Categoria ABC' },
@@ -117,6 +141,8 @@ export const composeHabitCards = (
     orderedHabitIds: readonly string[] = [],
     streaks: readonly StreakSource[] = [],
     incompletionReasons: readonly IncompletionReasonSource[] = [],
+    dependencies: readonly HabitDependencySource[] = [],
+    conditions: readonly HabitConditionSource[] = [],
 ): HabitCardViewData[] => {
     const categoryById = new Map(
         categories
@@ -152,21 +178,108 @@ export const composeHabitCards = (
             },
         ]),
     )
+    const habitById = new Map(habits.map(habit => [habit.id, habit]))
+    const scheduledHabitIds = new Set(
+        habits
+            .filter(
+                habit =>
+                    habit.userId === userId &&
+                    habit.name.trim().length > 0 &&
+                    habit.weekDays.every(day =>
+                        [1, 2, 3, 4, 5, 6, 7].includes(day),
+                    ) &&
+                    habit.weekDays.includes(weekDay),
+            )
+            .map(habit => habit.id),
+    )
+    const visibleHabitIds = new Set(scheduledHabitIds)
+    const prerequisiteOnlyIds = new Set<string>()
+    let addedPrerequisite = true
+    while (addedPrerequisite) {
+        addedPrerequisite = false
+        dependencies.forEach(dependency => {
+            if (
+                dependency.type === 'after_completion' &&
+                visibleHabitIds.has(dependency.habitId) &&
+                !visibleHabitIds.has(dependency.triggerHabitId) &&
+                habitById.has(dependency.triggerHabitId)
+            ) {
+                visibleHabitIds.add(dependency.triggerHabitId)
+                prerequisiteOnlyIds.add(dependency.triggerHabitId)
+                addedPrerequisite = true
+            }
+        })
+        conditions.forEach(condition => {
+            if (
+                condition.conditionType === 'habit_status' &&
+                visibleHabitIds.has(condition.habitId) &&
+                !visibleHabitIds.has(condition.conditionHabitId) &&
+                habitById.has(condition.conditionHabitId)
+            ) {
+                visibleHabitIds.add(condition.conditionHabitId)
+                prerequisiteOnlyIds.add(condition.conditionHabitId)
+                addedPrerequisite = true
+            }
+        })
+    }
+    const statusByHabitId = new Map<string, string>()
+    habits.forEach(habit => {
+        const status = completionByHabit.get(habit.id)?.status
+        if (
+            status &&
+            habitRequirementStatuses.includes(status as HabitRequirementStatus)
+        )
+            statusByHabitId.set(habit.id, status)
+    })
 
     const matching = habits
         .filter(
-            habit =>
-                habit.userId === userId &&
-                habit.name.trim().length > 0 &&
-                habit.weekDays.every(day =>
-                    [1, 2, 3, 4, 5, 6, 7].includes(day),
-                ) &&
-                habit.weekDays.includes(weekDay),
+            habit => habit.userId === userId && visibleHabitIds.has(habit.id),
         )
         .map(habit => {
             const completion = completionByHabit.get(habit.id)
             const priority = getPriorityPresentation(habit.priority)
             const isPaused = habit.status === 'paused'
+            const dependency = dependencies.find(
+                item =>
+                    item.habitId === habit.id &&
+                    item.type === 'after_completion',
+            )
+            const condition = conditions.find(
+                item =>
+                    item.habitId === habit.id &&
+                    item.conditionType === 'habit_status',
+            )
+            const requiredConditionStatus = condition
+                ? getConditionStatus(condition.conditionRule)
+                : undefined
+            const blockingHabitTitles: string[] = []
+            if (
+                dependency &&
+                statusByHabitId.get(dependency.triggerHabitId) !== 'completed'
+            ) {
+                blockingHabitTitles.push(
+                    habitById.get(dependency.triggerHabitId)?.name ??
+                        'Linked habit',
+                )
+            }
+            if (
+                condition &&
+                (!requiredConditionStatus ||
+                    statusByHabitId.get(condition.conditionHabitId) !==
+                        requiredConditionStatus)
+            ) {
+                blockingHabitTitles.push(
+                    habitById.get(condition.conditionHabitId)?.name ??
+                        'Linked habit',
+                )
+            }
+            const dependencyHabit = dependency
+                ? habitById.get(dependency.triggerHabitId)
+                : undefined
+            const conditionHabit = condition
+                ? habitById.get(condition.conditionHabitId)
+                : undefined
             const status = getHabitStatusPresentation(
                 isPaused ? 'paused' : completion?.status ?? habit.status,
             )
@@ -202,6 +315,14 @@ export const composeHabitCards = (
                     : completion?.status ?? habit.status,
                 statusLabel: status.label,
                 isPaused,
+                dependencyHabitId: dependency?.triggerHabitId,
+                dependencyHabitTitle: dependencyHabit?.name,
+                conditionHabitId: condition?.conditionHabitId,
+                conditionHabitTitle: conditionHabit?.name,
+                conditionStatus: requiredConditionStatus,
+                isPrerequisiteOnly: prerequisiteOnlyIds.has(habit.id),
+                isBlocked: blockingHabitTitles.length > 0,
+                blockingHabitTitles,
                 completionTime: completion?.completionTime,
                 isFocusOfDay: habit.isFocusOfDay,
                 frequencyType: habit.frequencyType,
@@ -310,9 +431,125 @@ const parsePreferredTime = (value: string): Date | undefined => {
     return date
 }
 
+const validateHabitRequirements = async (
+    formData: AddHabitFormData,
+    currentUserId: string,
+    habitId?: string,
+) => {
+    const requiredHabitIds = [
+        formData.dependencyHabitId,
+        formData.conditionHabitId,
+    ].filter(Boolean)
+    if (!requiredHabitIds.length) return
+
+    if (habitId && requiredHabitIds.includes(habitId))
+        throw new Error('A habit cannot require itself.')
+
+    const habits = await database.get<Habit>('habits').query().fetch()
+    const validHabitIds = new Set(
+        habits
+            .filter(habit => habit.userId === currentUserId)
+            .map(habit => habit.id),
+    )
+    if (requiredHabitIds.some(requiredId => !validHabitIds.has(requiredId)))
+        throw new Error('Choose an existing habit as a requirement.')
+
+    if (!habitId) return
+
+    const [dependencies, conditions] = await Promise.all([
+        database.get<HabitDependency>('habit_dependencies').query().fetch(),
+        database.get<HabitCondition>('habit_conditions').query().fetch(),
+    ])
+    const existingEdges = [
+        ...dependencies
+            .filter(
+                dependency =>
+                    dependency.habitId !== habitId &&
+                    dependency.type === 'after_completion',
+            )
+            .map(dependency => ({
+                habitId: dependency.habitId,
+                requiredHabitId: dependency.triggerHabitId,
+            })),
+        ...conditions
+            .filter(condition => condition.habitId !== habitId)
+            .map(condition => ({
+                habitId: condition.habitId,
+                requiredHabitId: condition.conditionHabitId,
+            })),
+    ]
+    if (
+        wouldCreateHabitRequirementCycle(
+            habitId,
+            requiredHabitIds,
+            existingEdges,
+        )
+    )
+        throw new Error('Habit requirements cannot form a cycle.')
+}
+
+const saveHabitRequirements = async (
+    habitId: string,
+    formData: AddHabitFormData,
+    dependencies: readonly HabitDependency[] = [],
+    conditions: readonly HabitCondition[] = [],
+) => {
+    const currentDependencies = dependencies.filter(
+        dependency => dependency.habitId === habitId,
+    )
+    const matchingDependency = currentDependencies.find(
+        dependency =>
+            dependency.type === 'after_completion' &&
+            dependency.triggerHabitId === formData.dependencyHabitId,
+    )
+    for (const dependency of currentDependencies) {
+        if (dependency !== matchingDependency) await dependency.markAsDeleted()
+    }
+
+    if (formData.dependencyHabitId && !matchingDependency) {
+        await database
+            .get<HabitDependency>('habit_dependencies')
+            .create(record => {
+                record.habitId = habitId
+                record.triggerHabitId = formData.dependencyHabitId
+                record.type = 'after_completion'
+            })
+    }
+
+    const currentConditions = conditions.filter(
+        condition => condition.habitId === habitId,
+    )
+    const matchingCondition = currentConditions.find(
+        condition =>
+            condition.conditionHabitId === formData.conditionHabitId &&
+            condition.conditionType === 'habit_status' &&
+            getConditionStatus(condition.conditionRule) ===
+                formData.conditionStatus,
+    )
+    for (const condition of currentConditions) {
+        if (condition !== matchingCondition) await condition.markAsDeleted()
+    }
+
+    if (
+        formData.conditionHabitId &&
+        formData.conditionStatus &&
+        !matchingCondition
+    ) {
+        await database
+            .get<HabitCondition>('habit_conditions')
+            .create(record => {
+                record.habitId = habitId
+                record.conditionHabitId = formData.conditionHabitId
+                record.conditionType = 'habit_status'
+                record.conditionRule = { status: formData.conditionStatus }
+            })
+    }
+}
+
 type DashboardData = {
     user: User | null
     cards: HabitCardViewData[]
+    habitOptions: HabitOption[]
     preference: HabitDisplayPreference | null
 }
 
@@ -328,6 +565,7 @@ export const useHabitsDashboardViewModel = (
     const [data, setData] = useState<DashboardData>({
         user: null,
         cards: [],
+        habitOptions: [],
         preference: null,
     })
     const [state, setState] = useState<DashboardRenderState>('loading')
@@ -354,6 +592,8 @@ export const useHabitsDashboardViewModel = (
                     completions,
                     streaks,
                     incompletionReasons,
+                    dependencies,
+                    conditions,
                     preferences,
                 ] = await Promise.all([
                     database
@@ -369,6 +609,14 @@ export const useHabitsDashboardViewModel = (
                     database.get<Streak>('streaks').query().fetch(),
                     database
                         .get<IncompletionReason>('incompletion_reasons')
+                        .query()
+                        .fetch(),
+                    database
+                        .get<HabitDependency>('habit_dependencies')
+                        .query()
+                        .fetch(),
+                    database
+                        .get<HabitCondition>('habit_conditions')
                         .query()
                         .fetch(),
                     database
@@ -398,8 +646,21 @@ export const useHabitsDashboardViewModel = (
                     preference?.orderedHabitIds ?? [],
                     streaks,
                     incompletionReasons,
+                    dependencies,
+                    conditions,
                 )
-                setData({ user, cards, preference })
+                setData({
+                    user,
+                    cards,
+                    habitOptions: habits
+                        .filter(
+                            habit =>
+                                habit.userId === currentUserId &&
+                                habit.name.trim().length > 0,
+                        )
+                        .map(habit => ({ id: habit.id, title: habit.name })),
+                    preference,
+                })
                 setState(cards.length === 0 ? 'empty' : 'success')
             } catch {
                 if (active) setState('error')
@@ -448,6 +709,7 @@ export const useHabitsDashboardViewModel = (
     }
 
     const createHabit = async (formData: AddHabitFormData) => {
+        await validateHabitRequirements(formData, currentUserId)
         const categoryName = formData.categoryName?.trim()
         const categories = categoryName
             ? await database.get<Category>('categories').query().fetch()
@@ -471,7 +733,7 @@ export const useHabitsDashboardViewModel = (
                 categoryId = category.id
             }
 
-            await database.get<Habit>('habits').create(record => {
+            const habit = await database.get<Habit>('habits').create(record => {
                 record.userId = currentUserId
                 record.categoryId = categoryId
                 record.name = formData.name.trim()
@@ -492,6 +754,7 @@ export const useHabitsDashboardViewModel = (
                 record.isFocusOfDay = formData.isFocusOfDay
                 record.status = 'pending'
             })
+            await saveHabitRequirements(habit.id, formData)
         })
         setReloadToken(current => current + 1)
     }
@@ -507,6 +770,8 @@ export const useHabitsDashboardViewModel = (
 
         const priority = getPriorityPresentation(formData.priority)
         if (!persistedHabit) {
+            if (formData.dependencyHabitId || formData.conditionHabitId)
+                throw new Error('Save requirements on a persisted habit.')
             setData(current => ({
                 ...current,
                 cards: current.cards.map(card =>
@@ -543,6 +808,8 @@ export const useHabitsDashboardViewModel = (
             return
         }
 
+        await validateHabitRequirements(formData, currentUserId, habitId)
+
         const categories = categoryName
             ? await database.get<Category>('categories').query().fetch()
             : []
@@ -552,6 +819,10 @@ export const useHabitsDashboardViewModel = (
                 category.name.toLocaleLowerCase() ===
                     categoryName?.toLocaleLowerCase(),
         )
+        const [dependencies, conditions] = await Promise.all([
+            database.get<HabitDependency>('habit_dependencies').query().fetch(),
+            database.get<HabitCondition>('habit_conditions').query().fetch(),
+        ])
         let categoryId = existingCategory?.id
         await database.write(async () => {
             if (categoryName && !categoryId) {
@@ -583,6 +854,12 @@ export const useHabitsDashboardViewModel = (
                 record.priority = formData.priority
                 record.isFocusOfDay = formData.isFocusOfDay
             })
+            await saveHabitRequirements(
+                habitId,
+                formData,
+                dependencies,
+                conditions,
+            )
         })
 
         setReloadToken(current => current + 1)
@@ -597,7 +874,31 @@ export const useHabitsDashboardViewModel = (
         if (persistedHabit && persistedHabit.userId !== currentUserId) return
 
         if (persistedHabit) {
+            const [dependencies, conditions] = await Promise.all([
+                database
+                    .get<HabitDependency>('habit_dependencies')
+                    .query()
+                    .fetch(),
+                database
+                    .get<HabitCondition>('habit_conditions')
+                    .query()
+                    .fetch(),
+            ])
             await database.write(async () => {
+                for (const dependency of dependencies) {
+                    if (
+                        dependency.habitId === habitId ||
+                        dependency.triggerHabitId === habitId
+                    )
+                        await dependency.markAsDeleted()
+                }
+                for (const condition of conditions) {
+                    if (
+                        condition.habitId === habitId ||
+                        condition.conditionHabitId === habitId
+                    )
+                        await condition.markAsDeleted()
+                }
                 await persistedHabit.markAsDeleted()
             })
             setReloadToken(current => current + 1)
@@ -651,7 +952,8 @@ export const useHabitsDashboardViewModel = (
 
     const completeHabit = async (habitId: string) => {
         const currentCard = data.cards.find(card => card.id === habitId)
-        if (!currentCard || currentCard.isPaused) return
+        if (!currentCard || currentCard.isPaused || currentCard.isBlocked)
+            return
 
         const completionTime = new Date()
         const dateKey = localDateKey(completionTime)
@@ -776,7 +1078,8 @@ export const useHabitsDashboardViewModel = (
         formData: LogHabitProgressFormData,
     ) => {
         const currentCard = data.cards.find(card => card.id === habitId)
-        if (!currentCard || currentCard.isPaused) return
+        if (!currentCard || currentCard.isPaused || currentCard.isBlocked)
+            return
 
         const [hours, minutes] = formData.time.split(':').map(Number)
         const date = new Date()
@@ -945,6 +1248,7 @@ export const useHabitsDashboardViewModel = (
                     : card,
             ),
         }))
+        setReloadToken(current => current + 1)
     }
 
     return {
