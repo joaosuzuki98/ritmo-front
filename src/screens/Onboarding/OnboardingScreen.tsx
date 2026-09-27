@@ -203,7 +203,11 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
         if (currentPage === 1) {
             return (
                 <View style={styles.introContent}>
-                    <View style={styles.introLogo}>{renderLogo()}</View>
+                    <View
+                        style={[styles.introLogo, { marginTop: height * 0.22 }]}
+                    >
+                        {renderLogo()}
+                    </View>
                     <View style={styles.introCopy}>
                         <Text style={styles.introDescription}>
                             {page.description}
@@ -296,7 +300,6 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
                             onPress={handleContinue}
                             style={({ pressed }) => [
                                 styles.continueButton,
-                                { marginBottom: height * 0.09 },
                                 pressed && styles.pressed,
                             ]}
                         >
@@ -304,6 +307,13 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
                                 {isLastPage ? 'Iniciar' : 'Próximo'}
                             </Text>
                         </Pressable>
+
+                        <View
+                            style={[
+                                styles.footerSpacer,
+                                { height: height * 0.09 },
+                            ]}
+                        />
 
                         <View
                             accessibilityLabel={`Tela ${currentPage + 1} de ${
@@ -392,12 +402,12 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
     },
-    introLogo: { marginTop: spacing.xl },
+    introLogo: { alignItems: 'center' },
     introCopy: {
         alignItems: 'center',
         flex: 1,
         justifyContent: 'flex-end',
-        paddingBottom: spacing.xl + spacing.lg,
+        paddingBottom: spacing.lg,
         width: '100%',
     },
     introDescription: {
@@ -456,6 +466,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         minHeight: spacing.touchTarget,
     },
+    footerSpacer: { flexShrink: 0 },
     continueText: {
         color: colors.onboardingMuted,
         fontFamily: onboardingFontFamily,
