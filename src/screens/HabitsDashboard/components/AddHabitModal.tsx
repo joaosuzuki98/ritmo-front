@@ -4,7 +4,6 @@ import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
-    ActivityIndicator,
     Animated,
     KeyboardAvoidingView,
     Modal,
@@ -14,7 +13,6 @@ import {
     StyleSheet,
     Switch,
     Text,
-    TextInput,
     View,
     useWindowDimensions,
 } from 'react-native'
@@ -29,6 +27,8 @@ import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
+import { FormActionButton } from '../../../components/FormActionButton'
+import { FormTextInput } from '../../../components/FormTextInput'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
 import { formatPreferredTime } from '../preferredTime'
 import {
@@ -214,17 +214,13 @@ export const AddHabitModal = ({
                                 control={control}
                                 name="name"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Habit name"
                                         autoCapitalize="sentences"
                                         onChangeText={field.onChange}
                                         onBlur={field.onBlur}
                                         placeholder="e.g. Study"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={[
-                                            styles.input,
-                                            errors.name && styles.inputError,
-                                        ]}
+                                        hasError={Boolean(errors.name)}
                                         value={field.value}
                                     />
                                 )}
@@ -240,17 +236,16 @@ export const AddHabitModal = ({
                                 control={control}
                                 name="description"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Habit description"
                                         multiline
                                         onChangeText={field.onChange}
                                         onBlur={field.onBlur}
                                         placeholder="What does this habit mean to you?"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={[
-                                            styles.input,
-                                            styles.multilineInput,
-                                        ]}
+                                        containerStyle={
+                                            styles.multilineContainer
+                                        }
+                                        style={styles.multilineText}
                                         textAlignVertical="top"
                                         value={field.value}
                                     />
@@ -262,14 +257,12 @@ export const AddHabitModal = ({
                                 control={control}
                                 name="categoryName"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Habit category"
                                         autoCapitalize="words"
                                         onChangeText={field.onChange}
                                         onBlur={field.onBlur}
                                         placeholder="e.g. Personal growth"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={styles.input}
                                         value={field.value}
                                     />
                                 )}
@@ -604,16 +597,12 @@ export const AddHabitModal = ({
                                         control={control}
                                         name="estimatedDurationMinutes"
                                         render={({ field }) => (
-                                            <TextInput
+                                            <FormTextInput
                                                 accessibilityLabel="Estimated duration in minutes"
                                                 keyboardType="number-pad"
                                                 onChangeText={field.onChange}
                                                 onBlur={field.onBlur}
                                                 placeholder="Minutes"
-                                                placeholderTextColor={
-                                                    colors.textMuted
-                                                }
-                                                style={styles.input}
                                                 value={field.value}
                                             />
                                         )}
@@ -639,7 +628,7 @@ export const AddHabitModal = ({
                                                 <View
                                                     style={styles.timeInputRow}
                                                 >
-                                                    <TextInput
+                                                    <FormTextInput
                                                         accessibilityLabel="Preferred habit hour"
                                                         keyboardType="number-pad"
                                                         maxLength={2}
@@ -675,13 +664,10 @@ export const AddHabitModal = ({
                                                                 )
                                                         }}
                                                         placeholder="00"
-                                                        placeholderTextColor={
-                                                            colors.textMuted
+                                                        containerStyle={
+                                                            styles.hourInputContainer
                                                         }
-                                                        style={[
-                                                            styles.input,
-                                                            styles.hourInput,
-                                                        ]}
+                                                        style={styles.hourInput}
                                                         value={field.value}
                                                     />
                                                     <Text
@@ -797,28 +783,18 @@ export const AddHabitModal = ({
                                     {submitError}
                                 </Text>
                             ) : null}
-                            <Pressable
+                            <FormActionButton
                                 accessibilityLabel={
                                     habit
                                         ? 'Save habit changes'
                                         : 'Create habit'
                                 }
-                                accessibilityRole="button"
                                 disabled={isSubmitting}
+                                isLoading={isSubmitting}
                                 onPress={handleFormSubmit}
-                                style={[
-                                    styles.submitButton,
-                                    isSubmitting && styles.submitButtonDisabled,
-                                ]}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator color={colors.text} />
-                                ) : (
-                                    <Text style={styles.submitText}>
-                                        {habit ? 'SAVE CHANGES' : 'ADD HABIT'}
-                                    </Text>
-                                )}
-                            </Pressable>
+                                title={habit ? 'Save changes' : 'Add habit'}
+                                containerStyle={styles.submitButton}
+                            />
                         </ScrollView>
                     </Animated.View>
                 </KeyboardAvoidingView>
@@ -874,23 +850,17 @@ const styles = StyleSheet.create({
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 8,
+        fontSize: 15,
+        fontWeight: '500',
+        marginBottom: spacing.xxs,
         marginTop: 18,
     },
-    input: {
-        backgroundColor: colors.surfaceInput,
-        borderRadius: 8,
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 17,
-        minHeight: 54,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+    multilineContainer: {
+        alignItems: 'flex-start',
+        minHeight: 92,
+        paddingVertical: spacing.xs,
     },
-    inputError: { borderColor: colors.danger, borderWidth: 1 },
-    multilineInput: { minHeight: 92 },
+    multilineText: { minHeight: 80, textAlignVertical: 'top' },
     errorText: {
         color: colors.danger,
         fontFamily: typography.fontFamily,
@@ -981,11 +951,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 4,
     },
-    hourInput: { flex: 1, minWidth: 36, paddingHorizontal: 8 },
+    hourInputContainer: { flex: 1, minWidth: 36, paddingHorizontal: 0 },
+    hourInput: { textAlign: 'center' },
     minuteText: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 17,
+        fontSize: 14,
     },
     periodOptions: { flexDirection: 'row', gap: 4 },
     periodOption: {
@@ -1033,19 +1004,5 @@ const styles = StyleSheet.create({
         marginTop: 14,
         textAlign: 'center',
     },
-    submitButton: {
-        alignItems: 'center',
-        backgroundColor: colors.priorityLow,
-        borderRadius: 8,
-        justifyContent: 'center',
-        marginTop: 22,
-        minHeight: 56,
-    },
-    submitButtonDisabled: { opacity: 0.65 },
-    submitText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 19,
-        fontWeight: '600',
-    },
+    submitButton: { marginTop: 22 },
 })

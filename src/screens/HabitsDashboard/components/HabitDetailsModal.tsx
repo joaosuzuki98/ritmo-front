@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getHabitStatusPresentation } from '../../../constants/habitStatuses'
 import { habitRequirementStatusLabels } from '../../../constants/habitRequirementStatuses'
 import { weekDayLabels, type WeekDay } from '../../../constants/weekDays'
+import { FormActionButton } from '../../../components/FormActionButton'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
@@ -214,44 +215,32 @@ export const HabitDetailsModal = ({
                             ) : null}
                         </View>
 
-                        <Pressable
+                        <FormActionButton
                             accessibilityLabel={`Record today's progress for ${habit.title}`}
-                            accessibilityRole="button"
                             disabled={habit.isBlocked}
                             onPress={onLogProgress}
-                            style={[
-                                styles.logProgressButton,
-                                habit.isBlocked && styles.disabledButton,
-                            ]}
-                        >
-                            <Text style={styles.logProgressButtonText}>
-                                {habit.isBlocked
+                            title={
+                                habit.isBlocked
                                     ? 'Complete requirements first'
-                                    : 'Record today’s progress'}
-                            </Text>
-                        </Pressable>
+                                    : 'Record today’s progress'
+                            }
+                            containerStyle={styles.logProgressButton}
+                        />
 
                         <View style={styles.actionsRow}>
-                            <Pressable
+                            <FormActionButton
                                 accessibilityLabel={`Edit ${habit.title}`}
-                                accessibilityRole="button"
                                 onPress={onEdit}
-                                style={styles.editButton}
-                            >
-                                <Text style={styles.editButtonText}>
-                                    Edit habit
-                                </Text>
-                            </Pressable>
-                            <Pressable
+                                title="Edit habit"
+                                containerStyle={styles.secondaryActionButton}
+                            />
+                            <FormActionButton
                                 accessibilityLabel={`Delete ${habit.title}`}
-                                accessibilityRole="button"
                                 onPress={onDelete}
-                                style={styles.deleteButton}
-                            >
-                                <Text style={styles.deleteButtonText}>
-                                    Delete
-                                </Text>
-                            </Pressable>
+                                title="Delete"
+                                variant="destructive"
+                                containerStyle={styles.secondaryActionButton}
+                            />
                         </View>
 
                         {habit.description ? (
@@ -504,51 +493,8 @@ const styles = StyleSheet.create({
         gap: 10,
         marginTop: 18,
     },
-    logProgressButton: {
-        alignItems: 'center',
-        backgroundColor: colors.priorityLow,
-        borderRadius: 9,
-        justifyContent: 'center',
-        marginTop: 18,
-        minHeight: spacing.touchTarget,
-    },
-    logProgressButtonText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    disabledButton: { opacity: 0.5 },
-    editButton: {
-        alignItems: 'center',
-        backgroundColor: colors.accent,
-        borderRadius: 9,
-        flex: 1,
-        justifyContent: 'center',
-        minHeight: spacing.touchTarget,
-    },
-    editButtonText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    deleteButton: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.danger,
-        borderRadius: 9,
-        borderWidth: 1,
-        flex: 1,
-        justifyContent: 'center',
-        minHeight: spacing.touchTarget,
-    },
-    deleteButtonText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '600',
-    },
+    logProgressButton: { marginTop: 18 },
+    secondaryActionButton: { flex: 1, width: 'auto' },
     badge: {
         borderRadius: 8,
         paddingHorizontal: 11,

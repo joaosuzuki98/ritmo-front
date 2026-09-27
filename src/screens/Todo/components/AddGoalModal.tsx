@@ -3,7 +3,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
-    ActivityIndicator,
     Animated,
     KeyboardAvoidingView,
     Modal,
@@ -12,13 +11,14 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     View,
     useWindowDimensions,
 } from 'react-native'
 import { X } from 'phosphor-react-native'
 
 import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
+import { FormActionButton } from '../../../components/FormActionButton'
+import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
@@ -325,14 +325,13 @@ export const AddGoalModal = ({
                                 control={control}
                                 name="description"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Goal description"
                                         autoCapitalize="sentences"
                                         onBlur={field.onBlur}
                                         onChangeText={field.onChange}
                                         placeholder="e.g. Build a consistent reading habit"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={styles.input}
+                                        hasError={Boolean(errors.description)}
                                         value={field.value}
                                     />
                                 )}
@@ -356,7 +355,7 @@ export const AddGoalModal = ({
                                         : 'targetPercentage'
                                 }
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel={
                                             goalType === 'habit'
                                                 ? 'Target completed sessions'
@@ -368,8 +367,11 @@ export const AddGoalModal = ({
                                         placeholder={
                                             goalType === 'habit' ? '10' : '80'
                                         }
-                                        placeholderTextColor={colors.textMuted}
-                                        style={styles.input}
+                                        hasError={Boolean(
+                                            goalType === 'habit'
+                                                ? errors.targetValue
+                                                : errors.targetPercentage,
+                                        )}
                                         value={field.value}
                                     />
                                 )}
@@ -390,28 +392,16 @@ export const AddGoalModal = ({
                                     {submitError}
                                 </Text>
                             ) : null}
-                            <Pressable
+                            <FormActionButton
                                 accessibilityLabel="Save goal"
-                                accessibilityRole="button"
                                 disabled={
                                     isSubmitting || habitOptions.length === 0
                                 }
+                                isLoading={isSubmitting}
                                 onPress={submitGoal}
-                                style={[
-                                    styles.submitButton,
-                                    (isSubmitting ||
-                                        habitOptions.length === 0) &&
-                                        styles.submitButtonDisabled,
-                                ]}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator color={colors.text} />
-                                ) : (
-                                    <Text style={styles.submitText}>
-                                        SAVE GOAL
-                                    </Text>
-                                )}
-                            </Pressable>
+                                title="Save goal"
+                                containerStyle={styles.submitButton}
+                            />
                         </ScrollView>
                     </Animated.View>
                 </KeyboardAvoidingView>
@@ -459,8 +449,8 @@ const styles = StyleSheet.create({
         color: colors.text,
         fontFamily: typography.fontFamily,
         fontSize: 15,
-        fontWeight: '600',
-        marginBottom: spacing.sm,
+        fontWeight: '500',
+        marginBottom: spacing.xxs,
         marginTop: spacing.md,
     },
     optionRow: { flexDirection: 'row', gap: spacing.sm },
@@ -510,40 +500,17 @@ const styles = StyleSheet.create({
         minHeight: 42,
         paddingHorizontal: spacing.md,
     },
-    input: {
-        backgroundColor: colors.surfaceInput,
-        borderRadius: 9,
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        minHeight: 50,
-        paddingHorizontal: spacing.md,
-    },
     errorText: {
         color: colors.danger,
         fontFamily: typography.fontFamily,
         fontSize: 12,
         marginTop: spacing.xs,
     },
+    submitButton: { marginTop: spacing.lg },
     helperText: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
         fontSize: 12,
         marginTop: spacing.xs,
-    },
-    submitButton: {
-        alignItems: 'center',
-        backgroundColor: colors.accent,
-        borderRadius: 9,
-        justifyContent: 'center',
-        marginTop: spacing.lg,
-        minHeight: 54,
-    },
-    submitButtonDisabled: { opacity: 0.5 },
-    submitText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '700',
     },
 })

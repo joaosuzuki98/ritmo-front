@@ -4,7 +4,6 @@ import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
-    ActivityIndicator,
     Animated,
     Alert,
     KeyboardAvoidingView,
@@ -14,7 +13,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     View,
     useWindowDimensions,
 } from 'react-native'
@@ -29,6 +27,8 @@ import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
+import { FormActionButton } from '../../../components/FormActionButton'
+import { FormTextInput } from '../../../components/FormTextInput'
 import { getScheduleTimeParts } from '../scheduleTime'
 import { ScheduleTimeInput } from './ScheduleTimeInput'
 
@@ -241,20 +241,13 @@ export const AddScheduleItemModal = ({
                                     control={control}
                                     name="title"
                                     render={({ field }) => (
-                                        <TextInput
+                                        <FormTextInput
                                             accessibilityLabel="Schedule item name"
                                             autoCapitalize="sentences"
                                             onBlur={field.onBlur}
                                             onChangeText={field.onChange}
                                             placeholder="e.g. Team meeting"
-                                            placeholderTextColor={
-                                                colors.textMuted
-                                            }
-                                            style={[
-                                                styles.input,
-                                                errors.title &&
-                                                    styles.inputError,
-                                            ]}
+                                            hasError={Boolean(errors.title)}
                                             value={field.value}
                                         />
                                     )}
@@ -295,43 +288,30 @@ export const AddScheduleItemModal = ({
                                 </Text>
                             ) : null}
                             {item && onDeleteItem ? (
-                                <Pressable
+                                <FormActionButton
                                     accessibilityLabel="Delete schedule item"
-                                    accessibilityRole="button"
                                     disabled={isSubmitting}
                                     onPress={handleDelete}
-                                    style={styles.deleteButton}
-                                >
-                                    <Text style={styles.deleteText}>
-                                        DELETE ITEM
-                                    </Text>
-                                </Pressable>
+                                    title="Delete item"
+                                    variant="destructive"
+                                    containerStyle={styles.deleteButton}
+                                />
                             ) : null}
-                            <Pressable
+                            <FormActionButton
                                 accessibilityLabel={
                                     item
                                         ? 'Save schedule item changes'
                                         : 'Add schedule item'
                                 }
-                                accessibilityRole="button"
                                 disabled={isSubmitting}
+                                isLoading={isSubmitting}
                                 onPress={() => handleSubmit(handleSave)()}
-                                style={[
-                                    styles.submitButton,
-                                    isSubmitting && styles.submitButtonDisabled,
-                                ]}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator color={colors.text} />
-                                ) : (
-                                    <Text style={styles.submitText}>
-                                        {submitLabel ??
-                                            (item
-                                                ? 'SAVE CHANGES'
-                                                : 'ADD ITEM')}
-                                    </Text>
-                                )}
-                            </Pressable>
+                                title={
+                                    submitLabel ??
+                                    (item ? 'Save changes' : 'Add item')
+                                }
+                                containerStyle={styles.submitButton}
+                            />
                         </ScrollView>
                     </Animated.View>
                 </KeyboardAvoidingView>
@@ -387,22 +367,11 @@ const styles = StyleSheet.create({
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 17,
-        fontWeight: '600',
-        marginBottom: 8,
+        fontSize: 15,
+        fontWeight: '500',
+        marginBottom: spacing.xxs,
         marginTop: 20,
     },
-    input: {
-        backgroundColor: colors.surfaceInput,
-        borderRadius: 8,
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 17,
-        minHeight: 54,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-    },
-    inputError: { borderColor: colors.danger, borderWidth: 1 },
     errorText: {
         color: colors.danger,
         fontFamily: typography.fontFamily,
@@ -411,34 +380,6 @@ const styles = StyleSheet.create({
     },
     timeRow: { flexDirection: 'row', gap: spacing.md },
     timeColumn: { flex: 1 },
-    submitButton: {
-        alignItems: 'center',
-        backgroundColor: colors.accent,
-        borderRadius: 8,
-        justifyContent: 'center',
-        marginTop: spacing.lg,
-        minHeight: 56,
-    },
-    submitButtonDisabled: { opacity: 0.65 },
-    deleteButton: {
-        alignItems: 'center',
-        borderColor: colors.danger,
-        borderRadius: 8,
-        borderWidth: 1,
-        justifyContent: 'center',
-        marginTop: spacing.lg,
-        minHeight: 52,
-    },
-    deleteText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    submitText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 18,
-        fontWeight: '600',
-    },
+    submitButton: { marginTop: spacing.lg },
+    deleteButton: { marginTop: spacing.lg },
 })

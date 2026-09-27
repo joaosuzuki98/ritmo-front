@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import {
-    ActivityIndicator,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -10,7 +9,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     View,
     useWindowDimensions,
 } from 'react-native'
@@ -21,6 +19,8 @@ import {
     type IncompletionReasonCode,
 } from '../../../constants/incompletionReasons'
 import { localDateKey } from '../../../utils/normalizeLocalDate'
+import { FormActionButton } from '../../../components/FormActionButton'
+import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
@@ -254,17 +254,13 @@ export const LogHabitProgressModal = ({
                                 control={control}
                                 name="time"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Progress time"
                                         keyboardType="numbers-and-punctuation"
                                         onBlur={field.onBlur}
                                         onChangeText={field.onChange}
                                         placeholder="HH:MM"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={[
-                                            styles.input,
-                                            errors.time && styles.inputError,
-                                        ]}
+                                        hasError={Boolean(errors.time)}
                                         value={field.value}
                                     />
                                 )}
@@ -280,18 +276,15 @@ export const LogHabitProgressModal = ({
                                 control={control}
                                 name="note"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Progress observation"
                                         multiline
                                         onBlur={field.onBlur}
                                         onChangeText={field.onChange}
                                         placeholder="Add a note about today"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={[
-                                            styles.input,
-                                            styles.noteInput,
-                                            errors.note && styles.inputError,
-                                        ]}
+                                        containerStyle={styles.noteContainer}
+                                        hasError={Boolean(errors.note)}
+                                        style={styles.noteText}
                                         textAlignVertical="top"
                                         value={field.value}
                                     />
@@ -308,24 +301,14 @@ export const LogHabitProgressModal = ({
                                     {submitError}
                                 </Text>
                             ) : null}
-                            <Pressable
-                                accessibilityRole="button"
+                            <FormActionButton
                                 accessibilityLabel="Save progress"
                                 disabled={isSubmitting}
+                                isLoading={isSubmitting}
                                 onPress={handleFormSubmit}
-                                style={[
-                                    styles.saveButton,
-                                    isSubmitting && styles.disabledButton,
-                                ]}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator color={colors.text} />
-                                ) : (
-                                    <Text style={styles.saveButtonText}>
-                                        SAVE PROGRESS
-                                    </Text>
-                                )}
-                            </Pressable>
+                                title="Save progress"
+                                containerStyle={styles.saveButton}
+                            />
                         </ScrollView>
                     </View>
                 </KeyboardAvoidingView>
@@ -368,8 +351,8 @@ const styles = StyleSheet.create({
         color: colors.text,
         fontFamily: typography.fontFamily,
         fontSize: 15,
-        fontWeight: '600',
-        marginBottom: 9,
+        fontWeight: '500',
+        marginBottom: spacing.xxs,
         marginTop: 20,
     },
     statusOptions: { gap: 8 },
@@ -391,40 +374,17 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
     statusOptionTextSelected: { color: colors.text, fontWeight: '600' },
-    input: {
-        backgroundColor: colors.surfaceInput,
-        borderColor: colors.border,
-        borderRadius: 9,
-        borderWidth: 1,
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 16,
-        minHeight: 52,
-        paddingHorizontal: 14,
-        paddingVertical: 11,
+    noteContainer: {
+        alignItems: 'flex-start',
+        minHeight: 100,
+        paddingVertical: spacing.xs,
     },
-    noteInput: { minHeight: 100 },
-    inputError: { borderColor: colors.danger },
+    noteText: { minHeight: 90, textAlignVertical: 'top' },
     errorText: {
         color: colors.danger,
         fontFamily: typography.fontFamily,
         fontSize: 12,
         marginTop: 6,
     },
-    saveButton: {
-        alignItems: 'center',
-        backgroundColor: colors.priorityLow,
-        borderRadius: 9,
-        justifyContent: 'center',
-        marginBottom: 18,
-        marginTop: 22,
-        minHeight: spacing.touchTarget,
-    },
-    disabledButton: { opacity: 0.65 },
-    saveButtonText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '700',
-    },
+    saveButton: { marginBottom: 18, marginTop: 22 },
 })

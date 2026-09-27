@@ -1,7 +1,8 @@
 import { Controller, type Control } from 'react-hook-form'
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 import type { AddScheduleItemFormData } from '../addScheduleItemSchema'
+import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
 import { typography } from '../../../styles/typography'
 
@@ -24,8 +25,9 @@ export const ScheduleTimeInput = ({
                 control={control}
                 name={hourName}
                 render={({ field, fieldState }) => (
-                    <TextInput
+                    <FormTextInput
                         accessibilityLabel={accessibilityLabel}
+                        hasError={Boolean(fieldState.error)}
                         keyboardType="number-pad"
                         maxLength={2}
                         onBlur={() => {
@@ -39,8 +41,8 @@ export const ScheduleTimeInput = ({
                             field.onChange(digits)
                         }}
                         placeholder="08"
-                        placeholderTextColor={colors.textMuted}
-                        style={[styles.input, fieldState.error && styles.error]}
+                        containerStyle={styles.hourInputContainer}
+                        style={styles.hourInput}
                         value={field.value}
                     />
                 )}
@@ -101,20 +103,14 @@ export const ScheduleTimeInput = ({
 
 const styles = StyleSheet.create({
     row: { alignItems: 'center', flexDirection: 'row', gap: 4 },
-    input: {
-        backgroundColor: colors.surfaceInput,
-        borderRadius: 8,
-        color: colors.text,
+    hourInputContainer: {
         flex: 1,
-        fontFamily: typography.fontFamily,
-        fontSize: 17,
-        minHeight: 54,
         minWidth: 32,
-        paddingHorizontal: 8,
-        paddingVertical: 12,
+        paddingHorizontal: 0,
+    },
+    hourInput: {
         textAlign: 'center',
     },
-    error: { borderColor: colors.danger, borderWidth: 1 },
     minutes: {
         color: colors.text,
         fontFamily: typography.fontFamily,

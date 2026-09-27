@@ -2,7 +2,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
-    ActivityIndicator,
     Animated,
     KeyboardAvoidingView,
     Modal,
@@ -11,7 +10,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     View,
     useWindowDimensions,
 } from 'react-native'
@@ -27,6 +25,8 @@ import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
+import { FormActionButton } from '../../../components/FormActionButton'
+import { FormTextInput } from '../../../components/FormTextInput'
 
 type AddTodoTaskModalProps = {
     category: string
@@ -159,7 +159,7 @@ export const AddTodoTaskModal = ({
                                 <Text
                                     style={[
                                         styles.label,
-                                        { fontSize: 17 * scale },
+                                        { fontSize: 15 * scale },
                                     ]}
                                 >
                                     O que você precisa fazer?
@@ -168,7 +168,7 @@ export const AddTodoTaskModal = ({
                                     control={control}
                                     name="title"
                                     render={({ field }) => (
-                                        <TextInput
+                                        <FormTextInput
                                             accessibilityLabel="Nome da tarefa"
                                             autoCapitalize="sentences"
                                             autoFocus
@@ -176,16 +176,8 @@ export const AddTodoTaskModal = ({
                                             onChangeText={field.onChange}
                                             onSubmitEditing={submitTask}
                                             placeholder="Ex.: Revisar anotações"
-                                            placeholderTextColor={
-                                                colors.textMuted
-                                            }
                                             returnKeyType="done"
-                                            style={[
-                                                styles.input,
-                                                { fontSize: 17 * scale },
-                                                errors.title &&
-                                                    styles.inputError,
-                                            ]}
+                                            hasError={Boolean(errors.title)}
                                             value={field.value}
                                         />
                                     )}
@@ -201,24 +193,14 @@ export const AddTodoTaskModal = ({
                                     </Text>
                                 ) : null}
                             </View>
-                            <Pressable
+                            <FormActionButton
                                 accessibilityLabel="Adicionar tarefa"
-                                accessibilityRole="button"
                                 disabled={isSubmitting}
+                                isLoading={isSubmitting}
                                 onPress={submitTask}
-                                style={[
-                                    styles.submitButton,
-                                    isSubmitting && styles.submitButtonDisabled,
-                                ]}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator color={colors.text} />
-                                ) : (
-                                    <Text style={styles.submitText}>
-                                        Adicionar tarefa
-                                    </Text>
-                                )}
-                            </Pressable>
+                                title="Adicionar tarefa"
+                                containerStyle={styles.submitButton}
+                            />
                         </ScrollView>
                     </Animated.View>
                 </KeyboardAvoidingView>
@@ -278,39 +260,15 @@ const styles = StyleSheet.create({
         color: colors.text,
         fontFamily: typography.fontFamily,
         fontSize: 15,
-        fontWeight: '600',
-        marginBottom: spacing.sm,
+        fontWeight: '500',
+        marginBottom: spacing.xxs,
         marginTop: spacing.lg,
     },
-    input: {
-        backgroundColor: colors.surfaceInput,
-        borderRadius: 8,
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 17,
-        minHeight: 54,
-        paddingHorizontal: spacing.md,
-    },
-    inputError: { borderColor: colors.danger },
     errorText: {
         color: colors.danger,
         fontFamily: typography.fontFamily,
         fontSize: 12,
         marginTop: spacing.xs,
     },
-    submitButton: {
-        alignItems: 'center',
-        backgroundColor: colors.accent,
-        borderRadius: 8,
-        justifyContent: 'center',
-        marginTop: spacing.lg,
-        minHeight: 54,
-    },
-    submitButtonDisabled: { opacity: 0.6 },
-    submitText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 16,
-        fontWeight: '600',
-    },
+    submitButton: { marginTop: spacing.lg },
 })

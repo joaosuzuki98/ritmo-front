@@ -1,6 +1,7 @@
-import { StyleSheet, Text, TextInput, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import type { TextInputProps } from 'react-native'
 
+import { FormTextInput } from '../FormTextInput'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -41,31 +42,21 @@ export const AuthTextInput = ({
     return (
         <View style={styles.field}>
             <Text style={styles.label}>{label}</Text>
-            <View
-                style={[
-                    styles.inputContainer,
-                    error ? styles.inputError : null,
-                ]}
-            >
-                <TextInput
-                    accessibilityLabel={label}
-                    autoCapitalize={autoCapitalize}
-                    autoComplete={autoComplete}
-                    autoCorrect={autoCorrect}
-                    keyboardType={keyboardType}
-                    onBlur={onBlur}
-                    onChangeText={onChangeText}
-                    placeholder={placeholder}
-                    placeholderTextColor={colors.inputPlaceholder}
-                    returnKeyType={returnKeyType}
-                    secureTextEntry={secureTextEntry}
-                    selectionColor={colors.accentStrong}
-                    style={styles.input}
-                    textContentType={textContentType}
-                    underlineColorAndroid="transparent"
-                    value={value}
-                />
-            </View>
+            <FormTextInput
+                accessibilityLabel={label}
+                autoCapitalize={autoCapitalize}
+                autoComplete={autoComplete}
+                autoCorrect={autoCorrect}
+                hasError={Boolean(error)}
+                keyboardType={keyboardType}
+                onBlur={onBlur}
+                onChangeText={onChangeText}
+                placeholder={placeholder}
+                returnKeyType={returnKeyType}
+                secureTextEntry={secureTextEntry}
+                textContentType={textContentType}
+                value={value}
+            />
             {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
     )
@@ -79,24 +70,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '500',
         marginBottom: spacing.xxs,
-    },
-    inputContainer: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceInput,
-        borderRadius: 4,
-        flexDirection: 'row',
-        minHeight: 40,
-        paddingHorizontal: spacing.sm,
-    },
-    inputError: { borderColor: colors.danger, borderWidth: 1 },
-    input: {
-        color: colors.white,
-        flex: 1,
-        fontFamily: typography.fontFamily,
-        fontSize: 14,
-        minWidth: 0,
-        paddingHorizontal: 0,
-        paddingVertical: spacing.xs,
     },
     error: {
         color: colors.danger,
