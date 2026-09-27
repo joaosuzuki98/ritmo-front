@@ -156,5 +156,21 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 6,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'events',
+                    columns: [
+                        {
+                            name: 'description',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 })
