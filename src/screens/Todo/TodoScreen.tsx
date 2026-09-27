@@ -337,7 +337,6 @@ const styles = StyleSheet.create({
     content: { paddingBottom: spacing.xl, paddingTop: spacing.lg },
     categoryButton: {
         alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
         borderRadius: 14,
         borderWidth: 1,
@@ -417,7 +416,6 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.sm,
     },
     progressCard: {
-        backgroundColor: colors.surface,
         borderColor: colors.border,
         borderRadius: 18,
         borderWidth: 1,
@@ -492,19 +490,13 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
     },
     taskList: {
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: 16,
-        borderWidth: 1,
         marginTop: spacing.sm,
-        overflow: 'hidden',
     },
     taskRow: {
         alignItems: 'center',
         flexDirection: 'row',
         gap: spacing.md,
         minHeight: 66,
-        paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
     },
     taskRowBorder: { borderBottomColor: colors.border, borderBottomWidth: 1 },

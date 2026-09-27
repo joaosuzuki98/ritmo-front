@@ -218,7 +218,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     goalList: {
-        backgroundColor: colors.surface,
         borderColor: colors.border,
         borderRadius: 16,
         borderWidth: 1,
@@ -318,7 +317,6 @@ const styles = StyleSheet.create({
     },
     emptyState: {
         alignItems: 'center',
-        backgroundColor: colors.surface,
         borderColor: colors.border,
         borderRadius: 16,
         borderWidth: 1,
