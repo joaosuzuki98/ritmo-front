@@ -4,6 +4,7 @@ import {
 } from '@react-navigation/native'
 import { useState } from 'react'
 
+import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen'
 import type { RootParamList } from './types'
 
 import { AuthNavigator } from './AuthNavigator'
@@ -13,6 +14,7 @@ export const navigationRef = createNavigationContainerRef<RootParamList>()
 
 export const RootNavigator = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false)
 
     return (
         <NavigationContainer ref={navigationRef}>
@@ -20,9 +22,13 @@ export const RootNavigator = () => {
                 <AppDrawerNavigator
                     onLogout={() => setIsAuthenticated(false)}
                 />
-            ) : (
+            ) : hasSeenOnboarding ? (
                 <AuthNavigator
                     onAuthenticated={() => setIsAuthenticated(true)}
+                />
+            ) : (
+                <OnboardingScreen
+                    onComplete={() => setHasSeenOnboarding(true)}
                 />
             )}
         </NavigationContainer>
