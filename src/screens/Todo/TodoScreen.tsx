@@ -17,9 +17,11 @@ import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { AddTodoTaskModal } from './components/AddTodoTaskModal'
+import { AddTodoCategoryModal } from './components/AddTodoCategoryModal'
 import { GoalsSection } from './components/GoalsSection'
 import type { TodoTaskCategory } from './todoTask.types'
 import { useTodoGoalsViewModel } from './useTodoGoalsViewModel'
+import { useTodoCategoriesViewModel } from './useTodoCategoriesViewModel'
 import { useTodoTasksViewModel } from './useTodoTasksViewModel'
 
 type TodoScreenProps = {
@@ -38,9 +40,11 @@ export const TodoScreen = ({
     const [category, setCategory] = useState<TodoTaskCategory>('College')
     const [isCategoryPickerVisible, setIsCategoryPickerVisible] =
         useState(false)
+    const [isAddCategoryModalVisible, setIsAddCategoryModalVisible] =
+        useState(false)
     const goalsViewModel = useTodoGoalsViewModel('local-user')
     const tasksViewModel = useTodoTasksViewModel('local-user')
-    const categories: TodoTaskCategory[] = ['College', 'Work']
+    const categoriesViewModel = useTodoCategoriesViewModel('local-user')
     const categoryTasks = tasksViewModel.tasks.filter(
         task => task.category === category,
     )
@@ -50,6 +54,10 @@ export const TodoScreen = ({
         : 0
     const addTask = (title: string) =>
         tasksViewModel.createTask(title, category)
+    const addCategory = async (name: string) => {
+        await categoriesViewModel.createCategory(name)
+        setCategory(name.trim())
+    }
 
     return (
         <ScreenLayout
@@ -211,11 +219,11 @@ export const TodoScreen = ({
                         <Text style={styles.categoryModalTitle}>
                             Choose a category
                         </Text>
-                        {categories.map(item => {
+                        {categoriesViewModel.categories.map(item => {
                             const count = tasksViewModel.tasks.filter(
-                                task => task.category === item,
+                                task => task.category === item.name,
                             ).length
-                            const isSelected = category === item
+                            const isSelected = category === item.name
 
                             return (
                                 <Pressable
@@ -223,9 +231,9 @@ export const TodoScreen = ({
                                     accessibilityState={{
                                         selected: isSelected,
                                     }}
-                                    key={item}
+                                    key={item.id}
                                     onPress={() => {
-                                        setCategory(item)
+                                        setCategory(item.name)
                                         setIsCategoryPickerVisible(false)
                                     }}
                                     style={[
@@ -241,7 +249,7 @@ export const TodoScreen = ({
                                                 styles.categoryOptionTextSelected,
                                         ]}
                                     >
-                                        {item}
+                                        {item.name}
                                     </Text>
                                     <Text style={styles.categoryOptionCount}>
                                         {count} tasks
@@ -249,9 +257,26 @@ export const TodoScreen = ({
                                 </Pressable>
                             )
                         })}
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => {
+                                setIsCategoryPickerVisible(false)
+                                setIsAddCategoryModalVisible(true)
+                            }}
+                            style={styles.addCategoryButton}
+                        >
+                            <Text style={styles.addCategoryText}>
+                                + Add category
+                            </Text>
+                        </Pressable>
                     </View>
                 </View>
             </Modal>
+            <AddTodoCategoryModal
+                isVisible={isAddCategoryModalVisible}
+                onClose={() => setIsAddCategoryModalVisible(false)}
+                onCreateCategory={addCategory}
+            />
         </ScreenLayout>
     )
 }
@@ -317,6 +342,19 @@ const styles = StyleSheet.create({
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
         fontSize: 12,
+    },
+    addCategoryButton: {
+        borderTopColor: colors.border,
+        borderTopWidth: 1,
+        marginTop: spacing.xs,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.md,
+    },
+    addCategoryText: {
+        color: colors.scheduleBackground,
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
+        fontWeight: '600',
     },
     progressCard: {
         backgroundColor: colors.surface,

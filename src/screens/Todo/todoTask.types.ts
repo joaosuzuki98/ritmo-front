@@ -1,4 +1,4 @@
-export type TodoTaskCategory = 'College' | 'Work'
+export type TodoTaskCategory = string
 
 export type TodoTaskSeed = {
     title: string

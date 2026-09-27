@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 6,
+    version: 7,
     tables: [
         tableSchema({
             name: 'users',
@@ -271,6 +271,15 @@ export const databaseSchema = appSchema({
                 { name: 'title', type: 'string' },
                 { name: 'category', type: 'string', isIndexed: true },
                 { name: 'is_complete', type: 'boolean' },
+                { name: 'created_at', type: 'number', isOptional: true },
+                { name: 'updated_at', type: 'number', isOptional: true },
+            ],
+        }),
+        tableSchema({
+            name: 'todo_categories',
+            columns: [
+                { name: 'user_id', type: 'string', isIndexed: true },
+                { name: 'name', type: 'string' },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],

@@ -172,5 +172,52 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 7,
+            steps: [
+                {
+                    type: 'create_table',
+                    schema: {
+                        name: 'todo_categories',
+                        columns: {
+                            user_id: {
+                                name: 'user_id',
+                                type: 'string',
+                                isIndexed: true,
+                            },
+                            name: { name: 'name', type: 'string' },
+                            created_at: {
+                                name: 'created_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                            updated_at: {
+                                name: 'updated_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                        },
+                        columnArray: [
+                            {
+                                name: 'user_id',
+                                type: 'string',
+                                isIndexed: true,
+                            },
+                            { name: 'name', type: 'string' },
+                            {
+                                name: 'created_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                            {
+                                name: 'updated_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                        ],
+                    },
+                },
+            ],
+        },
     ],
 })
