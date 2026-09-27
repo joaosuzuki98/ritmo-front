@@ -8,10 +8,13 @@ import {
     GearSix,
     SignOut,
     Stack,
+    UserCircle,
 } from 'phosphor-react-native'
-import { useContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { database, type User } from '../database'
 import { colors } from '../styles/colors'
 import { spacing } from '../styles/spacing'
 import { typography } from '../styles/typography'
@@ -67,10 +70,28 @@ export const AppDrawerContent = ({
     navigation,
 }: AppDrawerContentProps) => {
     const onLogout = useContext(AppDrawerLogoutContext)
+    const { bottom } = useSafeAreaInsets()
+    const [user, setUser] = useState<User | null>(null)
     const mainRoute = state.routes.find(route => route.name === 'Main')
     const mainState = mainRoute?.state
     const activeRouteName =
         mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
+
+    useEffect(() => {
+        let isActive = true
+
+        database
+            .get<User>('users')
+            .find('local-user')
+            .then(profile => {
+                if (isActive) setUser(profile)
+            })
+            .catch(() => undefined)
+
+        return () => {
+            isActive = false
+        }
+    }, [])
 
     const onSelectRoute = (route: keyof AppTabParamList) => {
         navigation.navigate('Main', { screen: route })
@@ -82,14 +103,20 @@ export const AppDrawerContent = ({
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.brand}>
-                    <View style={styles.brandIcon}>
-                        <Stack color={colors.white} size={23} weight="bold" />
+                <View style={styles.profile}>
+                    <View style={styles.profileIcon}>
+                        <UserCircle
+                            color={colors.textMuted}
+                            size={42}
+                            weight="regular"
+                        />
                     </View>
-                    <View>
-                        <Text style={styles.brandName}>Ritmo</Text>
-                        <Text style={styles.brandSubtitle}>
-                            SEU DIA, NO SEU TEMPO
+                    <View style={styles.profileIdentity}>
+                        <Text numberOfLines={1} style={styles.profileName}>
+                            {user?.name ?? 'Teste da Silva'}
+                        </Text>
+                        <Text numberOfLines={1} style={styles.profileEmail}>
+                            {user?.email ?? 'teste@email.com'}
                         </Text>
                     </View>
                 </View>
@@ -144,7 +171,9 @@ export const AppDrawerContent = ({
                 </View>
             </DrawerContentScrollView>
 
-            <View style={styles.bottom}>
+            <View
+                style={[styles.bottom, { paddingBottom: bottom + spacing.md }]}
+            >
                 <View style={styles.separator} />
                 <Pressable
                     accessibilityLabel="Logout"
@@ -152,11 +181,20 @@ export const AppDrawerContent = ({
                     onPress={onLogout}
                     style={({ pressed }) => [
                         styles.logout,
+                        styles.logoutRow,
                         pressed ? styles.logoutPressed : null,
                     ]}
                 >
-                    <SignOut color={colors.danger} size={22} weight="regular" />
-                    <Text style={styles.logoutLabel}>Logout</Text>
+                    <View style={styles.logoutContent}>
+                        <SignOut
+                            color={colors.danger}
+                            size={22}
+                            weight="regular"
+                        />
+                        <Text numberOfLines={1} style={styles.logoutLabel}>
+                            Logout
+                        </Text>
+                    </View>
                 </Pressable>
             </View>
         </View>
@@ -167,41 +205,44 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: colors.surface,
         flex: 1,
-        paddingBottom: spacing.md,
     },
     scrollContent: {
         flexGrow: 1,
         paddingHorizontal: spacing.md,
         paddingTop: spacing.xl,
     },
-    brand: {
+    profile: {
         alignItems: 'center',
         flexDirection: 'row',
         marginBottom: spacing.xl,
         paddingHorizontal: spacing.xs,
     },
-    brandIcon: {
+    profileIcon: {
         alignItems: 'center',
-        backgroundColor: colors.accentStrong,
-        borderRadius: 14,
-        height: 46,
+        backgroundColor: colors.surfaceMuted,
+        borderRadius: 24,
+        height: 48,
         justifyContent: 'center',
         marginRight: spacing.md,
-        width: 46,
+        width: 48,
     },
-    brandName: {
+    profileIdentity: {
+        alignItems: 'flex-start',
+        flex: 1,
+        flexDirection: 'column',
+        flexShrink: 1,
+    },
+    profileName: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 21,
+        fontSize: 16,
         fontWeight: '700',
     },
-    brandSubtitle: {
+    profileEmail: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
-        fontSize: 9,
-        fontWeight: '600',
-        letterSpacing: 0.8,
-        marginTop: 2,
+        fontSize: 12,
+        marginTop: spacing.xxs,
     },
     sectionLabel: {
         color: colors.textMuted,
@@ -244,10 +285,15 @@ const styles = StyleSheet.create({
     },
     logout: {
         alignItems: 'center',
+        alignSelf: 'stretch',
         borderRadius: 13,
-        flexDirection: 'row',
         minHeight: 52,
         paddingHorizontal: spacing.md,
+    },
+    logoutRow: { flexDirection: 'row' },
+    logoutContent: {
+        alignItems: 'center',
+        flexDirection: 'row',
     },
     logoutPressed: { backgroundColor: colors.surfaceMuted },
     logoutLabel: {
@@ -256,5 +302,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '700',
         marginLeft: spacing.md,
+        flexShrink: 0,
     },
 })
