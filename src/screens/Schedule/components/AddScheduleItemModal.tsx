@@ -282,36 +282,36 @@ export const AddScheduleItemModal = ({
                                     </View>
                                 </View>
                             </View>
-                            {submitError ? (
-                                <Text style={styles.errorText}>
-                                    {submitError}
-                                </Text>
-                            ) : null}
-                            {item && onDeleteItem ? (
+                            <View style={styles.actions}>
+                                {submitError ? (
+                                    <Text style={styles.errorText}>
+                                        {submitError}
+                                    </Text>
+                                ) : null}
+                                {item && onDeleteItem ? (
+                                    <FormActionButton
+                                        accessibilityLabel="Delete schedule item"
+                                        disabled={isSubmitting}
+                                        onPress={handleDelete}
+                                        title="Delete item"
+                                        variant="destructive"
+                                    />
+                                ) : null}
                                 <FormActionButton
-                                    accessibilityLabel="Delete schedule item"
+                                    accessibilityLabel={
+                                        item
+                                            ? 'Save schedule item changes'
+                                            : 'Add schedule item'
+                                    }
                                     disabled={isSubmitting}
-                                    onPress={handleDelete}
-                                    title="Delete item"
-                                    variant="destructive"
-                                    containerStyle={styles.deleteButton}
+                                    isLoading={isSubmitting}
+                                    onPress={() => handleSubmit(handleSave)()}
+                                    title={
+                                        submitLabel ??
+                                        (item ? 'Save changes' : 'Add item')
+                                    }
                                 />
-                            ) : null}
-                            <FormActionButton
-                                accessibilityLabel={
-                                    item
-                                        ? 'Save schedule item changes'
-                                        : 'Add schedule item'
-                                }
-                                disabled={isSubmitting}
-                                isLoading={isSubmitting}
-                                onPress={() => handleSubmit(handleSave)()}
-                                title={
-                                    submitLabel ??
-                                    (item ? 'Save changes' : 'Add item')
-                                }
-                                containerStyle={styles.submitButton}
-                            />
+                            </View>
                         </ScrollView>
                     </Animated.View>
                 </KeyboardAvoidingView>
@@ -380,6 +380,5 @@ const styles = StyleSheet.create({
     },
     timeRow: { flexDirection: 'row', gap: spacing.md },
     timeColumn: { flex: 1 },
-    submitButton: { marginTop: spacing.lg },
-    deleteButton: { marginTop: spacing.lg },
+    actions: { gap: spacing.sm },
 })

@@ -24,7 +24,7 @@ export const useRemindersViewModel = () => {
         const subscription = database
             .get<Event>('events')
             .query()
-            .observe()
+            .observeWithColumns(['title', 'date_time', 'end_time'])
             .subscribe({
                 next: setEvents,
                 error: () => setEvents([]),

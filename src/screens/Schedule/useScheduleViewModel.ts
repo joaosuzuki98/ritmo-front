@@ -103,7 +103,13 @@ export const useScheduleViewModel = () => {
         const subscription = database
             .get<Habit>('habits')
             .query()
-            .observe()
+            .observeWithColumns([
+                'name',
+                'status',
+                'preferred_time',
+                'estimated_duration_minutes',
+                'week_days',
+            ])
             .subscribe({
                 next: records => {
                     if (isActive) setHabits(records)
@@ -124,7 +130,7 @@ export const useScheduleViewModel = () => {
         const subscription = database
             .get<Event>('events')
             .query()
-            .observe()
+            .observeWithColumns(['title', 'date_time', 'end_time'])
             .subscribe({
                 next: records => {
                     if (isActive) setEvents(records)
