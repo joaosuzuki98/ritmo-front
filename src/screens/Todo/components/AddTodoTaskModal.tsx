@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
+    ActivityIndicator,
     Animated,
     KeyboardAvoidingView,
     Modal,
@@ -31,7 +32,7 @@ type AddTodoTaskModalProps = {
     category: string
     isVisible: boolean
     onClose: () => void
-    onCreateTask: (title: string) => void
+    onCreateTask: (title: string) => Promise<void>
 }
 
 export const AddTodoTaskModal = ({
@@ -43,6 +44,8 @@ export const AddTodoTaskModal = ({
     const { height, width } = useWindowDimensions()
     const { bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitError, setSubmitError] = useState('')
     const { backdropOpacity, isModalMounted, sheetTranslateY } =
         useBottomSheetAnimation(isVisible, height)
     const {
@@ -56,20 +59,37 @@ export const AddTodoTaskModal = ({
     })
 
     useEffect(() => {
-        if (isVisible) reset({ title: '' })
+        if (isVisible) {
+            reset({ title: '' })
+            setSubmitError('')
+        }
     }, [isVisible, reset])
 
-    const handleCreate = ({ title }: AddTodoTaskFormData) => {
-        onCreateTask(title.trim())
-        reset({ title: '' })
+    const handleClose = () => {
+        if (isSubmitting) return
         onClose()
+    }
+
+    const handleCreate = async ({ title }: AddTodoTaskFormData) => {
+        if (isSubmitting) return
+        setIsSubmitting(true)
+        setSubmitError('')
+        try {
+            await onCreateTask(title.trim())
+            reset({ title: '' })
+            onClose()
+        } catch {
+            setSubmitError('Não foi possível salvar a tarefa. Tente novamente.')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
     const submitTask = () => handleSubmit(handleCreate)()
 
     return (
         <Modal
             animationType="none"
-            onRequestClose={onClose}
+            onRequestClose={handleClose}
             statusBarTranslucent
             transparent
             visible={isModalMounted}
@@ -80,7 +100,7 @@ export const AddTodoTaskModal = ({
                 >
                     <Pressable
                         accessibilityLabel="Fechar criação de tarefa"
-                        onPress={onClose}
+                        onPress={handleClose}
                         style={StyleSheet.absoluteFill}
                     />
                 </Animated.View>
@@ -123,7 +143,8 @@ export const AddTodoTaskModal = ({
                             <Pressable
                                 accessibilityLabel="Fechar criação de tarefa"
                                 accessibilityRole="button"
-                                onPress={onClose}
+                                disabled={isSubmitting}
+                                onPress={handleClose}
                                 style={styles.closeButton}
                             >
                                 <X color={colors.text} size={30 * scale} />
@@ -174,15 +195,29 @@ export const AddTodoTaskModal = ({
                                         {errors.title.message}
                                     </Text>
                                 ) : null}
+                                {submitError ? (
+                                    <Text style={styles.errorText}>
+                                        {submitError}
+                                    </Text>
+                                ) : null}
                             </View>
                             <Pressable
+                                accessibilityLabel="Adicionar tarefa"
                                 accessibilityRole="button"
+                                disabled={isSubmitting}
                                 onPress={submitTask}
-                                style={styles.submitButton}
+                                style={[
+                                    styles.submitButton,
+                                    isSubmitting && styles.submitButtonDisabled,
+                                ]}
                             >
-                                <Text style={styles.submitText}>
-                                    Adicionar tarefa
-                                </Text>
+                                {isSubmitting ? (
+                                    <ActivityIndicator color={colors.text} />
+                                ) : (
+                                    <Text style={styles.submitText}>
+                                        Adicionar tarefa
+                                    </Text>
+                                )}
                             </Pressable>
                         </ScrollView>
                     </Animated.View>
@@ -271,6 +306,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         minHeight: 54,
     },
+    submitButtonDisabled: { opacity: 0.6 },
     submitText: {
         color: colors.text,
         fontFamily: typography.fontFamily,

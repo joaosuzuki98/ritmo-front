@@ -94,5 +94,67 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 5,
+            steps: [
+                {
+                    type: 'create_table',
+                    schema: {
+                        name: 'todo_tasks',
+                        columns: {
+                            user_id: {
+                                name: 'user_id',
+                                type: 'string',
+                                isIndexed: true,
+                            },
+                            title: { name: 'title', type: 'string' },
+                            category: {
+                                name: 'category',
+                                type: 'string',
+                                isIndexed: true,
+                            },
+                            is_complete: {
+                                name: 'is_complete',
+                                type: 'boolean',
+                            },
+                            created_at: {
+                                name: 'created_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                            updated_at: {
+                                name: 'updated_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                        },
+                        columnArray: [
+                            {
+                                name: 'user_id',
+                                type: 'string',
+                                isIndexed: true,
+                            },
+                            { name: 'title', type: 'string' },
+                            {
+                                name: 'category',
+                                type: 'string',
+                                isIndexed: true,
+                            },
+                            { name: 'is_complete', type: 'boolean' },
+                            {
+                                name: 'created_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                            {
+                                name: 'updated_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                        ],
+                    },
+                },
+            ],
+        },
     ],
 })

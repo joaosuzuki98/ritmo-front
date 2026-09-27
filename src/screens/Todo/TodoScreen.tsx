@@ -18,60 +18,9 @@ import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { AddTodoTaskModal } from './components/AddTodoTaskModal'
 import { GoalsSection } from './components/GoalsSection'
+import type { TodoTaskCategory } from './todoTask.types'
 import { useTodoGoalsViewModel } from './useTodoGoalsViewModel'
-
-type TodoCategory = 'College' | 'Work'
-type TodoTask = {
-    id: string
-    title: string
-    category: TodoCategory
-    isComplete: boolean
-}
-
-const initialTasks: TodoTask[] = [
-    {
-        id: 'college-1',
-        title: 'Finish calculator project',
-        category: 'College',
-        isComplete: false,
-    },
-    {
-        id: 'college-2',
-        title: 'Study SOLID principles',
-        category: 'College',
-        isComplete: false,
-    },
-    {
-        id: 'college-3',
-        title: 'Read “Learn Calculus Fast — The Indian Way”',
-        category: 'College',
-        isComplete: false,
-    },
-    {
-        id: 'college-4',
-        title: 'Get an A in the exam',
-        category: 'College',
-        isComplete: true,
-    },
-    {
-        id: 'work-1',
-        title: 'Prepare the weekly report',
-        category: 'Work',
-        isComplete: false,
-    },
-    {
-        id: 'work-2',
-        title: 'Review project feedback',
-        category: 'Work',
-        isComplete: false,
-    },
-    {
-        id: 'work-3',
-        title: 'Plan the next sprint',
-        category: 'Work',
-        isComplete: true,
-    },
-]
+import { useTodoTasksViewModel } from './useTodoTasksViewModel'
 
 type TodoScreenProps = {
     isAddTaskModalVisible: boolean
@@ -86,38 +35,21 @@ export const TodoScreen = ({
 }: TodoScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
-    const [tasks, setTasks] = useState(initialTasks)
-    const [category, setCategory] = useState<TodoCategory>('College')
+    const [category, setCategory] = useState<TodoTaskCategory>('College')
     const [isCategoryPickerVisible, setIsCategoryPickerVisible] =
         useState(false)
     const goalsViewModel = useTodoGoalsViewModel('local-user')
-    const categories: TodoCategory[] = ['College', 'Work']
-    const categoryTasks = tasks.filter(task => task.category === category)
+    const tasksViewModel = useTodoTasksViewModel('local-user')
+    const categories: TodoTaskCategory[] = ['College', 'Work']
+    const categoryTasks = tasksViewModel.tasks.filter(
+        task => task.category === category,
+    )
     const completedCount = categoryTasks.filter(task => task.isComplete).length
     const progress = categoryTasks.length
         ? Math.round((completedCount / categoryTasks.length) * 100)
         : 0
-    const toggleTask = (taskId: string) => {
-        setTasks(currentTasks =>
-            currentTasks.map(task =>
-                task.id === taskId
-                    ? { ...task, isComplete: !task.isComplete }
-                    : task,
-            ),
-        )
-    }
-
-    const addTask = (title: string) => {
-        setTasks(currentTasks => [
-            ...currentTasks,
-            {
-                id: `${category.toLowerCase()}-${Date.now()}`,
-                title,
-                category,
-                isComplete: false,
-            },
-        ])
-    }
+    const addTask = (title: string) =>
+        tasksViewModel.createTask(title, category)
 
     return (
         <ScreenLayout
@@ -176,6 +108,12 @@ export const TodoScreen = ({
                     </Text>
                 </View>
 
+                {tasksViewModel.loadError ? (
+                    <Text style={styles.taskError}>
+                        {tasksViewModel.loadError}
+                    </Text>
+                ) : null}
+
                 <View style={styles.tasksHeader}>
                     <View>
                         <Text style={styles.tasksTitle}>Your tasks</Text>
@@ -186,7 +124,11 @@ export const TodoScreen = ({
                 </View>
 
                 <View style={styles.taskList}>
-                    {categoryTasks.length ? (
+                    {tasksViewModel.isLoading ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyText}>Loading tasks…</Text>
+                        </View>
+                    ) : categoryTasks.length ? (
                         categoryTasks.map((task, index) => (
                             <Pressable
                                 accessibilityRole="checkbox"
@@ -194,7 +136,9 @@ export const TodoScreen = ({
                                     checked: task.isComplete,
                                 }}
                                 key={task.id}
-                                onPress={() => toggleTask(task.id)}
+                                onPress={() =>
+                                    tasksViewModel.toggleTask(task.id)
+                                }
                                 style={[
                                     styles.taskRow,
                                     index < categoryTasks.length - 1 &&
@@ -268,7 +212,7 @@ export const TodoScreen = ({
                             Choose a category
                         </Text>
                         {categories.map(item => {
-                            const count = tasks.filter(
+                            const count = tasksViewModel.tasks.filter(
                                 task => task.category === item,
                             ).length
                             const isSelected = category === item
@@ -442,6 +386,12 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 12,
         marginTop: 2,
+    },
+    taskError: {
+        color: colors.danger,
+        fontFamily: typography.fontFamily,
+        fontSize: 12,
+        marginBottom: spacing.md,
     },
     taskList: {
         backgroundColor: colors.surface,

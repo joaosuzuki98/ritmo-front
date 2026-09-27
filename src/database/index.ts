@@ -18,6 +18,7 @@ import { Reward } from './models/Reward'
 import { RoutineTemplate } from './models/RoutineTemplate'
 import { Streak } from './models/Streak'
 import { TemporaryChallenge } from './models/TemporaryChallenge'
+import { TodoTask } from './models/TodoTask'
 import { User } from './models/User'
 import { databaseMigrations } from './migrations'
 import { databaseSchema } from './schema'
@@ -50,6 +51,7 @@ export const database = new Database({
         Reward,
         Reminder,
         RoutineTemplate,
+        TodoTask,
     ],
 })
 
@@ -70,4 +72,5 @@ export * from './models/Reward'
 export * from './models/RoutineTemplate'
 export * from './models/Streak'
 export * from './models/TemporaryChallenge'
+export * from './models/TodoTask'
 export * from './models/User'
