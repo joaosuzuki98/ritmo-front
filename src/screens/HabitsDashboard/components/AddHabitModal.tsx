@@ -205,12 +205,6 @@ export const AddHabitModal = ({
                             keyboardShouldPersistTaps="handled"
                             showsVerticalScrollIndicator={false}
                         >
-                            <Text style={styles.sectionTitle}>
-                                {habit
-                                    ? 'Update habit details'
-                                    : 'Create new habit'}
-                            </Text>
-
                             <Text style={styles.label}>Name</Text>
                             <Controller
                                 control={control}
@@ -869,14 +863,14 @@ const styles = StyleSheet.create({
     sectionTitle: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '400',
-        marginBottom: 18,
+        marginTop: 40,
     },
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 17,
+        fontSize: 14,
         fontWeight: '600',
         marginBottom: 8,
         marginTop: 18,
