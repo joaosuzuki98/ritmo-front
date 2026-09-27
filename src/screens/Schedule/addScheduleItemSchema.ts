@@ -14,6 +14,8 @@ export const addScheduleItemSchema = z
         startHour: z.string().regex(hour, 'Enter an hour from 00 to 12.'),
         startPeriod: z.enum(['AM', 'PM']),
         title: z.string().trim().min(1, 'Give this item a name.'),
+        location: z.string().trim().optional(),
+        description: z.string().trim().optional(),
     })
     .refine(
         values =>

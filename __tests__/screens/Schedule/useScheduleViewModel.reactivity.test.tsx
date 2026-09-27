@@ -59,6 +59,8 @@ describe('useScheduleViewModel reactivity', () => {
             'title',
             'date_time',
             'end_time',
+            'location',
+            'description',
         ])
 
         const selectedDate = viewModel.selectedDate

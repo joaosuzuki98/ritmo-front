@@ -43,6 +43,7 @@ type AddScheduleItemModalProps = {
     title?: string
     subtitle?: string
     submitLabel?: string
+    showEventDetails?: boolean
 }
 
 const getInitialValues = (
@@ -69,6 +70,8 @@ const getInitialValues = (
         startHour: initialStart.hour,
         startPeriod: initialStart.period,
         title: item?.title ?? '',
+        location: item?.location ?? '',
+        description: item?.description ?? '',
     }
 }
 
@@ -83,6 +86,7 @@ export const AddScheduleItemModal = ({
     title,
     subtitle,
     submitLabel,
+    showEventDetails = false,
 }: AddScheduleItemModalProps) => {
     const { bottom } = useSafeAreaInsets()
     const { height, width } = useWindowDimensions()
@@ -257,6 +261,56 @@ export const AddScheduleItemModal = ({
                                         {errors.title.message}
                                     </Text>
                                 ) : null}
+                                {showEventDetails ? (
+                                    <>
+                                        <Text style={styles.label}>
+                                            Location
+                                        </Text>
+                                        <Controller
+                                            control={control}
+                                            name="location"
+                                            render={({ field }) => (
+                                                <FormTextInput
+                                                    accessibilityLabel="Event location"
+                                                    autoCapitalize="words"
+                                                    onBlur={field.onBlur}
+                                                    onChangeText={
+                                                        field.onChange
+                                                    }
+                                                    placeholder="e.g. Main office"
+                                                    value={field.value ?? ''}
+                                                />
+                                            )}
+                                        />
+                                        <Text style={styles.label}>
+                                            Description
+                                        </Text>
+                                        <Controller
+                                            control={control}
+                                            name="description"
+                                            render={({ field }) => (
+                                                <FormTextInput
+                                                    accessibilityLabel="Event description"
+                                                    autoCapitalize="sentences"
+                                                    containerStyle={
+                                                        styles.descriptionContainer
+                                                    }
+                                                    multiline
+                                                    onBlur={field.onBlur}
+                                                    onChangeText={
+                                                        field.onChange
+                                                    }
+                                                    placeholder="Add details"
+                                                    style={
+                                                        styles.descriptionInput
+                                                    }
+                                                    textAlignVertical="top"
+                                                    value={field.value ?? ''}
+                                                />
+                                            )}
+                                        />
+                                    </>
+                                ) : null}
                                 <View style={styles.timeRow}>
                                     <View style={styles.timeColumn}>
                                         <Text style={styles.label}>
@@ -380,5 +434,11 @@ const styles = StyleSheet.create({
     },
     timeRow: { flexDirection: 'row', gap: spacing.md },
     timeColumn: { flex: 1 },
+    descriptionContainer: {
+        alignItems: 'flex-start',
+        minHeight: 88,
+        paddingVertical: spacing.xs,
+    },
+    descriptionInput: { minHeight: 78, textAlignVertical: 'top' },
     actions: { gap: spacing.sm },
 })

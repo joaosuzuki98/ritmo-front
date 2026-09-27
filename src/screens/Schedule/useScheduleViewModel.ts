@@ -130,7 +130,13 @@ export const useScheduleViewModel = () => {
         const subscription = database
             .get<Event>('events')
             .query()
-            .observeWithColumns(['title', 'date_time', 'end_time'])
+            .observeWithColumns([
+                'title',
+                'date_time',
+                'end_time',
+                'location',
+                'description',
+            ])
             .subscribe({
                 next: records => {
                     if (isActive) setEvents(records)
@@ -176,6 +182,8 @@ export const useScheduleViewModel = () => {
     const addScheduleItem = async ({
         endHour,
         endPeriod,
+        location,
+        description,
         startHour,
         startPeriod,
         title,
@@ -207,6 +215,8 @@ export const useScheduleViewModel = () => {
                 event.title = title.trim()
                 event.dateTime = dateTime
                 event.endTime = scheduledEndTime
+                event.location = location?.trim() || undefined
+                event.description = description?.trim() || undefined
                 event.recurrence = 'none'
                 event.countdownEnabled = false
                 event.conversionOrigin = 'schedule'
@@ -219,6 +229,8 @@ export const useScheduleViewModel = () => {
         {
             endHour,
             endPeriod,
+            location,
+            description,
             startHour,
             startPeriod,
             title,
@@ -251,6 +263,8 @@ export const useScheduleViewModel = () => {
                 record.title = title.trim()
                 record.dateTime = dateTime
                 record.endTime = scheduledEndTime
+                record.location = location?.trim() || undefined
+                record.description = description?.trim() || undefined
                 record.updatedAt = new Date()
             })
         })
