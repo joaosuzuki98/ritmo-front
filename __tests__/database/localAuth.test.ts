@@ -18,7 +18,7 @@ type UserRecord = {
     id: string
     name: string
     email: string
-    legacyPassword?: string
+    password?: string
     passwordHash?: string
     passwordSalt?: string
     totalPoints: number
@@ -93,18 +93,17 @@ describe('local authentication', () => {
             email: ' ANA@Example.com ',
             password: 'password123',
         })
-        expect(user.passwordHash).not.toBe('password123')
-
         expect(user).toMatchObject({
             id: 'created-user',
             name: 'Ana Silva',
             email: 'ana@example.com',
-            passwordHash: expect.any(String),
-            passwordSalt: expect.any(String),
+            password: 'password123',
             isLoggedIn: true,
             totalPoints: 0,
             level: 1,
         })
+        expect(user.passwordHash).toBeUndefined()
+        expect(user.passwordSalt).toBeUndefined()
         expect(mockedGet).toHaveBeenCalledTimes(2)
         expect(mockedGet).toHaveBeenNthCalledWith(1, 'users')
         expect(mockedGet).toHaveBeenNthCalledWith(2, 'users')
@@ -168,15 +167,15 @@ describe('local authentication', () => {
         ).rejects.toThrow('E-mail ou senha incorretos.')
     })
 
-    it('upgrades an existing local password to a salted hash on login', async () => {
-        const user = createUser({ legacyPassword: 'legacy-password' })
+    it('authenticates a new unhashed local password directly', async () => {
+        const user = createUser({ password: 'plain-password' })
         users.push(user)
 
-        await authenticateLocalUser('ana@example.com', 'legacy-password')
+        await authenticateLocalUser('ana@example.com', 'plain-password')
 
-        expect(user.passwordHash).toEqual(expect.any(String))
-        expect(user.passwordSalt).toEqual(expect.any(String))
-        expect(user.legacyPassword).toBeUndefined()
+        expect(user.passwordHash).toBeUndefined()
+        expect(user.passwordSalt).toBeUndefined()
+        expect(user.password).toBe('plain-password')
         expect(user.isLoggedIn).toBe(true)
     })
 
