@@ -55,6 +55,7 @@ const onboardingPages: OnboardingPage[] = [
             'O Ritmo App é o seu espaço aconchegante para construir hábitos e organizar a rotina. Com um visual relaxante e cozy, o app transforma produtividade em algo leve e prazeroso, sem a pressão ou a frieza dos apps tradicionais.',
     },
     {
+        title: 'Bem-vindo(a)',
         description:
             'Crie novos hábitos, monte cronogramas, defina lembretes e organize suas tarefas em um único lugar, tudo em um ambiente pensado para trazer calma ao seu dia a dia. Porque construir uma rotinha melhor não precisa ser estressante, pode ser, literalmente, confortável.',
     },
@@ -207,6 +208,7 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
                         style={[styles.introLogo, { marginTop: height * 0.22 }]}
                     >
                         {renderLogo()}
+                        <Text style={styles.welcomeTitle}>{page.title}</Text>
                     </View>
                     <View style={styles.introCopy}>
                         <Text style={styles.introDescription}>
