@@ -30,6 +30,7 @@ import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
+import { formatPreferredTime } from '../preferredTime'
 import {
     habitRequirementStatuses,
     habitRequirementStatusLabels,
@@ -63,11 +64,8 @@ const getInitialValues = (
     estimatedDurationMinutes: habit?.estimatedDurationMinutes
         ? String(habit.estimatedDurationMinutes)
         : '',
-    preferredTime: habit?.preferredTime
-        ? `${String(habit.preferredTime.getHours()).padStart(2, '0')}:${String(
-              habit.preferredTime.getMinutes(),
-          ).padStart(2, '0')}`
-        : '',
+    preferredTime: formatPreferredTime(habit?.preferredTime).hour,
+    preferredTimePeriod: formatPreferredTime(habit?.preferredTime).period,
     isFocusOfDay: habit?.isFocusOfDay ?? false,
     dependencyHabitId: habit?.dependencyHabitId ?? '',
     conditionHabitId: habit?.conditionHabitId ?? '',
@@ -639,18 +637,125 @@ export const AddHabitModal = ({
                                         control={control}
                                         name="preferredTime"
                                         render={({ field }) => (
-                                            <TextInput
-                                                accessibilityLabel="Preferred habit time"
-                                                keyboardType="numbers-and-punctuation"
-                                                onChangeText={field.onChange}
-                                                onBlur={field.onBlur}
-                                                placeholder="HH:MM"
-                                                placeholderTextColor={
-                                                    colors.textMuted
-                                                }
-                                                style={styles.input}
-                                                value={field.value}
-                                            />
+                                            <View>
+                                                <View
+                                                    style={styles.timeInputRow}
+                                                >
+                                                    <TextInput
+                                                        accessibilityLabel="Preferred habit hour"
+                                                        keyboardType="number-pad"
+                                                        maxLength={2}
+                                                        onChangeText={value => {
+                                                            const digits =
+                                                                value.replace(
+                                                                    /\D/g,
+                                                                    '',
+                                                                )
+                                                            if (
+                                                                digits &&
+                                                                Number(digits) >
+                                                                    12
+                                                            )
+                                                                return
+                                                            field.onChange(
+                                                                digits,
+                                                            )
+                                                        }}
+                                                        onBlur={() => {
+                                                            field.onBlur()
+                                                            if (field.value)
+                                                                setValue(
+                                                                    'preferredTime',
+                                                                    field.value.padStart(
+                                                                        2,
+                                                                        '0',
+                                                                    ),
+                                                                    {
+                                                                        shouldValidate:
+                                                                            true,
+                                                                    },
+                                                                )
+                                                        }}
+                                                        placeholder="00"
+                                                        placeholderTextColor={
+                                                            colors.textMuted
+                                                        }
+                                                        style={[
+                                                            styles.input,
+                                                            styles.hourInput,
+                                                        ]}
+                                                        value={field.value}
+                                                    />
+                                                    <Text
+                                                        style={
+                                                            styles.minuteText
+                                                        }
+                                                    >
+                                                        :00
+                                                    </Text>
+                                                    <Controller
+                                                        control={control}
+                                                        name="preferredTimePeriod"
+                                                        render={({
+                                                            field: periodField,
+                                                        }) => (
+                                                            <View
+                                                                style={
+                                                                    styles.periodOptions
+                                                                }
+                                                            >
+                                                                {(
+                                                                    [
+                                                                        'AM',
+                                                                        'PM',
+                                                                    ] as const
+                                                                ).map(
+                                                                    period => {
+                                                                        const isSelected =
+                                                                            periodField.value ===
+                                                                            period
+                                                                        return (
+                                                                            <Pressable
+                                                                                accessibilityLabel={`Select ${period}`}
+                                                                                accessibilityRole="radio"
+                                                                                accessibilityState={{
+                                                                                    selected:
+                                                                                        isSelected,
+                                                                                }}
+                                                                                key={
+                                                                                    period
+                                                                                }
+                                                                                onPress={() =>
+                                                                                    periodField.onChange(
+                                                                                        period,
+                                                                                    )
+                                                                                }
+                                                                                style={[
+                                                                                    styles.periodOption,
+                                                                                    isSelected &&
+                                                                                        styles.optionSelected,
+                                                                                ]}
+                                                                            >
+                                                                                <Text
+                                                                                    style={[
+                                                                                        styles.periodOptionText,
+                                                                                        isSelected &&
+                                                                                            styles.optionTextSelected,
+                                                                                    ]}
+                                                                                >
+                                                                                    {
+                                                                                        period
+                                                                                    }
+                                                                                </Text>
+                                                                            </Pressable>
+                                                                        )
+                                                                    },
+                                                                )}
+                                                            </View>
+                                                        )}
+                                                    />
+                                                </View>
+                                            </View>
                                         )}
                                     />
                                     {errors.preferredTime ? (
@@ -873,6 +978,34 @@ const styles = StyleSheet.create({
     },
     twoColumnRow: { flexDirection: 'row', gap: 12 },
     column: { flex: 1 },
+    timeInputRow: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: 4,
+    },
+    hourInput: { flex: 1, minWidth: 36, paddingHorizontal: 8 },
+    minuteText: {
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 17,
+    },
+    periodOptions: { flexDirection: 'row', gap: 4 },
+    periodOption: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderRadius: 6,
+        borderWidth: 1,
+        justifyContent: 'center',
+        minHeight: 40,
+        minWidth: 39,
+        paddingHorizontal: 4,
+    },
+    periodOptionText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 12,
+    },
     focusRow: {
         alignItems: 'center',
         backgroundColor: colors.surfaceMuted,

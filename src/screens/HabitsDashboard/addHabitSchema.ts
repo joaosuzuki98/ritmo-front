@@ -22,12 +22,12 @@ export const addHabitSchema = z
             .string()
             .refine(
                 value =>
-                    value.trim() === '' ||
-                    /^([01]\d|2[0-3]):[0-5]\d$/.test(value),
+                    value === '' || /^(?:[0-9]|0[0-9]|1[0-2])$/.test(value),
                 {
-                    message: 'Use the HH:MM format.',
+                    message: 'Enter an hour from 00 to 12.',
                 },
             ),
+        preferredTimePeriod: z.enum(['AM', 'PM']),
         isFocusOfDay: z.boolean(),
         dependencyHabitId: z.string(),
         conditionHabitId: z.string(),

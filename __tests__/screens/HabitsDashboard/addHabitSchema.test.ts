@@ -9,6 +9,7 @@ const habitForm = {
     priority: 'medium',
     estimatedDurationMinutes: '',
     preferredTime: '',
+    preferredTimePeriod: 'AM',
     isFocusOfDay: false,
     dependencyHabitId: '',
     conditionHabitId: '',
@@ -38,6 +39,26 @@ describe('addHabitSchema requirements', () => {
                 dependencyHabitId: 'habit-1',
                 conditionHabitId: 'habit-1',
                 conditionStatus: 'completed',
+            }).success,
+        ).toBe(false)
+    })
+})
+
+describe('addHabitSchema preferred time', () => {
+    it.each(['00', '0', '09', '12'])('accepts hour %s', hour => {
+        expect(
+            addHabitSchema.safeParse({
+                ...habitForm,
+                preferredTime: hour,
+            }).success,
+        ).toBe(true)
+    })
+
+    it.each(['13', '99', '09:00 AM', '-1'])('rejects hour %s', hour => {
+        expect(
+            addHabitSchema.safeParse({
+                ...habitForm,
+                preferredTime: hour,
             }).success,
         ).toBe(false)
     })

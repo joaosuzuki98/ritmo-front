@@ -33,6 +33,7 @@ import type {
     SortCriterion,
 } from './habitDashboard.types'
 import type { AddHabitFormData } from './addHabitSchema'
+import { parsePreferredTime } from './preferredTime'
 import type { LogHabitProgressFormData } from './logHabitProgressSchema'
 import { wouldCreateHabitRequirementCycle } from './habitRequirementUtils'
 
@@ -423,14 +424,6 @@ export const reorderHabitIds = (
     return next
 }
 
-const parsePreferredTime = (value: string): Date | undefined => {
-    if (!value.trim()) return undefined
-    const [hours, minutes] = value.split(':').map(Number)
-    const date = new Date()
-    date.setHours(hours, minutes, 0, 0)
-    return date
-}
-
 const validateHabitRequirements = async (
     formData: AddHabitFormData,
     currentUserId: string,
@@ -749,6 +742,7 @@ export const useHabitsDashboardViewModel = (
                         : undefined
                 record.preferredTime = parsePreferredTime(
                     formData.preferredTime,
+                    formData.preferredTimePeriod,
                 )
                 record.priority = formData.priority
                 record.isFocusOfDay = formData.isFocusOfDay
@@ -799,6 +793,7 @@ export const useHabitsDashboardViewModel = (
                                       : undefined,
                               preferredTime: parsePreferredTime(
                                   formData.preferredTime,
+                                  formData.preferredTimePeriod,
                               ),
                               isFocusOfDay: formData.isFocusOfDay,
                           }
@@ -850,6 +845,7 @@ export const useHabitsDashboardViewModel = (
                         : undefined
                 record.preferredTime = parsePreferredTime(
                     formData.preferredTime,
+                    formData.preferredTimePeriod,
                 )
                 record.priority = formData.priority
                 record.isFocusOfDay = formData.isFocusOfDay
