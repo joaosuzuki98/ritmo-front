@@ -6,6 +6,7 @@ import {
     getEventScheduleEntries,
     getHabitScheduleEntries,
 } from './schedule.utils'
+import { getScheduleDateTime } from './scheduleTime'
 
 const monthNames = [
     'January',
@@ -77,13 +78,6 @@ export const getHourLabel = (hour: number): string => {
 
 export const parseScheduleHour = (time: string): number =>
     Number(time.slice(0, 2))
-
-const getScheduleDateTime = (date: Date, time: string): Date => {
-    const [hours, minutes] = time.split(':').map(Number)
-    const dateTime = new Date(date)
-    dateTime.setHours(hours, minutes, 0, 0)
-    return dateTime
-}
 
 export const useScheduleViewModel = () => {
     const today = startOfDay(new Date())
@@ -170,12 +164,22 @@ export const useScheduleViewModel = () => {
     }
 
     const addScheduleItem = async ({
-        endTime,
-        startTime,
+        endHour,
+        endPeriod,
+        startHour,
+        startPeriod,
         title,
     }: AddScheduleItemFormData) => {
-        const dateTime = getScheduleDateTime(selectedDate, startTime)
-        const scheduledEndTime = getScheduleDateTime(selectedDate, endTime)
+        const dateTime = getScheduleDateTime(
+            selectedDate,
+            startHour,
+            startPeriod,
+        )
+        const scheduledEndTime = getScheduleDateTime(
+            selectedDate,
+            endHour,
+            endPeriod,
+        )
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {
@@ -190,6 +194,40 @@ export const useScheduleViewModel = () => {
         })
     }
 
+    const updateScheduleItem = async (
+        eventId: string,
+        {
+            endHour,
+            endPeriod,
+            startHour,
+            startPeriod,
+            title,
+        }: AddScheduleItemFormData,
+    ) => {
+        const event = await database.get<Event>('events').find(eventId)
+        await database.write(async () => {
+            await event.update(record => {
+                record.title = title.trim()
+                record.dateTime = getScheduleDateTime(
+                    selectedDate,
+                    startHour,
+                    startPeriod,
+                )
+                record.endTime = getScheduleDateTime(
+                    selectedDate,
+                    endHour,
+                    endPeriod,
+                )
+                record.updatedAt = new Date()
+            })
+        })
+    }
+
+    const deleteScheduleItem = async (eventId: string) => {
+        const event = await database.get<Event>('events').find(eventId)
+        await database.write(async () => event.markAsDeleted())
+    }
+
     return {
         calendarMonth,
         entries,
@@ -198,10 +236,13 @@ export const useScheduleViewModel = () => {
         getCalendarDays,
         getHourLabel,
         addScheduleItem,
+        deleteScheduleItem,
         moveCalendarMonth,
         moveDate,
         parseScheduleHour,
         selectDate,
         selectedDate,
+        updateScheduleItem,
+        events,
     }
 }

@@ -37,6 +37,7 @@ export const getEventScheduleEntries = (
             {
                 endHour:
                     storedEndHour > startHour ? storedEndHour : startHour + 1,
+                eventId: event.id,
                 id: `event-${event.id}`,
                 isEvent: true,
                 startHour,

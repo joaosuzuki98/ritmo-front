@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { database, type Event } from '../../database'
 import type { AddScheduleItemFormData } from '../Schedule/addScheduleItemSchema'
+import { getScheduleDateTime } from '../Schedule/scheduleTime'
 
 const startOfDay = (date: Date): Date => {
     const value = new Date(date)
@@ -80,12 +81,16 @@ export const useRemindersViewModel = () => {
     }
 
     const addEvent = async (data: AddScheduleItemFormData) => {
-        const dateTime = new Date(selectedDate)
-        const [startHours, startMinutes] = data.startTime.split(':').map(Number)
-        dateTime.setHours(startHours, startMinutes, 0, 0)
-        const endTime = new Date(selectedDate)
-        const [endHours, endMinutes] = data.endTime.split(':').map(Number)
-        endTime.setHours(endHours, endMinutes, 0, 0)
+        const dateTime = getScheduleDateTime(
+            selectedDate,
+            data.startHour,
+            data.startPeriod,
+        )
+        const endTime = getScheduleDateTime(
+            selectedDate,
+            data.endHour,
+            data.endPeriod,
+        )
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {

@@ -30,6 +30,7 @@ describe('getEventScheduleEntries', () => {
         expect(entries).toEqual([
             {
                 id: 'event-today-event',
+                eventId: 'today-event',
                 title: 'Team meeting',
                 startHour: 14.5,
                 endHour: 16.25,
@@ -37,6 +38,7 @@ describe('getEventScheduleEntries', () => {
             },
             {
                 id: 'event-one-hour-event',
+                eventId: 'one-hour-event',
                 title: 'Check-in',
                 startHour: 18,
                 endHour: 19,

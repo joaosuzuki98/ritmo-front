@@ -8,6 +8,7 @@ import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
+import type { Event } from '../../database'
 import { CalendarModal } from './components/CalendarModal'
 import { AddScheduleItemModal } from './components/AddScheduleItemModal'
 import { ScheduleTimeline } from './components/ScheduleTimeline'
@@ -28,6 +29,7 @@ export const ScheduleScreen = ({
     const scale = getResponsiveScale(width)
     const viewModel = useScheduleViewModel()
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
+    const [editingEvent, setEditingEvent] = useState<Event | null>(null)
     const calendarButtonSize = 24 * scale
     const calendarButtonHitSlop = (spacing.touchTarget - calendarButtonSize) / 2
     const dateButtonOffset =
@@ -121,6 +123,12 @@ export const ScheduleScreen = ({
             <ScheduleTimeline
                 entries={viewModel.entries}
                 getHourLabel={viewModel.getHourLabel}
+                onEventPress={eventId => {
+                    const event = viewModel.events.find(
+                        item => item.id === eventId,
+                    )
+                    if (event) setEditingEvent(event)
+                }}
                 selectedDate={viewModel.selectedDate}
             />
             <CalendarModal
@@ -136,9 +144,23 @@ export const ScheduleScreen = ({
             />
             <AddScheduleItemModal
                 initialStartHour={8}
-                isVisible={isAddItemModalVisible}
-                onClose={onCloseAddItemModal}
+                isVisible={isAddItemModalVisible || Boolean(editingEvent)}
+                item={editingEvent}
+                onClose={() => {
+                    if (editingEvent) setEditingEvent(null)
+                    else onCloseAddItemModal()
+                }}
                 onCreateItem={viewModel.addScheduleItem}
+                onUpdateItem={data =>
+                    editingEvent
+                        ? viewModel.updateScheduleItem(editingEvent.id, data)
+                        : Promise.resolve()
+                }
+                onDeleteItem={() =>
+                    editingEvent
+                        ? viewModel.deleteScheduleItem(editingEvent.id)
+                        : Promise.resolve()
+                }
             />
         </ScreenLayout>
     )

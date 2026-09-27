@@ -10,5 +10,6 @@ export type ScheduleEntry = {
     startHour: number
     endHour: number
     isEvent?: boolean
+    eventId?: string
     habitId?: string
 }
