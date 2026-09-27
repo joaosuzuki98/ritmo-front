@@ -21,4 +21,7 @@ export const colors = {
     success: '#79D99B',
     danger: '#F2779A',
     priorityText: '#21134D',
+    onboardingBackground: '#121318',
+    onboardingMuted: '#606B98',
+    onboardingPurple: '#A27DF8',
 } as const

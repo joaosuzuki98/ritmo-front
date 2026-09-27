@@ -1,5 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
+    Animated,
+    Easing,
+    Image,
+    Platform,
     Pressable,
     ScrollView,
     StatusBar,
@@ -8,18 +12,12 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
+import type { ImageSourcePropType } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import {
-    Bell,
-    CalendarBlank,
-    CaretLeft,
-    CheckCircle,
-    Fire,
-    Lightning,
-    MusicNotes,
-    Stack,
-} from 'phosphor-react-native'
+import { SpeakerHigh } from 'phosphor-react-native'
 
+import RitmoLogo from '../../assets/images/ritmo-logo.svg'
+import Star from '../../assets/images/star.svg'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -28,44 +26,98 @@ type OnboardingScreenProps = {
     onComplete: () => void
 }
 
-const onboardingPages = [
+type OnboardingPage = {
+    title?: string
+    description: string
+    image?: ImageSourcePropType
+    imageLabel?: string
+}
+
+const onboardingStars = [
+    { left: 7, top: 13, size: 31, driftX: 3, driftY: 4, rotation: 3 },
+    { left: 73, top: 4, size: 30, driftX: -4, driftY: 3, rotation: -2 },
+    { left: 45, top: 12, size: 21, driftX: 2, driftY: -3, rotation: 2 },
+    { left: 61, top: 29, size: 54, driftX: -3, driftY: 5, rotation: 2 },
+    { left: 85, top: 36, size: 28, driftX: 4, driftY: -3, rotation: -3 },
+    { left: 24, top: 43, size: 38, driftX: -4, driftY: 3, rotation: 3 },
+    { left: 46, top: 52, size: 27, driftX: 3, driftY: -4, rotation: -2 },
+    { left: 76, top: 56, size: 23, driftX: -3, driftY: 4, rotation: 2 },
+    { left: 7, top: 73, size: 31, driftX: 3, driftY: -3, rotation: -2 },
+    { left: 82, top: 76, size: 32, driftX: -4, driftY: 4, rotation: 3 },
+    { left: 52, top: 86, size: 30, driftX: 2, driftY: -4, rotation: -2 },
+    { left: 18, top: 92, size: 37, driftX: -3, driftY: 3, rotation: 2 },
+] as const
+
+const onboardingPages: OnboardingPage[] = [
     {
-        eyebrow: 'BEM-VINDA AO RITMO',
-        title: 'Encontre o seu ritmo.',
+        title: 'Bem-vindo(a)',
         description:
-            'Um espaço leve para cuidar dos hábitos, organizar compromissos e tirar planos do papel — um passo de cada vez.',
+            'O Ritmo App é o seu espaço aconchegante para construir hábitos e organizar a rotina. Com um visual relaxante e cozy, o app transforma produtividade em algo leve e prazeroso, sem a pressão ou a frieza dos apps tradicionais.',
     },
     {
-        eyebrow: 'CONSTÂNCIA SEM PRESSA',
-        title: 'Pequenos hábitos, grandes mudanças.',
+        description:
+            'Crie novos hábitos, monte cronogramas, defina lembretes e organize suas tarefas em um único lugar, tudo em um ambiente pensado para trazer calma ao seu dia a dia. Porque construir uma rotinha melhor não precisa ser estressante, pode ser, literalmente, confortável.',
+    },
+    {
+        title: 'Pequenos hábitos, grandes mudanças',
         description:
             'Acompanhe seus hábitos no dia a dia, registre cada conquista e veja sua consistência crescer com o tempo.',
+        image: require('../../assets/images/onboarding-schedule.png'),
+        imageLabel: 'Cartões coloridos com exemplos de tarefas e hábitos',
     },
     {
-        eyebrow: 'ORGANIZAÇÃO LEVE',
-        title: 'Sua rotina em um só lugar.',
+        title: 'Sua rotina em um só lugar',
         description:
             'Planeje o dia, visualize seus compromissos e conecte atividades aos hábitos que quer cultivar.',
+        image: require('../../assets/images/onboarding-habits.png'),
+        imageLabel: 'Exemplo de uma agenda com horários e atividades',
     },
     {
-        eyebrow: 'NO MOMENTO CERTO',
-        title: 'Lembretes que ajudam.',
         description:
-            'Deixe eventos e datas importantes à vista para manter a cabeça tranquila e o dia fluindo.',
-    },
-    {
-        eyebrow: 'SEUS PLANOS, EM MOVIMENTO',
-        title: 'Faça acontecer no seu tempo.',
-        description:
-            'Transforme objetivos em tarefas simples, acompanhe o progresso e celebre cada etapa concluída.',
+            'Para melhorar sua vida, você não precisa ser o mais rápido, apenas manter o seu ritmo.',
     },
 ] as const
 
+const onboardingFontFamily =
+    Platform.OS === 'android'
+        ? 'quattrocento-sans'
+        : typography.onboardingFontFamily
+
 export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
     const [currentPage, setCurrentPage] = useState(0)
-    const { height } = useWindowDimensions()
+    const drift = useRef(new Animated.Value(0)).current
+    const { height, width } = useWindowDimensions()
     const page = onboardingPages[currentPage]
     const isLastPage = currentPage === onboardingPages.length - 1
+    const logoWidth = Math.min(width * 0.52, 300)
+    const artworkWidth = Math.min(
+        width * (currentPage === 3 ? 0.82 : 0.76),
+        height * 0.37,
+        380,
+    )
+
+    useEffect(() => {
+        const animation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(drift, {
+                    toValue: 1,
+                    duration: 18000,
+                    easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(drift, {
+                    toValue: 0,
+                    duration: 18000,
+                    easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: true,
+                }),
+            ]),
+        )
+
+        animation.start()
+
+        return () => animation.stop()
+    }, [drift])
 
     const handleContinue = () => {
         if (isLastPage) {
@@ -76,820 +128,355 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
         setCurrentPage(index => index + 1)
     }
 
-    const handlePrevious = () => {
-        setCurrentPage(index => Math.max(0, index - 1))
-    }
+    const renderStarField = () => (
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+            {onboardingStars.map(star => {
+                const animatedStyle = {
+                    transform: [
+                        {
+                            translateX: drift.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [-star.driftX, star.driftX],
+                            }),
+                        },
+                        {
+                            translateY: drift.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [star.driftY, -star.driftY],
+                            }),
+                        },
+                        {
+                            rotate: drift.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [
+                                    `${-star.rotation}deg`,
+                                    `${star.rotation}deg`,
+                                ],
+                            }),
+                        },
+                    ],
+                }
 
-    const renderArtwork = () => {
+                return (
+                    <Animated.View
+                        key={`${star.left}-${star.top}`}
+                        style={[
+                            styles.star,
+                            {
+                                height: star.size,
+                                left: `${star.left}%`,
+                                top: `${star.top}%`,
+                                width: star.size,
+                            },
+                            animatedStyle,
+                        ]}
+                    >
+                        <Star height="100%" width="100%" />
+                    </Animated.View>
+                )
+            })}
+        </View>
+    )
+
+    const renderLogo = () => (
+        <RitmoLogo height={(logoWidth * 52) / 228} width={logoWidth} />
+    )
+
+    const renderPageContent = () => {
         if (currentPage === 0) {
             return (
-                <View style={styles.welcomeArtwork}>
-                    <View style={styles.orbitOuter} />
-                    <View style={styles.orbitInner} />
-                    <View style={styles.brandOrb}>
-                        <MusicNotes
-                            color={colors.white}
-                            size={52}
-                            weight="fill"
-                        />
-                    </View>
-                    <View style={[styles.featureChip, styles.habitsChip]}>
-                        <Stack color={colors.success} size={18} weight="bold" />
-                        <Text style={styles.featureChipText}>Hábitos</Text>
-                    </View>
-                    <View style={[styles.featureChip, styles.scheduleChip]}>
-                        <CalendarBlank
-                            color={colors.scheduleBackground}
-                            size={18}
-                            weight="bold"
-                        />
-                        <Text style={styles.featureChipText}>Rotina</Text>
-                    </View>
-                    <View style={styles.orbitDot} />
+                <View
+                    style={[
+                        styles.welcomeContent,
+                        { transform: [{ translateY: height * 0.09 }] },
+                    ]}
+                >
+                    {renderLogo()}
+                    <Text style={styles.welcomeTitle}>{page.title}</Text>
+                    <Text style={styles.welcomeDescription}>
+                        {page.description}
+                    </Text>
                 </View>
             )
         }
 
         if (currentPage === 1) {
             return (
-                <View style={styles.mockCard}>
-                    <View style={styles.mockCardHeader}>
-                        <View>
-                            <Text style={styles.mockOverline}>
-                                SEUS HÁBITOS
-                            </Text>
-                            <Text style={styles.mockTitle}>Todo dia conta</Text>
-                        </View>
-                        <View style={styles.streakBadge}>
-                            <Fire
-                                color={colors.priorityMedium}
-                                size={18}
-                                weight="fill"
-                            />
-                            <Text style={styles.streakText}>7 dias</Text>
-                        </View>
-                    </View>
-                    <View style={styles.habitRow}>
-                        <CheckCircle
-                            color={colors.success}
-                            size={22}
-                            weight="fill"
-                        />
-                        <Text style={styles.habitText}>Ler por 15 minutos</Text>
-                        <Text style={styles.habitTime}>08:30</Text>
-                    </View>
-                    <View style={styles.habitRow}>
-                        <CheckCircle
-                            color={colors.success}
-                            size={22}
-                            weight="fill"
-                        />
-                        <Text style={styles.habitText}>Beber água</Text>
-                        <Text style={styles.habitTime}>12:00</Text>
-                    </View>
-                    <View style={styles.habitRow}>
-                        <View style={styles.emptyCheck} />
-                        <Text style={styles.habitText}>Alongar o corpo</Text>
-                        <Text style={styles.habitTime}>18:00</Text>
+                <View style={styles.introContent}>
+                    <View style={styles.introLogo}>{renderLogo()}</View>
+                    <View style={styles.introCopy}>
+                        <Text style={styles.introDescription}>
+                            {page.description}
+                        </Text>
                     </View>
                 </View>
             )
         }
 
-        if (currentPage === 2) {
+        if (currentPage === 2 || currentPage === 3) {
             return (
-                <View style={styles.mockCard}>
-                    <View style={styles.scheduleHeader}>
-                        <View>
-                            <Text style={styles.mockOverline}>
-                                QUARTA-FEIRA
-                            </Text>
-                            <Text style={styles.mockTitle}>
-                                Seu dia, com espaço
-                            </Text>
-                        </View>
-                        <CalendarBlank
-                            color={colors.scheduleBackground}
-                            size={26}
-                            weight="duotone"
-                        />
-                    </View>
-                    <View style={styles.timelineRow}>
-                        <Text style={styles.timelineTime}>09:00</Text>
-                        <View style={styles.timelineLine} />
-                        <View style={styles.eventBlock}>
-                            <Text style={styles.eventTitle}>
-                                Reunião de projeto
-                            </Text>
-                            <Text style={styles.eventSubtitle}>
-                                Trabalho · 30 min
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.timelineRow}>
-                        <Text style={styles.timelineTime}>17:30</Text>
-                        <View
-                            style={[
-                                styles.timelineLine,
-                                styles.timelineLineAccent,
-                            ]}
-                        />
-                        <View
-                            style={[styles.eventBlock, styles.linkedEventBlock]}
-                        >
-                            <Text style={styles.eventTitle}>Caminhada</Text>
-                            <Text style={styles.eventSubtitle}>
-                                Hábito conectado
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-            )
-        }
-
-        if (currentPage === 3) {
-            return (
-                <View style={styles.remindersArtwork}>
-                    <View style={styles.bellOrb}>
-                        <Bell color={colors.white} size={42} weight="duotone" />
-                        <View style={styles.bellDot} />
-                    </View>
-                    <View style={[styles.reminderCard, styles.reminderCardTop]}>
-                        <View style={styles.reminderIcon}>
-                            <CalendarBlank
-                                color={colors.scheduleBackground}
-                                size={19}
-                                weight="bold"
-                            />
-                        </View>
-                        <View style={styles.reminderCopy}>
-                            <Text style={styles.reminderTitle}>Consulta</Text>
-                            <Text style={styles.reminderSubtitle}>
-                                Hoje, às 14:00
-                            </Text>
-                        </View>
-                        <View style={styles.reminderIndicator} />
-                    </View>
-                    <View
-                        style={[styles.reminderCard, styles.reminderCardBottom]}
-                    >
-                        <View
-                            style={[
-                                styles.reminderIcon,
-                                styles.reminderIconWarm,
-                            ]}
-                        >
-                            <Lightning
-                                color={colors.priorityMedium}
-                                size={19}
-                                weight="fill"
-                            />
-                        </View>
-                        <View style={styles.reminderCopy}>
-                            <Text style={styles.reminderTitle}>
-                                Pausa para você
-                            </Text>
-                            <Text style={styles.reminderSubtitle}>
-                                Seu momento de respirar
-                            </Text>
-                        </View>
-                        <CheckCircle
-                            color={colors.success}
-                            size={20}
-                            weight="fill"
-                        />
-                    </View>
+                <View style={styles.featureContent}>
+                    {renderLogo()}
+                    <Image
+                        accessibilityLabel={page.imageLabel}
+                        resizeMode="contain"
+                        source={page.image}
+                        style={[
+                            styles.featureImage,
+                            {
+                                height: (artworkWidth * 427) / 440,
+                                width: artworkWidth,
+                            },
+                        ]}
+                    />
+                    <Text style={styles.featureTitle}>{page.title}</Text>
+                    <Text style={styles.featureDescription}>
+                        {page.description}
+                    </Text>
                 </View>
             )
         }
 
         return (
-            <View style={styles.goalArtwork}>
-                <View style={styles.goalCard}>
-                    <View style={styles.goalCardHeader}>
-                        <View style={styles.goalIcon}>
-                            <Lightning
-                                color={colors.white}
-                                size={23}
-                                weight="fill"
-                            />
-                        </View>
-                        <View style={styles.goalHeading}>
-                            <Text style={styles.mockOverline}>
-                                OBJETIVO DA SEMANA
-                            </Text>
-                            <Text style={styles.goalTitle}>Mais movimento</Text>
-                        </View>
-                        <Text style={styles.goalPercent}>75%</Text>
-                    </View>
-                    <View style={styles.progressTrack}>
-                        <View style={styles.progressFill} />
-                    </View>
-                    <View style={styles.goalTaskRow}>
-                        <CheckCircle
-                            color={colors.success}
-                            size={19}
-                            weight="fill"
-                        />
-                        <Text style={styles.completedGoalTask}>
-                            Caminhar na segunda
-                        </Text>
-                    </View>
-                    <View style={styles.goalTaskRow}>
-                        <CheckCircle
-                            color={colors.success}
-                            size={19}
-                            weight="fill"
-                        />
-                        <Text style={styles.completedGoalTask}>
-                            Fazer alongamento
-                        </Text>
-                    </View>
-                    <View style={styles.goalTaskRow}>
-                        <View style={styles.emptyCheckSmall} />
-                        <Text style={styles.habitText}>
-                            Pedalar no fim de semana
-                        </Text>
-                    </View>
-                </View>
-                <View style={styles.goalSparkle}>
-                    <Lightning
-                        color={colors.priorityMedium}
-                        size={19}
-                        weight="fill"
-                    />
-                </View>
+            <View
+                style={[
+                    styles.finalContent,
+                    { transform: [{ translateY: height * 0.08 }] },
+                ]}
+            >
+                {renderLogo()}
+                <Text style={styles.finalDescription}>{page.description}</Text>
             </View>
         )
     }
 
     return (
-        <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <View style={styles.root}>
             <StatusBar barStyle="light-content" />
-            <ScrollView
-                bounces={false}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
+            {renderStarField()}
+            <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
                 <View style={styles.screen}>
-                    <View style={styles.topBar}>
-                        <View style={styles.brand}>
-                            <View style={styles.brandMark}>
-                                <MusicNotes
-                                    color={colors.white}
-                                    size={21}
-                                    weight="fill"
+                    {isLastPage ? (
+                        <View style={styles.topBarSpacer} />
+                    ) : (
+                        <View style={styles.topBar}>
+                            <View
+                                accessibilityElementsHidden
+                                importantForAccessibility="no-hide-descendants"
+                            >
+                                <SpeakerHigh
+                                    color={colors.onboardingMuted}
+                                    size={20}
+                                    weight="regular"
                                 />
                             </View>
-                            <Text style={styles.brandName}>ritmo</Text>
+                            <Pressable
+                                accessibilityLabel="Pular apresentação"
+                                accessibilityRole="button"
+                                hitSlop={spacing.sm}
+                                onPress={onComplete}
+                            >
+                                <Text style={styles.skipText}>Pular</Text>
+                            </Pressable>
                         </View>
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={onComplete}
-                            style={styles.skipButton}
-                        >
-                            <Text style={styles.skipText}>Pular</Text>
-                        </Pressable>
-                    </View>
+                    )}
 
-                    <View
-                        style={[
-                            styles.artworkArea,
-                            {
-                                height: Math.min(
-                                    360,
-                                    Math.max(260, height * 0.38),
-                                ),
-                            },
-                        ]}
+                    <ScrollView
+                        bounces={false}
+                        contentContainerStyle={styles.contentContainer}
+                        showsVerticalScrollIndicator={false}
+                        style={styles.content}
                     >
-                        {renderArtwork()}
-                    </View>
-
-                    <View style={styles.copy}>
-                        <Text style={styles.eyebrow}>{page.eyebrow}</Text>
-                        <Text accessibilityRole="header" style={styles.title}>
-                            {page.title}
-                        </Text>
-                        <Text style={styles.description}>
-                            {page.description}
-                        </Text>
-                    </View>
+                        {renderPageContent()}
+                    </ScrollView>
 
                     <View style={styles.footer}>
-                        <View style={styles.progressRow}>
-                            <View
-                                accessibilityLabel={`Tela ${
-                                    currentPage + 1
-                                } de ${onboardingPages.length}`}
-                                accessibilityRole="progressbar"
-                                style={styles.pagination}
-                            >
-                                {onboardingPages.map((_, index) => (
-                                    <View
-                                        key={index}
-                                        style={[
-                                            styles.paginationDot,
-                                            index === currentPage &&
-                                                styles.paginationDotActive,
-                                        ]}
-                                    />
-                                ))}
-                            </View>
-                            <Text style={styles.progressCount}>
-                                {String(currentPage + 1).padStart(2, '0')} / 05
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={handleContinue}
+                            style={({ pressed }) => [
+                                styles.continueButton,
+                                { marginBottom: height * 0.09 },
+                                pressed && styles.pressed,
+                            ]}
+                        >
+                            <Text style={styles.continueText}>
+                                {isLastPage ? 'Iniciar' : 'Próximo'}
                             </Text>
-                        </View>
+                        </Pressable>
 
-                        <View style={styles.actions}>
-                            {currentPage > 0 ? (
-                                <Pressable
-                                    accessibilityLabel="Voltar para a tela anterior"
-                                    accessibilityRole="button"
-                                    onPress={handlePrevious}
-                                    style={({ pressed }) => [
-                                        styles.backButton,
-                                        pressed && styles.buttonPressed,
+                        <View
+                            accessibilityLabel={`Tela ${currentPage + 1} de ${
+                                onboardingPages.length
+                            }`}
+                            accessibilityRole="progressbar"
+                            style={styles.pagination}
+                        >
+                            {onboardingPages.map((_, index) => (
+                                <View
+                                    key={index}
+                                    style={[
+                                        styles.paginationItem,
+                                        index === currentPage &&
+                                            styles.paginationItemActive,
                                     ]}
-                                >
-                                    <CaretLeft
-                                        color={colors.text}
-                                        size={21}
-                                        weight="bold"
-                                    />
-                                </Pressable>
-                            ) : null}
-                            <Pressable
-                                accessibilityRole="button"
-                                onPress={handleContinue}
-                                style={({ pressed }) => [
-                                    styles.continueButton,
-                                    currentPage === 0 &&
-                                        styles.firstContinueButton,
-                                    pressed && styles.buttonPressed,
-                                ]}
-                            >
-                                <Text style={styles.continueText}>
-                                    {isLastPage ? 'Vamos começar' : 'Continuar'}
-                                </Text>
-                            </Pressable>
+                                />
+                            ))}
                         </View>
                     </View>
                 </View>
-            </ScrollView>
-        </SafeAreaView>
+            </SafeAreaView>
+        </View>
     )
 }
 
 const styles = StyleSheet.create({
-    safeArea: { backgroundColor: colors.background, flex: 1 },
-    scrollContent: { flexGrow: 1 },
+    root: { backgroundColor: colors.onboardingBackground, flex: 1 },
+    safeArea: { flex: 1 },
     screen: {
         alignSelf: 'center',
         flex: 1,
         maxWidth: 500,
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.sm,
+        paddingHorizontal: spacing.md,
         width: '100%',
     },
+    star: { position: 'absolute' },
     topBar: {
         alignItems: 'center',
         flexDirection: 'row',
+        height: spacing.touchTarget,
         justifyContent: 'space-between',
-        minHeight: 48,
+        paddingHorizontal: spacing.xs,
     },
-    brand: { alignItems: 'center', flexDirection: 'row' },
-    brandMark: {
-        alignItems: 'center',
-        backgroundColor: colors.accentStrong,
-        borderRadius: 13,
-        height: 36,
-        justifyContent: 'center',
-        marginRight: spacing.sm,
-        width: 36,
-    },
-    brandName: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 21,
-        fontWeight: '700',
-        letterSpacing: -0.5,
-    },
-    skipButton: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: spacing.touchTarget,
-        minWidth: spacing.touchTarget,
-    },
+    topBarSpacer: { height: spacing.touchTarget },
     skipText: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 14,
-        fontWeight: '600',
+        color: colors.onboardingMuted,
+        fontFamily: onboardingFontFamily,
+        fontSize: typography.onboardingAction.fontSize,
+        fontWeight: typography.onboardingAction.fontWeight,
     },
-    artworkArea: { alignItems: 'center', justifyContent: 'center' },
-    welcomeArtwork: {
-        alignItems: 'center',
-        height: 300,
-        justifyContent: 'center',
-        width: '100%',
-    },
-    orbitOuter: {
-        borderColor: colors.border,
-        borderRadius: 150,
-        borderWidth: 1,
-        height: 276,
-        position: 'absolute',
-        width: 276,
-    },
-    orbitInner: {
-        borderColor: colors.surfaceMuted,
-        borderRadius: 120,
-        borderWidth: 1,
-        height: 220,
-        position: 'absolute',
-        width: 220,
-    },
-    brandOrb: {
-        alignItems: 'center',
-        backgroundColor: colors.accentStrong,
-        borderColor: colors.scheduleLinked,
-        borderRadius: 54,
-        borderWidth: 8,
-        height: 108,
-        justifyContent: 'center',
-        width: 108,
-    },
-    featureChip: {
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: 16,
-        borderWidth: 1,
-        flexDirection: 'row',
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        position: 'absolute',
-    },
-    habitsChip: { left: '4%', top: 43 },
-    scheduleChip: { bottom: 40, right: '2%' },
-    featureChipText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 13,
-        fontWeight: '600',
-        marginLeft: spacing.xs,
-    },
-    orbitDot: {
-        backgroundColor: colors.priorityMedium,
-        borderRadius: 5,
-        height: 10,
-        position: 'absolute',
-        right: '16%',
-        top: 51,
-        width: 10,
-    },
-    mockCard: {
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: 24,
-        borderWidth: 1,
-        maxWidth: 390,
-        padding: spacing.lg,
-        width: '100%',
-    },
-    mockCardHeader: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: spacing.md,
-    },
-    mockOverline: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1,
-    },
-    mockTitle: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 19,
-        fontWeight: '700',
-        marginTop: spacing.xxs,
-    },
-    streakBadge: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderRadius: 14,
-        flexDirection: 'row',
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-    },
-    streakText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        fontWeight: '700',
-        marginLeft: spacing.xs,
-    },
-    habitRow: {
-        alignItems: 'center',
-        borderTopColor: colors.border,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        flexDirection: 'row',
-        minHeight: 53,
-    },
-    habitText: {
-        color: colors.text,
+    content: {
         flex: 1,
-        fontFamily: typography.fontFamily,
-        fontSize: 13,
-        fontWeight: '600',
-        marginLeft: spacing.sm,
+        width: '100%',
     },
-    habitTime: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 11,
-        marginLeft: spacing.xs,
-    },
-    emptyCheck: {
-        borderColor: colors.textMuted,
-        borderRadius: 11,
-        borderWidth: 1.5,
-        height: 22,
-        width: 22,
-    },
-    scheduleHeader: {
+    contentContainer: {
         alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: spacing.lg,
+        flexGrow: 1,
+        justifyContent: 'center',
+        width: '100%',
     },
-    timelineRow: {
+    welcomeContent: {
         alignItems: 'center',
-        flexDirection: 'row',
-        marginBottom: spacing.sm,
+        justifyContent: 'center',
+        width: '100%',
     },
-    timelineTime: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 11,
-        width: 45,
+    welcomeTitle: {
+        color: colors.white,
+        fontFamily: onboardingFontFamily,
+        fontSize: typography.onboardingTitle.fontSize,
+        lineHeight: typography.onboardingTitle.lineHeight,
+        marginTop: spacing.md,
+        textAlign: 'center',
     },
-    timelineLine: {
-        backgroundColor: colors.scheduleBackground,
-        borderRadius: 3,
-        height: 46,
-        marginRight: spacing.sm,
-        width: 3,
+    welcomeDescription: {
+        color: colors.onboardingPurple,
+        fontFamily: onboardingFontFamily,
+        fontSize: typography.onboardingBody.fontSize,
+        lineHeight: typography.onboardingBody.lineHeight,
+        marginTop: spacing.xl + spacing.sm,
+        textAlign: 'center',
+        width: '94%',
     },
-    timelineLineAccent: { backgroundColor: colors.success },
-    eventBlock: {
-        backgroundColor: colors.surfaceMuted,
-        borderRadius: 13,
+    introContent: {
+        alignItems: 'center',
         flex: 1,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-    },
-    linkedEventBlock: { backgroundColor: colors.scheduleCurrent },
-    eventTitle: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 13,
-        fontWeight: '700',
-    },
-    eventSubtitle: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 11,
-        marginTop: 2,
-    },
-    remindersArtwork: {
-        alignItems: 'center',
-        height: 300,
-        justifyContent: 'center',
-        maxWidth: 390,
-        position: 'relative',
         width: '100%',
     },
-    bellOrb: {
+    introLogo: { marginTop: spacing.xl },
+    introCopy: {
         alignItems: 'center',
-        backgroundColor: colors.scheduleCurrent,
-        borderColor: colors.scheduleLinked,
-        borderRadius: 48,
-        borderWidth: 1,
-        height: 96,
-        justifyContent: 'center',
-        width: 96,
-    },
-    bellDot: {
-        backgroundColor: colors.priorityMedium,
-        borderColor: colors.background,
-        borderRadius: 7,
-        borderWidth: 2,
-        height: 14,
-        position: 'absolute',
-        right: 19,
-        top: 19,
-        width: 14,
-    },
-    reminderCard: {
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: 16,
-        borderWidth: 1,
-        flexDirection: 'row',
-        left: 0,
-        padding: spacing.sm,
-        position: 'absolute',
-        right: 0,
-    },
-    reminderCardTop: { top: 19 },
-    reminderCardBottom: { bottom: 15 },
-    reminderIcon: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderRadius: 12,
-        height: 40,
-        justifyContent: 'center',
-        width: 40,
-    },
-    reminderIconWarm: { backgroundColor: colors.background },
-    reminderCopy: { flex: 1, marginLeft: spacing.sm },
-    reminderTitle: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        fontWeight: '700',
-    },
-    reminderSubtitle: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 10,
-        marginTop: 2,
-    },
-    reminderIndicator: {
-        backgroundColor: colors.accentStrong,
-        borderRadius: 4,
-        height: 8,
-        width: 8,
-    },
-    goalArtwork: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        maxWidth: 390,
-        position: 'relative',
+        flex: 1,
+        justifyContent: 'flex-end',
+        paddingBottom: spacing.xl + spacing.lg,
         width: '100%',
     },
-    goalCard: {
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: 24,
-        borderWidth: 1,
-        padding: spacing.lg,
+    introDescription: {
+        color: colors.onboardingPurple,
+        fontFamily: onboardingFontFamily,
+        fontSize: typography.onboardingBody.fontSize,
+        lineHeight: typography.onboardingBody.lineHeight,
+        textAlign: 'center',
         width: '100%',
     },
-    goalCardHeader: { alignItems: 'center', flexDirection: 'row' },
-    goalIcon: {
+    featureContent: {
         alignItems: 'center',
-        backgroundColor: colors.accentStrong,
-        borderRadius: 14,
-        height: 42,
-        justifyContent: 'center',
-        width: 42,
+        justifyContent: 'flex-start',
+        paddingTop: spacing.xs,
+        width: '100%',
     },
-    goalHeading: { flex: 1, marginLeft: spacing.sm },
-    goalTitle: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '700',
-        marginTop: 2,
+    featureImage: { marginTop: spacing.xl },
+    featureTitle: {
+        color: colors.white,
+        fontFamily: onboardingFontFamily,
+        fontSize: typography.onboardingTitle.fontSize,
+        lineHeight: typography.onboardingTitle.lineHeight,
+        marginTop: spacing.xl,
+        textAlign: 'center',
+        width: '100%',
     },
-    goalPercent: {
-        color: colors.success,
-        fontFamily: typography.fontFamily,
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    progressTrack: {
-        backgroundColor: colors.surfaceMuted,
-        borderRadius: 5,
-        height: 8,
-        marginVertical: spacing.md,
-        overflow: 'hidden',
-    },
-    progressFill: {
-        backgroundColor: colors.success,
-        borderRadius: 5,
-        height: '100%',
-        width: '75%',
-    },
-    goalTaskRow: { alignItems: 'center', flexDirection: 'row', minHeight: 34 },
-    completedGoalTask: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginLeft: spacing.sm,
-        textDecorationLine: 'line-through',
-    },
-    emptyCheckSmall: {
-        borderColor: colors.textMuted,
-        borderRadius: 10,
-        borderWidth: 1.5,
-        height: 19,
-        width: 19,
-    },
-    goalSparkle: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 20,
-        borderWidth: 1,
-        height: 42,
-        justifyContent: 'center',
-        position: 'absolute',
-        right: -10,
-        top: -13,
-        width: 42,
-    },
-    copy: { marginTop: spacing.sm },
-    eyebrow: {
-        color: colors.success,
-        fontFamily: typography.fontFamily,
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1.35,
-        marginBottom: spacing.xs,
-    },
-    title: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 29,
-        fontWeight: '700',
-        letterSpacing: -0.7,
-        lineHeight: 36,
-    },
-    description: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 14,
-        lineHeight: 21,
+    featureDescription: {
+        color: colors.onboardingPurple,
+        fontFamily: onboardingFontFamily,
+        fontSize: typography.onboardingBody.fontSize,
+        lineHeight: typography.onboardingBody.lineHeight,
         marginTop: spacing.xs,
+        textAlign: 'center',
+        width: '100%',
     },
-    footer: { marginTop: 'auto', paddingTop: spacing.lg },
-    progressRow: {
+    finalContent: {
         alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: spacing.md,
-    },
-    pagination: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs },
-    paginationDot: {
-        backgroundColor: colors.surfaceMuted,
-        borderRadius: 4,
-        height: 7,
-        width: 7,
-    },
-    paginationDotActive: {
-        backgroundColor: colors.accentStrong,
-        width: 22,
-    },
-    progressCount: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 11,
-        fontWeight: '600',
-        letterSpacing: 0.8,
-    },
-    actions: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
-    backButton: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 15,
-        borderWidth: 1,
-        height: 56,
         justifyContent: 'center',
-        width: 56,
+        width: '100%',
+    },
+    finalDescription: {
+        color: colors.onboardingPurple,
+        fontFamily: onboardingFontFamily,
+        fontSize: typography.onboardingBody.fontSize,
+        lineHeight: typography.onboardingBody.lineHeight,
+        marginTop: spacing.lg,
+        textAlign: 'center',
+        width: '100%',
+    },
+    footer: {
+        alignItems: 'center',
+        paddingBottom: spacing.xl + spacing.md,
     },
     continueButton: {
         alignItems: 'center',
-        backgroundColor: colors.accentStrong,
-        borderRadius: 15,
-        flex: 1,
-        height: 56,
         justifyContent: 'center',
+        minHeight: spacing.touchTarget,
     },
-    firstContinueButton: { flex: 1 },
     continueText: {
-        color: colors.white,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '700',
+        color: colors.onboardingMuted,
+        fontFamily: onboardingFontFamily,
+        fontSize: typography.onboardingAction.fontSize,
+        fontWeight: typography.onboardingAction.fontWeight,
+        textDecorationLine: 'underline',
     },
-    buttonPressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
+    pressed: { opacity: 0.7 },
+    pagination: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: spacing.xs,
+    },
+    paginationItem: {
+        backgroundColor: colors.onboardingMuted,
+        borderRadius: spacing.sm,
+        height: spacing.sm,
+        width: spacing.xl,
+    },
+    paginationItemActive: {
+        backgroundColor: colors.accent,
+        width: spacing.xl + spacing.lg,
+    },
 })
