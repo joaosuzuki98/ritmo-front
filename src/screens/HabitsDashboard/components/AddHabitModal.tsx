@@ -138,8 +138,12 @@ export const AddHabitModal = ({
             else await onCreateHabit(data)
             reset(getInitialValues(initialWeekDay))
             onClose()
-        } catch {
-            setSubmitError('Unable to save this habit. Please try again.')
+        } catch (error) {
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to save this habit. Please try again.',
+            )
         } finally {
             setIsSubmitting(false)
         }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { database, type Event } from '../../database'
+import { database, type Event, type Habit } from '../../database'
 import type { AddScheduleItemFormData } from '../Schedule/addScheduleItemSchema'
+import { findEventScheduleConflict } from '../../utils/scheduleConflict'
 import { getScheduleDateTime } from '../Schedule/scheduleTime'
 
 const startOfDay = (date: Date): Date => {
@@ -91,6 +92,17 @@ export const useRemindersViewModel = () => {
             data.endHour,
             data.endPeriod,
         )
+        const [existingEvents, existingHabits] = await Promise.all([
+            database.get<Event>('events').query().fetch(),
+            database.get<Habit>('habits').query().fetch(),
+        ])
+        const conflict = findEventScheduleConflict(
+            { dateTime, endTime },
+            existingEvents,
+            existingHabits,
+        )
+        if (conflict)
+            throw new Error(`This time overlaps with “${conflict.title}”.`)
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {

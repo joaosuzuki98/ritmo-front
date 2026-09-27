@@ -17,6 +17,7 @@ import {
     database,
     type Category,
     type CompletionRecord,
+    type Event,
     type Habit,
     type HabitCondition,
     type HabitDependency,
@@ -34,6 +35,7 @@ import type {
 } from './habitDashboard.types'
 import type { AddHabitFormData } from './addHabitSchema'
 import { parsePreferredTime } from './preferredTime'
+import { findHabitScheduleConflict } from '../../utils/scheduleConflict'
 import type { LogHabitProgressFormData } from './logHabitProgressSchema'
 import { wouldCreateHabitRequirementCycle } from './habitRequirementUtils'
 
@@ -539,6 +541,42 @@ const saveHabitRequirements = async (
     }
 }
 
+const assertNoHabitScheduleConflict = async (
+    formData: AddHabitFormData,
+    userId: string,
+    habitId?: string,
+): Promise<void> => {
+    const preferredTime = parsePreferredTime(
+        formData.preferredTime,
+        formData.preferredTimePeriod,
+    )
+    if (!preferredTime) return
+
+    const [habits, events] = await Promise.all([
+        database.get<Habit>('habits').query().fetch(),
+        database.get<Event>('events').query().fetch(),
+    ])
+    const conflict = findHabitScheduleConflict(
+        {
+            id: habitId,
+            userId,
+            weekDays:
+                formData.frequencyType === 'daily'
+                    ? [1, 2, 3, 4, 5, 6, 7]
+                    : formData.weekDays,
+            preferredTime,
+            estimatedDurationMinutes: formData.estimatedDurationMinutes.trim()
+                ? Number(formData.estimatedDurationMinutes)
+                : undefined,
+        },
+        habits,
+        events,
+    )
+
+    if (conflict)
+        throw new Error(`This time overlaps with “${conflict.title}”.`)
+}
+
 type DashboardData = {
     user: User | null
     cards: HabitCardViewData[]
@@ -703,6 +741,7 @@ export const useHabitsDashboardViewModel = (
 
     const createHabit = async (formData: AddHabitFormData) => {
         await validateHabitRequirements(formData, currentUserId)
+        await assertNoHabitScheduleConflict(formData, currentUserId)
         const categoryName = formData.categoryName?.trim()
         const categories = categoryName
             ? await database.get<Category>('categories').query().fetch()
@@ -804,6 +843,7 @@ export const useHabitsDashboardViewModel = (
         }
 
         await validateHabitRequirements(formData, currentUserId, habitId)
+        await assertNoHabitScheduleConflict(formData, currentUserId, habitId)
 
         const categories = categoryName
             ? await database.get<Category>('categories').query().fetch()

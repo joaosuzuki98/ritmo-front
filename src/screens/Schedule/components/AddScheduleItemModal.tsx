@@ -124,8 +124,12 @@ export const AddScheduleItemModal = ({
             }
             reset(getInitialValues(initialStartHour))
             onClose()
-        } catch {
-            setSubmitError('Unable to save this schedule item. Please retry.')
+        } catch (error) {
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to save this schedule item. Please retry.',
+            )
         } finally {
             setIsSubmitting(false)
         }

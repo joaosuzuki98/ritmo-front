@@ -6,6 +6,7 @@ import {
     getEventScheduleEntries,
     getHabitScheduleEntries,
 } from './schedule.utils'
+import { findEventScheduleConflict } from '../../utils/scheduleConflict'
 import { getScheduleDateTime } from './scheduleTime'
 
 const monthNames = [
@@ -78,6 +79,9 @@ export const getHourLabel = (hour: number): string => {
 
 export const parseScheduleHour = (time: string): number =>
     Number(time.slice(0, 2))
+
+const getScheduleConflictError = (title: string): Error =>
+    new Error(`This time overlaps with “${title}”.`)
 
 export const useScheduleViewModel = () => {
     const today = startOfDay(new Date())
@@ -180,6 +184,16 @@ export const useScheduleViewModel = () => {
             endHour,
             endPeriod,
         )
+        const [existingEvents, existingHabits] = await Promise.all([
+            database.get<Event>('events').query().fetch(),
+            database.get<Habit>('habits').query().fetch(),
+        ])
+        const conflict = findEventScheduleConflict(
+            { dateTime, endTime: scheduledEndTime },
+            existingEvents,
+            existingHabits,
+        )
+        if (conflict) throw getScheduleConflictError(conflict.title)
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {
@@ -205,19 +219,32 @@ export const useScheduleViewModel = () => {
         }: AddScheduleItemFormData,
     ) => {
         const event = await database.get<Event>('events').find(eventId)
+        const dateTime = getScheduleDateTime(
+            selectedDate,
+            startHour,
+            startPeriod,
+        )
+        const scheduledEndTime = getScheduleDateTime(
+            selectedDate,
+            endHour,
+            endPeriod,
+        )
+        const [existingEvents, existingHabits] = await Promise.all([
+            database.get<Event>('events').query().fetch(),
+            database.get<Habit>('habits').query().fetch(),
+        ])
+        const conflict = findEventScheduleConflict(
+            { id: eventId, dateTime, endTime: scheduledEndTime },
+            existingEvents,
+            existingHabits,
+        )
+        if (conflict) throw getScheduleConflictError(conflict.title)
+
         await database.write(async () => {
             await event.update(record => {
                 record.title = title.trim()
-                record.dateTime = getScheduleDateTime(
-                    selectedDate,
-                    startHour,
-                    startPeriod,
-                )
-                record.endTime = getScheduleDateTime(
-                    selectedDate,
-                    endHour,
-                    endPeriod,
-                )
+                record.dateTime = dateTime
+                record.endTime = scheduledEndTime
                 record.updatedAt = new Date()
             })
         })
