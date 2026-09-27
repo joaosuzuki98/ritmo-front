@@ -1,6 +1,7 @@
 import type { PriorityCode } from '../../constants/priorities'
 import type { HabitStatusCode } from '../../constants/habitStatuses'
 import type { WeekDay } from '../../constants/weekDays'
+import type { User } from '../../database'
 
 export type SortCriterion = 'title' | 'priority' | 'status'
 export type DashboardRenderState =
@@ -22,8 +23,14 @@ export type HabitCompletionViewData = {
     date: Date
     status: string
     completionTime?: Date
+    incompletionReason?: string
     note?: string
     distractionLockEnabled?: boolean
+}
+
+export type HabitOption = {
+    id: string
+    title: string
 }
 
 export type HabitCardViewData = {
@@ -40,6 +47,14 @@ export type HabitCardViewData = {
     isPaused: boolean
     completionTime?: Date
     isFocusOfDay: boolean
+    dependencyHabitId?: string
+    dependencyHabitTitle?: string
+    conditionHabitId?: string
+    conditionHabitTitle?: string
+    conditionStatus?: string
+    isPrerequisiteOnly: boolean
+    isBlocked: boolean
+    blockingHabitTitles: string[]
     frequencyType?: string
     weekDays: number[]
     estimatedDurationMinutes?: number
@@ -48,6 +63,7 @@ export type HabitCardViewData = {
     seasonalEnd?: Date
     createdAt?: Date
     completedCount: number
+    partialCount: number
     skippedCount: number
     successRate: number
     currentStreak: number
@@ -58,12 +74,13 @@ export type HabitCardViewData = {
 }
 
 export type HabitsDashboardScreenProps = {
-    currentUserId: string
+    currentUser: User
     title?: string
     initialWeekDay?: WeekDay
     isAddHabitModalVisible?: boolean
     onOpenAddHabitModal?: () => void
     onCloseAddHabitModal?: () => void
+    onMenuPress?: () => void
     isDoubleTapHintVisible?: boolean
     onCloseDoubleTapHint?: () => void
 }

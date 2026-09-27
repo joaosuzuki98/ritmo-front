@@ -12,6 +12,8 @@
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		DE64FFEDA937472F9407B56F /* quicksand.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3FCCDBDBE85F436F95EF2A04 /* quicksand.ttf */; };
+		4414BC6DB67747519E36594F /* quattrocento-sans.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B2C53BCF441941DF8AFAB22A /* quattrocento-sans.ttf */; };
+		BE93119A4166476FAECF40C4 /* quattrocento-sans-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5DA894D962B347DCA5A85D92 /* quattrocento-sans-OFL.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +28,8 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ritmo_front/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		3FCCDBDBE85F436F95EF2A04 /* quicksand.ttf */ = {isa = PBXFileReference; name = "quicksand.ttf"; path = "../src/assets/fonts/quicksand.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		B2C53BCF441941DF8AFAB22A /* quattrocento-sans.ttf */ = {isa = PBXFileReference; name = "quattrocento-sans.ttf"; path = "../src/assets/fonts/quattrocento-sans.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		5DA894D962B347DCA5A85D92 /* quattrocento-sans-OFL.txt */ = {isa = PBXFileReference; name = "quattrocento-sans-OFL.txt"; path = "../src/assets/fonts/quattrocento-sans-OFL.txt"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +108,8 @@
 			isa = "PBXGroup";
 			children = (
 				3FCCDBDBE85F436F95EF2A04 /* quicksand.ttf */,
+				B2C53BCF441941DF8AFAB22A /* quattrocento-sans.ttf */,
+				5DA894D962B347DCA5A85D92 /* quattrocento-sans-OFL.txt */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -172,6 +178,8 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				DE64FFEDA937472F9407B56F /* quicksand.ttf in Resources */,
+				4414BC6DB67747519E36594F /* quattrocento-sans.ttf in Resources */,
+				BE93119A4166476FAECF40C4 /* quattrocento-sans-OFL.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

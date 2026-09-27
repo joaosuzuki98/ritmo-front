@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
@@ -15,6 +16,7 @@ import { typography } from '../../../styles/typography'
 type ScheduleTimelineProps = {
     entries: ScheduleEntry[]
     getHourLabel: (hour: number) => string
+    onEventPress: (eventId: string) => void
     selectedDate: Date
 }
 
@@ -25,6 +27,7 @@ const baseHourHeight = 102
 export const ScheduleTimeline = ({
     entries,
     getHourLabel,
+    onEventPress,
     selectedDate,
 }: ScheduleTimelineProps) => {
     const { width } = useWindowDimensions()
@@ -99,20 +102,29 @@ export const ScheduleTimeline = ({
                     </View>
                 ))}
                 {entries.map(entry => (
-                    <View
+                    <Pressable
                         accessibilityLabel={`${entry.title.replace(
                             '\n',
                             ' ',
                         )} from ${getHourLabel(
                             entry.startHour,
                         )} to ${getHourLabel(entry.endHour)}`}
+                        accessibilityRole={entry.isEvent ? 'button' : undefined}
                         key={entry.id}
+                        onPress={
+                            entry.isEvent && entry.eventId
+                                ? () => {
+                                      const { eventId } = entry
+                                      if (eventId) onEventPress(eventId)
+                                  }
+                                : undefined
+                        }
                         style={[
                             styles.entry,
                             {
                                 backgroundColor: entry.habitId
                                     ? colors.scheduleLinked
-                                    : entry.isManual
+                                    : entry.isEvent
                                     ? colors.scheduleManual
                                     : colors.scheduleBackground,
                                 height: Math.max(
@@ -136,7 +148,7 @@ export const ScheduleTimeline = ({
                         >
                             {entry.title}
                         </Text>
-                    </View>
+                    </Pressable>
                 ))}
             </View>
         </ScrollView>

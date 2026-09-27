@@ -57,6 +57,7 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>quicksand.ttf</string>
+		<string>quattrocento-sans.ttf</string>
 	</array>
 </dict>
 </plist>

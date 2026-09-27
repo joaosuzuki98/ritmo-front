@@ -1,6 +1,7 @@
 export const habitStatusCodes = [
     'pending',
     'completed',
+    'partial',
     'skipped',
     'paused',
 ] as const
@@ -17,6 +18,7 @@ export const habitStatusPresentations: Record<
 > = {
     pending: { label: 'Pending', rank: 1 },
     completed: { label: 'Completed', rank: 3 },
+    partial: { label: 'Partially completed', rank: 2 },
     skipped: { label: 'Skipped', rank: 2 },
     paused: { label: 'Paused', rank: 0 },
 }

@@ -2,6 +2,14 @@
   "migIndex": 1,
   "data": [
     {
+      "path": "src/assets/fonts/quattrocento-sans-OFL.txt",
+      "sha1": "6188f4e990614bf13e1c3b89e9a14c35eef89d96"
+    },
+    {
+      "path": "src/assets/fonts/quattrocento-sans.ttf",
+      "sha1": "d9f091af10c0941bd3ecfb3b652dc4b05a3fba00"
+    },
+    {
       "path": "src/assets/fonts/quicksand.ttf",
       "sha1": "42233ea07c570e0e880fcaa792922627814ecdc7"
     }

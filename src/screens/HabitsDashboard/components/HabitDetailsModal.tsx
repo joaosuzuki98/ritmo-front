@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { X, Flame } from 'phosphor-react-native'
 import {
+    Animated,
     Modal,
     Pressable,
     ScrollView,
@@ -11,17 +13,23 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { getHabitStatusPresentation } from '../../../constants/habitStatuses'
+import { habitRequirementStatusLabels } from '../../../constants/habitRequirementStatuses'
 import { weekDayLabels, type WeekDay } from '../../../constants/weekDays'
+import { FormActionButton } from '../../../components/FormActionButton'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import type { HabitCardViewData } from '../habitDashboard.types'
+import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
 
 type HabitDetailsModalProps = {
     habit: HabitCardViewData | null
     isVisible: boolean
     onClose: () => void
+    onEdit: () => void
+    onDelete: () => void
+    onLogProgress: () => void
 }
 
 const formatDate = (date?: Date) =>
@@ -52,17 +60,30 @@ const formatDuration = (minutes?: number) => {
 const getStatusColor = (status: string) => {
     if (status === 'completed') return colors.success
     if (status === 'skipped') return colors.danger
+    if (status === 'partial') return colors.priorityMedium
     return colors.textMuted
 }
 
 export const HabitDetailsModal = ({
-    habit,
+    habit: incomingHabit,
     isVisible,
     onClose,
+    onEdit,
+    onDelete,
+    onLogProgress,
 }: HabitDetailsModalProps) => {
     const { height, width } = useWindowDimensions()
     const { bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
+    const [retainedHabit, setRetainedHabit] = useState(incomingHabit)
+    const { backdropOpacity, isModalMounted, sheetTranslateY } =
+        useBottomSheetAnimation(isVisible, height)
+    const habit = incomingHabit ?? retainedHabit
+
+    useEffect(() => {
+        if (incomingHabit) setRetainedHabit(incomingHabit)
+        else if (!isVisible && !isModalMounted) setRetainedHabit(null)
+    }, [incomingHabit, isModalMounted, isVisible])
 
     if (!habit) return null
 
@@ -83,6 +104,7 @@ export const HabitDetailsModal = ({
             : 'Not set'
     const stats = [
         { label: 'Completed', value: String(habit.completedCount ?? 0) },
+        { label: 'Partial', value: String(habit.partialCount ?? 0) },
         { label: 'Not done', value: String(habit.skippedCount ?? 0) },
         {
             label: 'Success rate',
@@ -93,25 +115,30 @@ export const HabitDetailsModal = ({
 
     return (
         <Modal
-            animationType="slide"
+            animationType="none"
             onRequestClose={onClose}
             statusBarTranslucent
             transparent
-            visible={isVisible}
+            visible={isModalMounted}
         >
             <View style={styles.overlay}>
-                <Pressable
-                    accessibilityLabel="Close habit details"
-                    onPress={onClose}
-                    style={styles.backdrop}
-                />
-                <View
+                <Animated.View
+                    style={[styles.backdrop, { opacity: backdropOpacity }]}
+                >
+                    <Pressable
+                        accessibilityLabel="Close habit details"
+                        onPress={onClose}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
+                <Animated.View
                     style={[
                         styles.sheet,
                         {
                             height: Math.min(height * 0.9, 760 * scale),
                             paddingHorizontal: spacing.lg * scale,
                             paddingBottom: bottom,
+                            transform: [{ translateY: sheetTranslateY }],
                         },
                     ]}
                 >
@@ -188,10 +215,68 @@ export const HabitDetailsModal = ({
                             ) : null}
                         </View>
 
+                        <FormActionButton
+                            accessibilityLabel={`Record today's progress for ${habit.title}`}
+                            disabled={habit.isBlocked}
+                            onPress={onLogProgress}
+                            title={
+                                habit.isBlocked
+                                    ? 'Complete requirements first'
+                                    : 'Record today’s progress'
+                            }
+                            containerStyle={styles.logProgressButton}
+                        />
+
+                        <View style={styles.actionsRow}>
+                            <FormActionButton
+                                accessibilityLabel={`Edit ${habit.title}`}
+                                onPress={onEdit}
+                                title="Edit habit"
+                                containerStyle={styles.secondaryActionButton}
+                            />
+                            <FormActionButton
+                                accessibilityLabel={`Delete ${habit.title}`}
+                                onPress={onDelete}
+                                title="Delete"
+                                variant="destructive"
+                                containerStyle={styles.secondaryActionButton}
+                            />
+                        </View>
+
                         {habit.description ? (
                             <Text style={styles.description}>
                                 {habit.description}
                             </Text>
+                        ) : null}
+
+                        {habit.dependencyHabitTitle ||
+                        habit.conditionHabitTitle ? (
+                            <>
+                                <Text style={styles.sectionTitle}>
+                                    Requirements
+                                </Text>
+                                <View style={styles.requirementsBox}>
+                                    {habit.dependencyHabitTitle ? (
+                                        <Text style={styles.requirementText}>
+                                            Complete “
+                                            {habit.dependencyHabitTitle}” first
+                                            today.
+                                        </Text>
+                                    ) : null}
+                                    {habit.conditionHabitTitle ? (
+                                        <Text style={styles.requirementText}>
+                                            “{habit.conditionHabitTitle}” must
+                                            be marked as{' '}
+                                            {habit.conditionStatus
+                                                ? habitRequirementStatusLabels[
+                                                      habit.conditionStatus as keyof typeof habitRequirementStatusLabels
+                                                  ]
+                                                : 'the required status'}
+                                            .
+                                        </Text>
+                                    ) : null}
+                                </View>
+                            </>
                         ) : null}
 
                         <Text style={styles.sectionTitle}>Schedule</Text>
@@ -294,6 +379,24 @@ export const HabitDetailsModal = ({
                                                 ).label
                                             }
                                         </Text>
+                                        {record.completionTime ? (
+                                            <Text style={styles.historyDetail}>
+                                                {formatTime(
+                                                    record.completionTime,
+                                                )}
+                                            </Text>
+                                        ) : null}
+                                        {record.incompletionReason ? (
+                                            <Text style={styles.historyDetail}>
+                                                Reason:{' '}
+                                                {record.incompletionReason}
+                                            </Text>
+                                        ) : null}
+                                        {record.note ? (
+                                            <Text style={styles.historyDetail}>
+                                                {record.note}
+                                            </Text>
+                                        ) : null}
                                     </View>
                                 ))}
                             </View>
@@ -320,7 +423,7 @@ export const HabitDetailsModal = ({
                             </Text>
                         ) : null}
                     </ScrollView>
-                </View>
+                </Animated.View>
             </View>
         </Modal>
     )
@@ -385,6 +488,13 @@ const styles = StyleSheet.create({
         gap: 8,
         marginTop: 16,
     },
+    actionsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 18,
+    },
+    logProgressButton: { marginTop: 18 },
+    secondaryActionButton: { flex: 1, width: 'auto' },
     badge: {
         borderRadius: 8,
         paddingHorizontal: 11,
@@ -437,6 +547,19 @@ const styles = StyleSheet.create({
         fontSize: 18,
         lineHeight: 27,
         marginTop: 22,
+    },
+    requirementsBox: {
+        backgroundColor: colors.surfaceMuted,
+        borderRadius: 10,
+        gap: 7,
+        paddingHorizontal: 13,
+        paddingVertical: 11,
+    },
+    requirementText: {
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+        lineHeight: 21,
     },
     sectionTitle: {
         color: colors.text,
@@ -533,6 +656,12 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 13,
         marginTop: 3,
+    },
+    historyDetail: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+        marginTop: 4,
     },
     emptyHistory: {
         color: colors.textMuted,

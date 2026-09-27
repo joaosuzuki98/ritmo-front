@@ -12,6 +12,6 @@ module.exports = {
             '<rootDir>/__mocks__/react-native-gesture-handler.js',
     },
     transformIgnorePatterns: [
-        'node_modules/(?!((jest-)?react-native|@react-native(-community)?|react-native-css-interop)/)',
+        'node_modules/(?!((jest-)?react-native|@react-native(-community)?|react-native-css-interop|@noble/hashes)/)',
     ],
 }

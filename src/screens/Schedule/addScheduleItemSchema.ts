@@ -1,20 +1,29 @@
 import { z } from 'zod'
 
-const fullHour = /^([01]\d|2[0-3]):00$/
+const hour = /^(?:[0-9]|0[0-9]|1[0-2])$/
+
+const toMinutes = (value: string, period: 'AM' | 'PM'): number => {
+    const hours = (Number(value) % 12) + (period === 'PM' ? 12 : 0)
+    return hours * 60
+}
 
 export const addScheduleItemSchema = z
     .object({
-        endTime: z.string().regex(fullHour, 'Use a full hour, e.g. 09:00.'),
-        startTime: z.string().regex(fullHour, 'Use a full hour, e.g. 08:00.'),
+        endHour: z.string().regex(hour, 'Enter an hour from 00 to 12.'),
+        endPeriod: z.enum(['AM', 'PM']),
+        startHour: z.string().regex(hour, 'Enter an hour from 00 to 12.'),
+        startPeriod: z.enum(['AM', 'PM']),
         title: z.string().trim().min(1, 'Give this item a name.'),
+        location: z.string().trim().optional(),
+        description: z.string().trim().optional(),
     })
     .refine(
         values =>
-            Number(values.endTime.slice(0, 2)) >
-            Number(values.startTime.slice(0, 2)),
+            toMinutes(values.endHour, values.endPeriod) >
+            toMinutes(values.startHour, values.startPeriod),
         {
             message: 'End time must be after start time.',
-            path: ['endTime'],
+            path: ['endHour'],
         },
     )
 

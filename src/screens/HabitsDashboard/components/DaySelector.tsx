@@ -1,4 +1,4 @@
-import { Pressable, View, useWindowDimensions } from 'react-native'
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { CaretLeft, CaretRight } from 'phosphor-react-native'
 
 import {
@@ -9,6 +9,8 @@ import {
 import { ScreenSubtitle } from '../../../components/ScreenSubtitle'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
+import { spacing } from '../../../styles/spacing'
+import { typography } from '../../../styles/typography'
 
 type DaySelectorProps = {
     weekDay: WeekDay
@@ -21,24 +23,29 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
     return (
         <View
             accessibilityRole="adjustable"
-            style={{
-                alignItems: 'flex-start',
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                minHeight: 44 * scale,
-                width: 296 * scale,
-            }}
+            style={[
+                styles.container,
+                { width: spacing.dateNavigationWidth * scale },
+            ]}
         >
             <Pressable
                 accessibilityLabel="Previous day"
                 onPress={() => onChange(cycleWeekDay(weekDay - 1))}
-                style={{
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 12 * scale,
-                    transform: [{ translateY: -12 * scale }],
-                    width: 48 * scale,
-                }}
+                style={[
+                    styles.dayButton,
+                    styles.previousDayButton,
+                    {
+                        height: spacing.touchTarget * scale,
+                        top:
+                            (-(
+                                spacing.touchTarget -
+                                typography.screenSubtitle.fontSize
+                            ) *
+                                scale) /
+                            2,
+                        width: spacing.dateNavigationButtonWidth * scale,
+                    },
+                ]}
             >
                 <CaretLeft
                     color={colors.textMuted}
@@ -46,19 +53,27 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
                     weight="regular"
                 />
             </Pressable>
-            <View style={{ alignItems: 'center', flex: 1 }}>
+            <View style={styles.subtitle}>
                 <ScreenSubtitle>{weekDayLabels[weekDay]}</ScreenSubtitle>
             </View>
             <Pressable
                 accessibilityLabel="Next day"
                 onPress={() => onChange(cycleWeekDay(weekDay + 1))}
-                style={{
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 12 * scale,
-                    transform: [{ translateY: -12 * scale }],
-                    width: 48 * scale,
-                }}
+                style={[
+                    styles.dayButton,
+                    styles.nextDayButton,
+                    {
+                        height: spacing.touchTarget * scale,
+                        top:
+                            (-(
+                                spacing.touchTarget -
+                                typography.screenSubtitle.fontSize
+                            ) *
+                                scale) /
+                            2,
+                        width: spacing.dateNavigationButtonWidth * scale,
+                    },
+                ]}
             >
                 <CaretRight
                     color={colors.textMuted}
@@ -69,3 +84,19 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    container: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    dayButton: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'absolute',
+    },
+    previousDayButton: { left: 0 },
+    subtitle: { alignItems: 'center', flex: 1 },
+    nextDayButton: { right: 0 },
+})

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { PanGestureHandler } from 'react-native-gesture-handler'
 import type { PanGestureHandlerGestureEvent } from 'react-native-gesture-handler'
 import {
+    Alert,
     Pressable,
     ScrollView,
     Text,
@@ -27,6 +28,7 @@ import { HabitCard } from './components/HabitCard'
 import { HabitToolbar } from './components/HabitToolbar'
 import { HabitDetailsModal } from './components/HabitDetailsModal'
 import { DoubleTapHintModal } from './components/DoubleTapHintModal'
+import { LogHabitProgressModal } from './components/LogHabitProgressModal'
 import { SearchInput } from './components/SearchInput'
 import type {
     HabitsDashboardScreenProps,
@@ -35,19 +37,26 @@ import type {
 import { useHabitsDashboardViewModel } from './useHabitsDashboardViewModel'
 
 export const HabitsDashboardScreen = ({
-    currentUserId,
+    currentUser,
     title = 'Habits',
     initialWeekDay,
     isAddHabitModalVisible = false,
+    onMenuPress = () => undefined,
     onOpenAddHabitModal = () => undefined,
     onCloseAddHabitModal = () => undefined,
     isDoubleTapHintVisible = true,
     onCloseDoubleTapHint = () => undefined,
 }: HabitsDashboardScreenProps) => {
-    const viewModel = useHabitsDashboardViewModel(currentUserId, initialWeekDay)
+    const viewModel = useHabitsDashboardViewModel(
+        currentUser.id,
+        initialWeekDay,
+    )
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [selectedHabit, setSelectedHabit] =
         useState<HabitCardViewData | null>(null)
+    const [habitBeingEdited, setHabitBeingEdited] =
+        useState<HabitCardViewData | null>(null)
+    const [habitToLog, setHabitToLog] = useState<HabitCardViewData | null>(null)
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const draggedIndex = useSharedValue(-1)
@@ -91,6 +100,31 @@ export const HabitsDashboardScreen = ({
         )
     }
 
+    const handleDeleteHabit = (habit: HabitCardViewData) => {
+        Alert.alert(
+            'Delete habit?',
+            `“${habit.title}” will be removed from your habits.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => {
+                        viewModel
+                            .deleteHabit(habit.id)
+                            .then(() => setSelectedHabit(null))
+                            .catch(() =>
+                                Alert.alert(
+                                    'Unable to delete habit',
+                                    'Please try again.',
+                                ),
+                            )
+                    },
+                },
+            ],
+        )
+    }
+
     return (
         <ScreenLayout
             title={title}
@@ -102,11 +136,11 @@ export const HabitsDashboardScreen = ({
                     }
                 />
             }
-            userName={viewModel.user?.name ?? 'Teste da Silva'}
-            level={viewModel.user?.level ?? 7}
-            totalPoints={viewModel.user?.totalPoints ?? 27}
+            userName={currentUser.name}
+            level={currentUser.level}
+            totalPoints={currentUser.totalPoints}
             onProfilePress={() => undefined}
-            onMenuPress={() => undefined}
+            onMenuPress={onMenuPress}
         >
             <ScrollView
                 contentContainerStyle={{ paddingBottom: spacing.xl * scale }}
@@ -185,7 +219,9 @@ export const HabitsDashboardScreen = ({
                                         paddingVertical: 24,
                                     }}
                                 >
-                                    No habits for this day.
+                                    {viewModel.hasAnyHabits
+                                        ? 'No habits for this day.'
+                                        : 'No habits yet. Create your first habit to get started.'}
                                 </Text>
                                 <Pressable
                                     accessibilityLabel="Add a habit"
@@ -261,15 +297,38 @@ export const HabitsDashboardScreen = ({
                 </PanGestureHandler>
             </ScrollView>
             <AddHabitModal
+                habitOptions={viewModel.habitOptions}
                 initialWeekDay={viewModel.weekDay}
-                isVisible={isAddHabitModalVisible}
-                onClose={onCloseAddHabitModal}
+                habit={habitBeingEdited}
+                isVisible={isAddHabitModalVisible || habitBeingEdited !== null}
+                onClose={() => {
+                    setHabitBeingEdited(null)
+                    onCloseAddHabitModal()
+                }}
                 onCreateHabit={viewModel.createHabit}
+                onUpdateHabit={viewModel.updateHabit}
             />
             <HabitDetailsModal
                 habit={selectedHabit}
                 isVisible={selectedHabit !== null}
                 onClose={() => setSelectedHabit(null)}
+                onEdit={() => {
+                    setHabitBeingEdited(selectedHabit)
+                    setSelectedHabit(null)
+                }}
+                onDelete={() => {
+                    if (selectedHabit) handleDeleteHabit(selectedHabit)
+                }}
+                onLogProgress={() => {
+                    setHabitToLog(selectedHabit)
+                    setSelectedHabit(null)
+                }}
+            />
+            <LogHabitProgressModal
+                habit={habitToLog}
+                isVisible={habitToLog !== null}
+                onClose={() => setHabitToLog(null)}
+                onSave={viewModel.recordHabitProgress}
             />
             <DoubleTapHintModal
                 isVisible={isDoubleTapHintVisible}

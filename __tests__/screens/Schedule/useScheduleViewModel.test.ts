@@ -8,6 +8,8 @@ import {
 } from '../../../src/screens/Schedule/useScheduleViewModel'
 import { addScheduleItemSchema } from '../../../src/screens/Schedule/addScheduleItemSchema'
 
+jest.mock('../../../src/database', () => ({ database: {} }))
+
 describe('schedule date helpers', () => {
     it('formats the selected date and hour for the schedule header', () => {
         const date = new Date(2026, 5, 12)
@@ -24,13 +26,17 @@ describe('schedule date helpers', () => {
     it('parses valid full-hour schedule item values', () => {
         expect(
             addScheduleItemSchema.parse({
-                endTime: '10:00',
-                startTime: '09:00',
+                endHour: '10',
+                endPeriod: 'AM',
+                startHour: '09',
+                startPeriod: 'AM',
                 title: 'Team meeting',
             }),
         ).toEqual({
-            endTime: '10:00',
-            startTime: '09:00',
+            endHour: '10',
+            endPeriod: 'AM',
+            startHour: '09',
+            startPeriod: 'AM',
             title: 'Team meeting',
         })
         expect(parseScheduleHour('09:00')).toBe(9)
@@ -38,12 +44,44 @@ describe('schedule date helpers', () => {
 
     it('rejects an item whose end is not after its start', () => {
         const result = addScheduleItemSchema.safeParse({
-            endTime: '09:00',
-            startTime: '09:00',
+            endHour: '09',
+            endPeriod: 'AM',
+            startHour: '09',
+            startPeriod: 'AM',
             title: 'Team meeting',
         })
 
         expect(result.success).toBe(false)
+    })
+
+    it('supports an event that crosses noon and rejects invalid hours', () => {
+        expect(
+            addScheduleItemSchema.safeParse({
+                endHour: '01',
+                endPeriod: 'PM',
+                startHour: '11',
+                startPeriod: 'AM',
+                title: 'Appointment',
+            }).success,
+        ).toBe(true)
+        expect(
+            addScheduleItemSchema.safeParse({
+                endHour: '13',
+                endPeriod: 'PM',
+                startHour: '11',
+                startPeriod: 'AM',
+                title: 'Appointment',
+            }).success,
+        ).toBe(false)
+        expect(
+            addScheduleItemSchema.safeParse({
+                endHour: '9',
+                endPeriod: 'AM',
+                startHour: '8',
+                startPeriod: 'AM',
+                title: 'Appointment',
+            }).success,
+        ).toBe(true)
     })
 
     it('returns every day in a month with leading calendar cells', () => {

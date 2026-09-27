@@ -8,24 +8,34 @@ import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
+import type { Event, User } from '../../database'
 import { CalendarModal } from './components/CalendarModal'
 import { AddScheduleItemModal } from './components/AddScheduleItemModal'
 import { ScheduleTimeline } from './components/ScheduleTimeline'
 import { useScheduleViewModel } from './useScheduleViewModel'
 
 type ScheduleScreenProps = {
+    currentUser: User
     isAddItemModalVisible: boolean
+    onMenuPress?: () => void
     onCloseAddItemModal: () => void
 }
 
 export const ScheduleScreen = ({
+    currentUser,
     isAddItemModalVisible,
+    onMenuPress = () => undefined,
     onCloseAddItemModal,
 }: ScheduleScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
-    const viewModel = useScheduleViewModel()
+    const viewModel = useScheduleViewModel(currentUser.id)
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
+    const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+    const calendarButtonSize = 24 * scale
+    const calendarButtonHitSlop = (spacing.touchTarget - calendarButtonSize) / 2
+    const dateButtonOffset =
+        ((typography.screenSubtitle.fontSize - spacing.touchTarget) * scale) / 2
 
     return (
         <ScreenLayout
@@ -35,55 +45,67 @@ export const ScheduleScreen = ({
                     accessibilityLabel="Open calendar"
                     accessibilityRole="button"
                     onPress={() => setIsCalendarVisible(true)}
-                    style={styles.calendarButton}
+                    hitSlop={{
+                        top: calendarButtonHitSlop,
+                        right: calendarButtonHitSlop * 2,
+                        bottom: calendarButtonHitSlop,
+                        left: 0,
+                    }}
+                    style={[
+                        styles.calendarButton,
+                        {
+                            height: calendarButtonSize,
+                            width: calendarButtonSize,
+                        },
+                    ]}
                 >
-                    <CalendarBlank color={colors.textMuted} size={24 * scale} />
+                    <CalendarBlank
+                        color={colors.textMuted}
+                        size={calendarButtonSize}
+                    />
                 </Pressable>
             }
             subtitle={
-                <View style={styles.dateRow}>
+                <View
+                    style={[
+                        styles.dateRow,
+                        { width: spacing.dateNavigationWidth * scale },
+                    ]}
+                >
                     <Pressable
                         accessibilityLabel="Previous day"
                         onPress={() => viewModel.moveDate(-1)}
                         style={[
                             styles.dateButton,
+                            styles.previousDateButton,
                             {
-                                transform: [
-                                    {
-                                        translateY:
-                                            -(
-                                                spacing.touchTarget -
-                                                typography.screenSubtitle
-                                                    .fontSize *
-                                                    scale
-                                            ) / 2,
-                                    },
-                                ],
+                                height: spacing.touchTarget * scale,
+                                top: dateButtonOffset,
+                                width:
+                                    spacing.dateNavigationButtonWidth * scale,
                             },
                         ]}
                     >
                         <CaretLeft color={colors.textMuted} size={24 * scale} />
                     </Pressable>
-                    <ScreenSubtitle>
-                        {viewModel.formatScheduleDate(viewModel.selectedDate)}
-                    </ScreenSubtitle>
+                    <View style={styles.dateSubtitle}>
+                        <ScreenSubtitle>
+                            {viewModel.formatScheduleDate(
+                                viewModel.selectedDate,
+                            )}
+                        </ScreenSubtitle>
+                    </View>
                     <Pressable
                         accessibilityLabel="Next day"
                         onPress={() => viewModel.moveDate(1)}
                         style={[
                             styles.dateButton,
+                            styles.nextDateButton,
                             {
-                                transform: [
-                                    {
-                                        translateY:
-                                            -(
-                                                spacing.touchTarget -
-                                                typography.screenSubtitle
-                                                    .fontSize *
-                                                    scale
-                                            ) / 2,
-                                    },
-                                ],
+                                height: spacing.touchTarget * scale,
+                                top: dateButtonOffset,
+                                width:
+                                    spacing.dateNavigationButtonWidth * scale,
                             },
                         ]}
                     >
@@ -94,17 +116,25 @@ export const ScheduleScreen = ({
                     </Pressable>
                 </View>
             }
-            level={7}
-            onMenuPress={() => undefined}
+            level={currentUser.level}
+            onMenuPress={onMenuPress}
             onProfilePress={() => undefined}
-            totalPoints={27}
-            userName="Teste da Silva"
+            totalPoints={currentUser.totalPoints}
+            userName={currentUser.name}
         >
-            <ScheduleTimeline
-                entries={viewModel.entries}
-                getHourLabel={viewModel.getHourLabel}
-                selectedDate={viewModel.selectedDate}
-            />
+            <View style={styles.timeline}>
+                <ScheduleTimeline
+                    entries={viewModel.entries}
+                    getHourLabel={viewModel.getHourLabel}
+                    onEventPress={eventId => {
+                        const event = viewModel.events.find(
+                            item => item.id === eventId,
+                        )
+                        if (event) setEditingEvent(event)
+                    }}
+                    selectedDate={viewModel.selectedDate}
+                />
+            </View>
             <CalendarModal
                 isVisible={isCalendarVisible}
                 month={viewModel.calendarMonth}
@@ -118,35 +148,45 @@ export const ScheduleScreen = ({
             />
             <AddScheduleItemModal
                 initialStartHour={8}
-                isVisible={isAddItemModalVisible}
-                onClose={onCloseAddItemModal}
-                onCreateItem={data => {
-                    viewModel.addScheduleItem(data)
-                    onCloseAddItemModal()
+                isVisible={isAddItemModalVisible || Boolean(editingEvent)}
+                item={editingEvent}
+                onClose={() => {
+                    if (editingEvent) setEditingEvent(null)
+                    else onCloseAddItemModal()
                 }}
+                onCreateItem={viewModel.addScheduleItem}
+                onUpdateItem={data =>
+                    editingEvent
+                        ? viewModel.updateScheduleItem(editingEvent.id, data)
+                        : Promise.resolve()
+                }
+                onDeleteItem={() =>
+                    editingEvent
+                        ? viewModel.deleteScheduleItem(editingEvent.id)
+                        : Promise.resolve()
+                }
             />
         </ScreenLayout>
     )
 }
 
 const styles = StyleSheet.create({
+    timeline: { flex: 1 },
     calendarButton: {
-        height: spacing.touchTarget,
         justifyContent: 'center',
-        width: spacing.touchTarget,
         marginLeft: spacing.sm,
-        marginTop: 4,
     },
     dateRow: {
-        alignItems: 'flex-start',
+        alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: 280,
     },
+    dateSubtitle: { alignItems: 'center', flex: 1 },
     dateButton: {
         alignItems: 'center',
-        height: spacing.touchTarget,
         justifyContent: 'center',
-        width: spacing.touchTarget,
+        position: 'absolute',
     },
+    previousDateButton: { left: 0 },
+    nextDateButton: { right: 0 },
 })

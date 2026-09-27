@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
+    Animated,
+    Alert,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -11,7 +13,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     View,
     useWindowDimensions,
 } from 'react-native'
@@ -20,90 +21,181 @@ import {
     addScheduleItemSchema,
     type AddScheduleItemFormData,
 } from '../addScheduleItemSchema'
+import type { Event } from '../../../database'
+import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
+import { FormActionButton } from '../../../components/FormActionButton'
+import { FormTextInput } from '../../../components/FormTextInput'
+import { getScheduleTimeParts } from '../scheduleTime'
+import { ScheduleTimeInput } from './ScheduleTimeInput'
 
 type AddScheduleItemModalProps = {
     initialStartHour: number
     isVisible: boolean
+    item?: Event | null
     onClose: () => void
-    onCreateItem: (data: AddScheduleItemFormData) => void
+    onCreateItem: (data: AddScheduleItemFormData) => Promise<void>
+    onDeleteItem?: () => Promise<void>
+    onUpdateItem?: (data: AddScheduleItemFormData) => Promise<void>
     title?: string
     subtitle?: string
     submitLabel?: string
+    showEventDetails?: boolean
 }
 
-const getInitialValues = (startHour: number): AddScheduleItemFormData => ({
-    endTime: `${String(Math.min(23, startHour + 1)).padStart(2, '0')}:00`,
-    startTime: `${String(startHour).padStart(2, '0')}:00`,
-    title: '',
-})
+const getInitialValues = (
+    startHour: number,
+    item?: Event | null,
+): AddScheduleItemFormData => {
+    const initialStart = getScheduleTimeParts(
+        item?.dateTime.getHours() ?? startHour,
+    )
+    const defaultEnd = new Date(item?.dateTime ?? new Date())
+    if (!item || !item.endTime)
+        defaultEnd.setHours(
+            (item?.dateTime.getHours() ?? startHour) + 1,
+            0,
+            0,
+            0,
+        )
+    const endDate = item?.endTime ?? defaultEnd
+    const initialEnd = getScheduleTimeParts(endDate.getHours())
+
+    return {
+        endHour: initialEnd.hour,
+        endPeriod: initialEnd.period,
+        startHour: initialStart.hour,
+        startPeriod: initialStart.period,
+        title: item?.title ?? '',
+        location: item?.location ?? '',
+        description: item?.description ?? '',
+    }
+}
 
 export const AddScheduleItemModal = ({
     initialStartHour,
     isVisible,
+    item = null,
     onClose,
     onCreateItem,
-    title = 'Add schedule item',
-    subtitle = 'Habits are added automatically.',
-    submitLabel = 'ADD ITEM',
+    onDeleteItem,
+    onUpdateItem,
+    title,
+    subtitle,
+    submitLabel,
+    showEventDetails = false,
 }: AddScheduleItemModalProps) => {
     const { bottom } = useSafeAreaInsets()
     const { height, width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitError, setSubmitError] = useState('')
+    const { backdropOpacity, isModalMounted, sheetTranslateY } =
+        useBottomSheetAnimation(isVisible, height)
     const {
         control,
         formState: { errors },
         handleSubmit,
         reset,
     } = useForm<AddScheduleItemFormData>({
-        defaultValues: getInitialValues(initialStartHour),
+        defaultValues: getInitialValues(initialStartHour, item),
         resolver: zodResolver(addScheduleItemSchema),
     })
 
     useEffect(() => {
-        if (isVisible) reset(getInitialValues(initialStartHour))
-    }, [initialStartHour, isVisible, reset])
+        if (isVisible) reset(getInitialValues(initialStartHour, item))
+    }, [initialStartHour, isVisible, item, reset])
 
     const handleClose = () => {
-        reset(getInitialValues(initialStartHour))
+        if (isSubmitting) return
+        reset(getInitialValues(initialStartHour, item))
+        setSubmitError('')
         onClose()
     }
-    const handleCreate = (data: AddScheduleItemFormData) => {
-        onCreateItem(data)
-        reset(getInitialValues(initialStartHour))
-        onClose()
+    const handleSave = async (data: AddScheduleItemFormData) => {
+        setIsSubmitting(true)
+        setSubmitError('')
+        try {
+            if (item) {
+                if (!onUpdateItem)
+                    throw new Error('Missing schedule item update handler.')
+                await onUpdateItem(data)
+            } else {
+                await onCreateItem(data)
+            }
+            reset(getInitialValues(initialStartHour))
+            onClose()
+        } catch (error) {
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to save this schedule item. Please retry.',
+            )
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+    const handleDelete = () => {
+        if (!onDeleteItem) return
+        Alert.alert('Delete schedule item?', 'This action cannot be undone.', [
+            { style: 'cancel', text: 'Cancel' },
+            {
+                onPress: () => {
+                    setIsSubmitting(true)
+                    setSubmitError('')
+                    onDeleteItem()
+                        .then(() => {
+                            reset(getInitialValues(initialStartHour))
+                            onClose()
+                        })
+                        .catch(() =>
+                            setSubmitError(
+                                'Unable to delete this schedule item. Please retry.',
+                            ),
+                        )
+                        .finally(() => setIsSubmitting(false))
+                },
+                style: 'destructive',
+                text: 'Delete',
+            },
+        ])
     }
 
     return (
         <Modal
-            animationType="slide"
+            animationType="none"
             onRequestClose={handleClose}
             statusBarTranslucent
             transparent
-            visible={isVisible}
+            visible={isModalMounted}
         >
             <View style={styles.overlay}>
-                <Pressable
-                    accessibilityLabel="Close add schedule item modal"
-                    onPress={handleClose}
-                    style={styles.backdrop}
-                />
+                <Animated.View
+                    style={[styles.backdrop, { opacity: backdropOpacity }]}
+                >
+                    <Pressable
+                        accessibilityLabel="Close schedule item modal"
+                        onPress={handleClose}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={styles.sheetWrapper}
                 >
-                    <View
+                    <Animated.View
                         style={[
                             styles.sheet,
                             {
                                 borderTopLeftRadius: 28 * scale,
                                 borderTopRightRadius: 28 * scale,
-                                maxHeight: height * 0.78,
+                                height: height * 0.9,
                                 paddingBottom: bottom,
                                 paddingHorizontal: spacing.lg * scale,
+                                transform: [{ translateY: sheetTranslateY }],
                             },
                         ]}
                     >
@@ -112,10 +204,13 @@ export const AddScheduleItemModal = ({
                                 <Text
                                     style={[
                                         styles.title,
-                                        { fontSize: 30 * scale },
+                                        { fontSize: 34 * scale },
                                     ]}
                                 >
-                                    {title}
+                                    {title ??
+                                        (item
+                                            ? 'Edit schedule item'
+                                            : 'Add schedule item')}
                                 </Text>
                                 <Text
                                     style={[
@@ -123,124 +218,156 @@ export const AddScheduleItemModal = ({
                                         { fontSize: 13 * scale },
                                     ]}
                                 >
-                                    {subtitle}
+                                    {subtitle ??
+                                        (item
+                                            ? 'Update or remove this schedule item.'
+                                            : 'Habits are added automatically.')}
                                 </Text>
                             </View>
                             <Pressable
-                                accessibilityLabel="Close add schedule item modal"
+                                accessibilityLabel="Close schedule item modal"
                                 accessibilityRole="button"
                                 onPress={handleClose}
                                 style={styles.closeButton}
                             >
-                                <X color={colors.text} size={26 * scale} />
+                                <X color={colors.text} size={30 * scale} />
                             </Pressable>
                         </View>
                         <ScrollView
+                            style={styles.formScroll}
                             contentContainerStyle={styles.content}
                             keyboardShouldPersistTaps="handled"
                             showsVerticalScrollIndicator={false}
                         >
-                            <Text style={styles.label}>Item name</Text>
-                            <Controller
-                                control={control}
-                                name="title"
-                                render={({ field }) => (
-                                    <TextInput
-                                        accessibilityLabel="Schedule item name"
-                                        autoCapitalize="sentences"
-                                        onBlur={field.onBlur}
-                                        onChangeText={field.onChange}
-                                        placeholder="e.g. Team meeting"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={[
-                                            styles.input,
-                                            errors.title && styles.inputError,
-                                        ]}
-                                        value={field.value}
-                                    />
-                                )}
-                            />
-                            {errors.title ? (
-                                <Text style={styles.errorText}>
-                                    {errors.title.message}
-                                </Text>
-                            ) : null}
-                            <View style={styles.timeRow}>
-                                <View style={styles.timeColumn}>
-                                    <Text style={styles.label}>Starts at</Text>
-                                    <Controller
-                                        control={control}
-                                        name="startTime"
-                                        render={({ field }) => (
-                                            <TextInput
-                                                accessibilityLabel="Schedule item start time"
-                                                keyboardType="numbers-and-punctuation"
-                                                maxLength={5}
-                                                onBlur={field.onBlur}
-                                                onChangeText={field.onChange}
-                                                placeholder="08:00"
-                                                placeholderTextColor={
-                                                    colors.textMuted
-                                                }
-                                                style={[
-                                                    styles.input,
-                                                    errors.startTime &&
-                                                        styles.inputError,
-                                                ]}
-                                                value={field.value}
-                                            />
-                                        )}
-                                    />
-                                    {errors.startTime ? (
-                                        <Text style={styles.errorText}>
-                                            {errors.startTime.message}
+                            <View>
+                                <Text style={styles.label}>Item name</Text>
+                                <Controller
+                                    control={control}
+                                    name="title"
+                                    render={({ field }) => (
+                                        <FormTextInput
+                                            accessibilityLabel="Schedule item name"
+                                            autoCapitalize="sentences"
+                                            onBlur={field.onBlur}
+                                            onChangeText={field.onChange}
+                                            placeholder="e.g. Team meeting"
+                                            hasError={Boolean(errors.title)}
+                                            value={field.value}
+                                        />
+                                    )}
+                                />
+                                {errors.title ? (
+                                    <Text style={styles.errorText}>
+                                        {errors.title.message}
+                                    </Text>
+                                ) : null}
+                                {showEventDetails ? (
+                                    <>
+                                        <Text style={styles.label}>
+                                            Location
                                         </Text>
-                                    ) : null}
-                                </View>
-                                <View style={styles.timeColumn}>
-                                    <Text style={styles.label}>Ends at</Text>
-                                    <Controller
-                                        control={control}
-                                        name="endTime"
-                                        render={({ field }) => (
-                                            <TextInput
-                                                accessibilityLabel="Schedule item end time"
-                                                keyboardType="numbers-and-punctuation"
-                                                maxLength={5}
-                                                onBlur={field.onBlur}
-                                                onChangeText={field.onChange}
-                                                placeholder="09:00"
-                                                placeholderTextColor={
-                                                    colors.textMuted
-                                                }
-                                                style={[
-                                                    styles.input,
-                                                    errors.endTime &&
-                                                        styles.inputError,
-                                                ]}
-                                                value={field.value}
-                                            />
-                                        )}
-                                    />
-                                    {errors.endTime ? (
-                                        <Text style={styles.errorText}>
-                                            {errors.endTime.message}
+                                        <Controller
+                                            control={control}
+                                            name="location"
+                                            render={({ field }) => (
+                                                <FormTextInput
+                                                    accessibilityLabel="Event location"
+                                                    autoCapitalize="words"
+                                                    onBlur={field.onBlur}
+                                                    onChangeText={
+                                                        field.onChange
+                                                    }
+                                                    placeholder="e.g. Main office"
+                                                    value={field.value ?? ''}
+                                                />
+                                            )}
+                                        />
+                                        <Text style={styles.label}>
+                                            Description
                                         </Text>
-                                    ) : null}
+                                        <Controller
+                                            control={control}
+                                            name="description"
+                                            render={({ field }) => (
+                                                <FormTextInput
+                                                    accessibilityLabel="Event description"
+                                                    autoCapitalize="sentences"
+                                                    containerStyle={
+                                                        styles.descriptionContainer
+                                                    }
+                                                    multiline
+                                                    onBlur={field.onBlur}
+                                                    onChangeText={
+                                                        field.onChange
+                                                    }
+                                                    placeholder="Add details"
+                                                    style={
+                                                        styles.descriptionInput
+                                                    }
+                                                    textAlignVertical="top"
+                                                    value={field.value ?? ''}
+                                                />
+                                            )}
+                                        />
+                                    </>
+                                ) : null}
+                                <View style={styles.timeRow}>
+                                    <View style={styles.timeColumn}>
+                                        <Text style={styles.label}>
+                                            Starts at
+                                        </Text>
+                                        <ScheduleTimeInput
+                                            accessibilityLabel="Schedule item start hour"
+                                            control={control}
+                                            hourName="startHour"
+                                            periodName="startPeriod"
+                                        />
+                                    </View>
+                                    <View style={styles.timeColumn}>
+                                        <Text style={styles.label}>
+                                            Ends at
+                                        </Text>
+                                        <ScheduleTimeInput
+                                            accessibilityLabel="Schedule item end hour"
+                                            control={control}
+                                            hourName="endHour"
+                                            periodName="endPeriod"
+                                        />
+                                    </View>
                                 </View>
                             </View>
-                            <Pressable
-                                accessibilityLabel="Add schedule item"
-                                accessibilityRole="button"
-                                onPress={() => handleSubmit(handleCreate)()}
-                                style={styles.submitButton}
-                            >
-                                <Text style={styles.submitText}>
-                                    {submitLabel}
-                                </Text>
-                            </Pressable>
+                            <View style={styles.actions}>
+                                {submitError ? (
+                                    <Text style={styles.errorText}>
+                                        {submitError}
+                                    </Text>
+                                ) : null}
+                                {item && onDeleteItem ? (
+                                    <FormActionButton
+                                        accessibilityLabel="Delete schedule item"
+                                        disabled={isSubmitting}
+                                        onPress={handleDelete}
+                                        title="Delete item"
+                                        variant="destructive"
+                                    />
+                                ) : null}
+                                <FormActionButton
+                                    accessibilityLabel={
+                                        item
+                                            ? 'Save schedule item changes'
+                                            : 'Add schedule item'
+                                    }
+                                    disabled={isSubmitting}
+                                    isLoading={isSubmitting}
+                                    onPress={() => handleSubmit(handleSave)()}
+                                    title={
+                                        submitLabel ??
+                                        (item ? 'Save changes' : 'Add item')
+                                    }
+                                />
+                            </View>
                         </ScrollView>
-                    </View>
+                    </Animated.View>
                 </KeyboardAvoidingView>
             </View>
         </Modal>
@@ -250,7 +377,7 @@ export const AddScheduleItemModal = ({
 const styles = StyleSheet.create({
     overlay: { flex: 1, justifyContent: 'flex-end' },
     backdrop: {
-        backgroundColor: 'rgba(0, 0, 0, 0.62)',
+        backgroundColor: 'rgba(0, 0, 0, 0.46)',
         bottom: 0,
         left: 0,
         position: 'absolute',
@@ -262,7 +389,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
         borderTopColor: colors.border,
         borderTopWidth: 1,
-        paddingTop: 22,
+        paddingTop: 20,
     },
     header: {
         alignItems: 'center',
@@ -272,7 +399,7 @@ const styles = StyleSheet.create({
     title: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontWeight: '400',
+        fontWeight: '300',
     },
     subtitle: {
         color: colors.textMuted,
@@ -285,26 +412,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: spacing.touchTarget,
     },
-    content: { paddingBottom: spacing.lg },
+    formScroll: { flex: 1 },
+    content: {
+        flexGrow: 1,
+        justifyContent: 'space-between',
+        paddingBottom: spacing.lg,
+    },
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 8,
+        fontSize: 15,
+        fontWeight: '500',
+        marginBottom: spacing.xxs,
         marginTop: 20,
     },
-    input: {
-        backgroundColor: colors.surfaceInput,
-        borderRadius: 8,
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 16,
-        minHeight: 54,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-    },
-    inputError: { borderColor: colors.danger, borderWidth: 1 },
     errorText: {
         color: colors.danger,
         fontFamily: typography.fontFamily,
@@ -313,18 +434,11 @@ const styles = StyleSheet.create({
     },
     timeRow: { flexDirection: 'row', gap: spacing.md },
     timeColumn: { flex: 1 },
-    submitButton: {
-        alignItems: 'center',
-        backgroundColor: colors.accent,
-        borderRadius: 8,
-        justifyContent: 'center',
-        marginTop: spacing.lg,
-        minHeight: 56,
+    descriptionContainer: {
+        alignItems: 'flex-start',
+        minHeight: 88,
+        paddingVertical: spacing.xs,
     },
-    submitText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 18,
-        fontWeight: '600',
-    },
+    descriptionInput: { minHeight: 78, textAlignVertical: 'top' },
+    actions: { gap: spacing.sm },
 })

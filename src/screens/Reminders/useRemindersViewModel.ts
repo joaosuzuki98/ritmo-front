@@ -1,7 +1,10 @@
+import { Q } from '@nozbe/watermelondb'
 import { useEffect, useMemo, useState } from 'react'
 
-import { database, type Event } from '../../database'
+import { database, type Event, type Habit } from '../../database'
 import type { AddScheduleItemFormData } from '../Schedule/addScheduleItemSchema'
+import { findEventScheduleConflict } from '../../utils/scheduleConflict'
+import { getScheduleDateTime } from '../Schedule/scheduleTime'
 
 const startOfDay = (date: Date): Date => {
     const value = new Date(date)
@@ -9,7 +12,7 @@ const startOfDay = (date: Date): Date => {
     return value
 }
 
-export const useRemindersViewModel = () => {
+export const useRemindersViewModel = (currentUserId: string) => {
     const [events, setEvents] = useState<Event[]>([])
     const [visibleMonth, setVisibleMonth] = useState(() => {
         const today = new Date()
@@ -21,15 +24,21 @@ export const useRemindersViewModel = () => {
     useEffect(() => {
         const subscription = database
             .get<Event>('events')
-            .query()
-            .observe()
+            .query(Q.where('user_id', currentUserId))
+            .observeWithColumns([
+                'title',
+                'date_time',
+                'end_time',
+                'location',
+                'description',
+            ])
             .subscribe({
                 next: setEvents,
                 error: () => setEvents([]),
             })
 
         return () => subscription.unsubscribe()
-    }, [])
+    }, [currentUserId])
 
     const calendarDays = useMemo(() => {
         const firstWeekday = new Date(
@@ -80,14 +89,42 @@ export const useRemindersViewModel = () => {
     }
 
     const addEvent = async (data: AddScheduleItemFormData) => {
-        const dateTime = new Date(selectedDate)
-        dateTime.setHours(Number(data.startTime.slice(0, 2)), 0, 0, 0)
+        const dateTime = getScheduleDateTime(
+            selectedDate,
+            data.startHour,
+            data.startPeriod,
+        )
+        const endTime = getScheduleDateTime(
+            selectedDate,
+            data.endHour,
+            data.endPeriod,
+        )
+        const [existingEvents, existingHabits] = await Promise.all([
+            database
+                .get<Event>('events')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+            database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+        ])
+        const conflict = findEventScheduleConflict(
+            { dateTime, endTime },
+            existingEvents,
+            existingHabits,
+        )
+        if (conflict)
+            throw new Error(`This time overlaps with “${conflict.title}”.`)
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {
-                event.userId = 'local-user'
+                event.userId = currentUserId
                 event.title = data.title.trim()
                 event.dateTime = dateTime
+                event.endTime = endTime
+                event.location = data.location?.trim() || undefined
+                event.description = data.description?.trim() || undefined
                 event.recurrence = 'none'
                 event.countdownEnabled = false
                 event.conversionOrigin = 'reminders'
@@ -95,8 +132,62 @@ export const useRemindersViewModel = () => {
         })
     }
 
+    const updateEvent = async (
+        eventId: string,
+        data: AddScheduleItemFormData,
+    ) => {
+        const event = await database.get<Event>('events').find(eventId)
+        if (event.userId !== currentUserId) return
+        const dateTime = getScheduleDateTime(
+            selectedDate,
+            data.startHour,
+            data.startPeriod,
+        )
+        const endTime = getScheduleDateTime(
+            selectedDate,
+            data.endHour,
+            data.endPeriod,
+        )
+        const [existingEvents, existingHabits] = await Promise.all([
+            database
+                .get<Event>('events')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+            database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+        ])
+        const conflict = findEventScheduleConflict(
+            { id: eventId, dateTime, endTime },
+            existingEvents,
+            existingHabits,
+        )
+        if (conflict)
+            throw new Error(`This time overlaps with “${conflict.title}”.`)
+
+        await database.write(async () => {
+            await event.update(record => {
+                record.title = data.title.trim()
+                record.dateTime = dateTime
+                record.endTime = endTime
+                record.location = data.location?.trim() || undefined
+                record.description = data.description?.trim() || undefined
+                record.updatedAt = new Date()
+            })
+        })
+    }
+
+    const deleteEvent = async (eventId: string) => {
+        const event = await database.get<Event>('events').find(eventId)
+        if (event.userId !== currentUserId) return
+        await database.write(async () => event.markAsDeleted())
+    }
+
     return {
         addEvent,
+        updateEvent,
+        deleteEvent,
         calendarDays,
         eventsForSelectedDate,
         events,

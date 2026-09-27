@@ -7,7 +7,9 @@ export class Event extends Model {
     @field('user_id') userId!: string
     @field('title') title!: string
     @date('date_time') dateTime!: Date
+    @date('end_time') endTime?: Date
     @field('location') location?: string
+    @field('description') description?: string
     @field('recurrence') recurrence!: string
     @field('notification_minutes_before') notificationMinutesBefore?: number
     @field('countdown_enabled') countdownEnabled!: boolean

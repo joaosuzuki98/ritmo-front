@@ -1,8 +1,14 @@
+import { Q } from '@nozbe/watermelondb'
 import { useEffect, useMemo, useState } from 'react'
 
-import { database, type Habit } from '../../database'
+import { database, type Event, type Habit } from '../../database'
 import type { AddScheduleItemFormData } from './addScheduleItemSchema'
-import type { ScheduleEntry } from './schedule.types'
+import {
+    getEventScheduleEntries,
+    getHabitScheduleEntries,
+} from './schedule.utils'
+import { findEventScheduleConflict } from '../../utils/scheduleConflict'
+import { getScheduleDateTime } from './scheduleTime'
 
 const monthNames = [
     'January',
@@ -17,27 +23,6 @@ const monthNames = [
     'October',
     'November',
     'December',
-]
-
-const baseEntries: ScheduleEntry[] = [
-    {
-        endHour: 8,
-        id: 'wake-up',
-        startHour: 6,
-        title: 'Wake up and brush\nmy teeth',
-    },
-    {
-        endHour: 13,
-        id: 'work',
-        startHour: 11,
-        title: 'Work',
-    },
-    {
-        endHour: 16,
-        id: 'clean-house',
-        startHour: 15,
-        title: 'Clean my house',
-    },
 ]
 
 const startOfDay = (date: Date): Date => {
@@ -81,26 +66,32 @@ export const getCalendarDays = (month: Date): Array<Date | null> => {
 export const getHourLabel = (hour: number): string => {
     const normalizedHour = hour % 24
     const displayHour = normalizedHour % 12 || 12
-    const label = `${String(displayHour).padStart(2, '0')}:00`
+    const minutes = Math.round(
+        (normalizedHour - Math.floor(normalizedHour)) * 60,
+    )
+    const label = `${String(displayHour).padStart(2, '0')}:${String(
+        minutes,
+    ).padStart(2, '0')}`
 
     if (normalizedHour === 0) return `AM\n${label}`
     if (normalizedHour === 12) return `PM\n${label}`
-    return label
+    return `${label} ${normalizedHour < 12 ? 'AM' : 'PM'}`
 }
 
 export const parseScheduleHour = (time: string): number =>
     Number(time.slice(0, 2))
 
-export const useScheduleViewModel = () => {
+const getScheduleConflictError = (title: string): Error =>
+    new Error(`This time overlaps with “${title}”.`)
+
+export const useScheduleViewModel = (currentUserId: string) => {
     const today = startOfDay(new Date())
     const [selectedDate, setSelectedDate] = useState(today)
     const [calendarMonth, setCalendarMonth] = useState(
         new Date(today.getFullYear(), today.getMonth(), 1),
     )
     const [habits, setHabits] = useState<Habit[]>([])
-    const [manualItems, setManualItems] = useState<
-        Record<string, ScheduleEntry[]>
-    >({})
+    const [events, setEvents] = useState<Event[]>([])
 
     useEffect(() => {
         setCalendarMonth(
@@ -112,8 +103,14 @@ export const useScheduleViewModel = () => {
         let isActive = true
         const subscription = database
             .get<Habit>('habits')
-            .query()
-            .observe()
+            .query(Q.where('user_id', currentUserId))
+            .observeWithColumns([
+                'name',
+                'status',
+                'preferred_time',
+                'estimated_duration_minutes',
+                'week_days',
+            ])
             .subscribe({
                 next: records => {
                     if (isActive) setHabits(records)
@@ -127,41 +124,42 @@ export const useScheduleViewModel = () => {
             isActive = false
             subscription.unsubscribe()
         }
-    }, [])
+    }, [currentUserId])
+
+    useEffect(() => {
+        let isActive = true
+        const subscription = database
+            .get<Event>('events')
+            .query(Q.where('user_id', currentUserId))
+            .observeWithColumns([
+                'title',
+                'date_time',
+                'end_time',
+                'location',
+                'description',
+            ])
+            .subscribe({
+                next: records => {
+                    if (isActive) setEvents(records)
+                },
+                error: () => {
+                    if (isActive) setEvents([])
+                },
+            })
+
+        return () => {
+            isActive = false
+            subscription.unsubscribe()
+        }
+    }, [currentUserId])
 
     const entries = useMemo(() => {
-        const weekDay = selectedDate.getDay() || 7
-        const linkedEntries = habits.flatMap(habit => {
-            if (
-                habit.status === 'paused' ||
-                !habit.preferredTime ||
-                !habit.weekDays.includes(weekDay)
-            )
-                return []
-            const startHour = habit.preferredTime.getHours()
-            return [
-                {
-                    endHour:
-                        startHour +
-                        Math.max(
-                            1,
-                            Math.ceil(
-                                (habit.estimatedDurationMinutes ?? 60) / 60,
-                            ),
-                        ),
-                    habitId: habit.id,
-                    id: `habit-${habit.id}-${startHour}`,
-                    startHour,
-                    title: habit.name,
-                },
-            ]
-        })
-        return [
-            ...baseEntries,
-            ...(manualItems[dateKey(selectedDate)] ?? []),
-            ...linkedEntries,
-        ].sort((left, right) => left.startHour - right.startHour)
-    }, [habits, manualItems, selectedDate])
+        const eventEntries = getEventScheduleEntries(events, selectedDate)
+        const linkedEntries = getHabitScheduleEntries(habits, selectedDate)
+        return [...eventEntries, ...linkedEntries].sort(
+            (left, right) => left.startHour - right.startHour,
+        )
+    }, [events, habits, selectedDate])
 
     const moveDate = (delta: number) => {
         setSelectedDate(current => {
@@ -182,25 +180,114 @@ export const useScheduleViewModel = () => {
         )
     }
 
-    const addScheduleItem = ({
-        endTime,
-        startTime,
+    const addScheduleItem = async ({
+        endHour,
+        endPeriod,
+        location,
+        description,
+        startHour,
+        startPeriod,
         title,
     }: AddScheduleItemFormData) => {
-        const key = dateKey(selectedDate)
-        const startHour = parseScheduleHour(startTime)
-        const endHour = parseScheduleHour(endTime)
-        const item: ScheduleEntry = {
-            endHour,
-            id: `manual-${Date.now()}`,
-            isManual: true,
+        const dateTime = getScheduleDateTime(
+            selectedDate,
             startHour,
-            title: title.trim(),
-        }
-        setManualItems(current => ({
-            ...current,
-            [key]: [...(current[key] ?? []), item],
-        }))
+            startPeriod,
+        )
+        const scheduledEndTime = getScheduleDateTime(
+            selectedDate,
+            endHour,
+            endPeriod,
+        )
+        const [existingEvents, existingHabits] = await Promise.all([
+            database
+                .get<Event>('events')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+            database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+        ])
+        const conflict = findEventScheduleConflict(
+            { dateTime, endTime: scheduledEndTime },
+            existingEvents,
+            existingHabits,
+        )
+        if (conflict) throw getScheduleConflictError(conflict.title)
+
+        await database.write(async () => {
+            await database.get<Event>('events').create(event => {
+                event.userId = currentUserId
+                event.title = title.trim()
+                event.dateTime = dateTime
+                event.endTime = scheduledEndTime
+                event.location = location?.trim() || undefined
+                event.description = description?.trim() || undefined
+                event.recurrence = 'none'
+                event.countdownEnabled = false
+                event.conversionOrigin = 'schedule'
+            })
+        })
+    }
+
+    const updateScheduleItem = async (
+        eventId: string,
+        {
+            endHour,
+            endPeriod,
+            location,
+            description,
+            startHour,
+            startPeriod,
+            title,
+        }: AddScheduleItemFormData,
+    ) => {
+        const event = await database.get<Event>('events').find(eventId)
+        if (event.userId !== currentUserId) return
+        const dateTime = getScheduleDateTime(
+            selectedDate,
+            startHour,
+            startPeriod,
+        )
+        const scheduledEndTime = getScheduleDateTime(
+            selectedDate,
+            endHour,
+            endPeriod,
+        )
+        const [existingEvents, existingHabits] = await Promise.all([
+            database
+                .get<Event>('events')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+            database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', currentUserId))
+                .fetch(),
+        ])
+        const conflict = findEventScheduleConflict(
+            { id: eventId, dateTime, endTime: scheduledEndTime },
+            existingEvents,
+            existingHabits,
+        )
+        if (conflict) throw getScheduleConflictError(conflict.title)
+
+        await database.write(async () => {
+            await event.update(record => {
+                record.title = title.trim()
+                record.dateTime = dateTime
+                record.endTime = scheduledEndTime
+                record.location = location?.trim() || undefined
+                record.description = description?.trim() || undefined
+                record.updatedAt = new Date()
+            })
+        })
+    }
+
+    const deleteScheduleItem = async (eventId: string) => {
+        const event = await database.get<Event>('events').find(eventId)
+        if (event.userId !== currentUserId) return
+        await database.write(async () => event.markAsDeleted())
     }
 
     return {
@@ -211,10 +298,13 @@ export const useScheduleViewModel = () => {
         getCalendarDays,
         getHourLabel,
         addScheduleItem,
+        deleteScheduleItem,
         moveCalendarMonth,
         moveDate,
         parseScheduleHour,
         selectDate,
         selectedDate,
+        updateScheduleItem,
+        events,
     }
 }

@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
-    ActivityIndicator,
+    Animated,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -13,7 +13,6 @@ import {
     StyleSheet,
     Switch,
     Text,
-    TextInput,
     View,
     useWindowDimensions,
 } from 'react-native'
@@ -28,32 +27,60 @@ import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
+import { FormActionButton } from '../../../components/FormActionButton'
+import { FormTextInput } from '../../../components/FormTextInput'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
+import { formatPreferredTime } from '../preferredTime'
+import {
+    habitRequirementStatuses,
+    habitRequirementStatusLabels,
+} from '../../../constants/habitRequirementStatuses'
+import type { HabitCardViewData, HabitOption } from '../habitDashboard.types'
+import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
 
 type AddHabitModalProps = {
     isVisible: boolean
     initialWeekDay: WeekDay
+    habit?: HabitCardViewData | null
+    habitOptions: readonly HabitOption[]
     onClose: () => void
     onCreateHabit: (data: AddHabitFormData) => Promise<void>
+    onUpdateHabit?: (habitId: string, data: AddHabitFormData) => Promise<void>
 }
 
-const getInitialValues = (initialWeekDay: WeekDay): AddHabitFormData => ({
-    name: '',
-    description: '',
-    categoryName: '',
-    frequencyType: 'daily',
-    weekDays: [initialWeekDay],
-    priority: 'medium',
-    estimatedDurationMinutes: '',
-    preferredTime: '',
-    isFocusOfDay: false,
+const getInitialValues = (
+    initialWeekDay: WeekDay,
+    habit?: HabitCardViewData | null,
+): AddHabitFormData => ({
+    name: habit?.title ?? '',
+    description: habit?.description ?? '',
+    categoryName: habit?.categoryLabel ?? '',
+    frequencyType: habit?.frequencyType === 'weekly' ? 'weekly' : 'daily',
+    weekDays: habit?.weekDays.length ? habit.weekDays : [initialWeekDay],
+    priority:
+        habit?.priority === 'low' || habit?.priority === 'high'
+            ? habit.priority
+            : 'medium',
+    estimatedDurationMinutes: habit?.estimatedDurationMinutes
+        ? String(habit.estimatedDurationMinutes)
+        : '',
+    preferredTime: formatPreferredTime(habit?.preferredTime).hour,
+    preferredTimePeriod: formatPreferredTime(habit?.preferredTime).period,
+    isFocusOfDay: habit?.isFocusOfDay ?? false,
+    dependencyHabitId: habit?.dependencyHabitId ?? '',
+    conditionHabitId: habit?.conditionHabitId ?? '',
+    conditionStatus:
+        (habit?.conditionStatus as AddHabitFormData['conditionStatus']) ?? '',
 })
 
 export const AddHabitModal = ({
     isVisible,
     initialWeekDay,
+    habit = null,
+    habitOptions,
     onClose,
     onCreateHabit,
+    onUpdateHabit,
 }: AddHabitModalProps) => {
     const { height, width } = useWindowDimensions()
     const { bottom } = useSafeAreaInsets()
@@ -64,6 +91,8 @@ export const AddHabitModal = ({
     )
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
+    const { backdropOpacity, isModalMounted, sheetTranslateY } =
+        useBottomSheetAnimation(isVisible, height)
     const {
         control,
         formState: { errors },
@@ -72,13 +101,20 @@ export const AddHabitModal = ({
         setValue,
         watch,
     } = useForm<AddHabitFormData>({
-        defaultValues: getInitialValues(initialWeekDay),
+        defaultValues: getInitialValues(initialWeekDay, habit),
         resolver: zodResolver(addHabitSchema),
     })
     const frequencyType = watch('frequencyType')
     const selectedWeekDays = watch('weekDays')
     const selectedPriority = watch('priority')
     const isFocusOfDay = watch('isFocusOfDay')
+    const dependencyHabitId = watch('dependencyHabitId')
+    const conditionHabitId = watch('conditionHabitId')
+    const conditionStatus = watch('conditionStatus')
+
+    useEffect(() => {
+        if (isVisible) reset(getInitialValues(initialWeekDay, habit))
+    }, [habit, initialWeekDay, isVisible, reset])
 
     const handleClose = () => {
         if (isSubmitting) return
@@ -98,11 +134,16 @@ export const AddHabitModal = ({
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            await onCreateHabit(data)
+            if (habit && onUpdateHabit) await onUpdateHabit(habit.id, data)
+            else await onCreateHabit(data)
             reset(getInitialValues(initialWeekDay))
             onClose()
-        } catch {
-            setSubmitError('Unable to save this habit. Please try again.')
+        } catch (error) {
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to save this habit. Please try again.',
+            )
         } finally {
             setIsSubmitting(false)
         }
@@ -111,23 +152,27 @@ export const AddHabitModal = ({
 
     return (
         <Modal
-            animationType="slide"
+            animationType="none"
             onRequestClose={handleClose}
             statusBarTranslucent
             transparent
-            visible={isVisible}
+            visible={isModalMounted}
         >
             <View style={styles.overlay}>
-                <Pressable
-                    accessibilityLabel="Close add habit modal"
-                    onPress={handleClose}
-                    style={styles.backdrop}
-                />
+                <Animated.View
+                    style={[styles.backdrop, { opacity: backdropOpacity }]}
+                >
+                    <Pressable
+                        accessibilityLabel="Close add habit modal"
+                        onPress={handleClose}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={styles.sheetWrapper}
                 >
-                    <View
+                    <Animated.View
                         style={[
                             styles.sheet,
                             {
@@ -136,6 +181,7 @@ export const AddHabitModal = ({
                                 maxHeight: height * 0.9,
                                 paddingHorizontal: spacing.lg * scale,
                                 paddingBottom: bottom,
+                                transform: [{ translateY: sheetTranslateY }],
                             },
                         ]}
                     >
@@ -143,7 +189,7 @@ export const AddHabitModal = ({
                             <Text
                                 style={[styles.title, { fontSize: 34 * scale }]}
                             >
-                                Add habit
+                                {habit ? 'Edit habit' : 'Add habit'}
                             </Text>
                             <Pressable
                                 accessibilityLabel="Close add habit modal"
@@ -163,26 +209,18 @@ export const AddHabitModal = ({
                             keyboardShouldPersistTaps="handled"
                             showsVerticalScrollIndicator={false}
                         >
-                            <Text style={styles.sectionTitle}>
-                                Create new habit
-                            </Text>
-
                             <Text style={styles.label}>Name</Text>
                             <Controller
                                 control={control}
                                 name="name"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Habit name"
                                         autoCapitalize="sentences"
                                         onChangeText={field.onChange}
                                         onBlur={field.onBlur}
                                         placeholder="e.g. Study"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={[
-                                            styles.input,
-                                            errors.name && styles.inputError,
-                                        ]}
+                                        hasError={Boolean(errors.name)}
                                         value={field.value}
                                     />
                                 )}
@@ -198,17 +236,16 @@ export const AddHabitModal = ({
                                 control={control}
                                 name="description"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Habit description"
                                         multiline
                                         onChangeText={field.onChange}
                                         onBlur={field.onBlur}
                                         placeholder="What does this habit mean to you?"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={[
-                                            styles.input,
-                                            styles.multilineInput,
-                                        ]}
+                                        containerStyle={
+                                            styles.multilineContainer
+                                        }
+                                        style={styles.multilineText}
                                         textAlignVertical="top"
                                         value={field.value}
                                     />
@@ -220,14 +257,12 @@ export const AddHabitModal = ({
                                 control={control}
                                 name="categoryName"
                                 render={({ field }) => (
-                                    <TextInput
+                                    <FormTextInput
                                         accessibilityLabel="Habit category"
                                         autoCapitalize="words"
                                         onChangeText={field.onChange}
                                         onBlur={field.onBlur}
                                         placeholder="e.g. Personal growth"
-                                        placeholderTextColor={colors.textMuted}
-                                        style={styles.input}
                                         value={field.value}
                                     />
                                 )}
@@ -331,6 +366,179 @@ export const AddHabitModal = ({
                                 </Text>
                             ) : null}
 
+                            <Text style={styles.sectionTitle}>
+                                Habit requirements
+                            </Text>
+                            <Text style={styles.label}>Complete after</Text>
+                            <View style={styles.requirementOptions}>
+                                {[
+                                    { id: '', title: 'No prerequisite' },
+                                    ...habitOptions.filter(
+                                        option =>
+                                            option.id !== conditionHabitId,
+                                    ),
+                                ].map(option => {
+                                    const isSelected =
+                                        dependencyHabitId === option.id
+                                    return (
+                                        <Pressable
+                                            accessibilityRole="radio"
+                                            accessibilityState={{
+                                                selected: isSelected,
+                                            }}
+                                            key={option.id || 'no-prerequisite'}
+                                            onPress={() =>
+                                                setValue(
+                                                    'dependencyHabitId',
+                                                    option.id,
+                                                    { shouldValidate: true },
+                                                )
+                                            }
+                                            style={[
+                                                styles.requirementOption,
+                                                isSelected &&
+                                                    styles.optionSelected,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.optionText,
+                                                    isSelected &&
+                                                        styles.optionTextSelected,
+                                                ]}
+                                            >
+                                                {option.title}
+                                            </Text>
+                                        </Pressable>
+                                    )
+                                })}
+                                {habitOptions.length === 0 ? (
+                                    <Text style={styles.helperText}>
+                                        Create another habit first to add a
+                                        prerequisite.
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            <Text style={styles.label}>
+                                Only when another habit is
+                            </Text>
+                            <View style={styles.requirementOptions}>
+                                {[
+                                    { id: '', title: 'No condition' },
+                                    ...habitOptions.filter(
+                                        option =>
+                                            option.id !== dependencyHabitId,
+                                    ),
+                                ].map(option => {
+                                    const isSelected =
+                                        conditionHabitId === option.id
+                                    return (
+                                        <Pressable
+                                            accessibilityRole="radio"
+                                            accessibilityState={{
+                                                selected: isSelected,
+                                            }}
+                                            key={option.id || 'no-condition'}
+                                            onPress={() => {
+                                                setValue(
+                                                    'conditionHabitId',
+                                                    option.id,
+                                                    { shouldValidate: true },
+                                                )
+                                                setValue(
+                                                    'conditionStatus',
+                                                    option.id
+                                                        ? conditionStatus ||
+                                                              'completed'
+                                                        : '',
+                                                    { shouldValidate: true },
+                                                )
+                                            }}
+                                            style={[
+                                                styles.requirementOption,
+                                                isSelected &&
+                                                    styles.optionSelected,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.optionText,
+                                                    isSelected &&
+                                                        styles.optionTextSelected,
+                                                ]}
+                                            >
+                                                {option.title}
+                                            </Text>
+                                        </Pressable>
+                                    )
+                                })}
+                            </View>
+                            {conditionHabitId ? (
+                                <>
+                                    <Text style={styles.label}>
+                                        Must be marked as
+                                    </Text>
+                                    <View style={styles.optionRow}>
+                                        {habitRequirementStatuses.map(
+                                            status => {
+                                                const isSelected =
+                                                    conditionStatus === status
+                                                return (
+                                                    <Pressable
+                                                        accessibilityRole="radio"
+                                                        accessibilityState={{
+                                                            selected:
+                                                                isSelected,
+                                                        }}
+                                                        key={status}
+                                                        onPress={() =>
+                                                            setValue(
+                                                                'conditionStatus',
+                                                                status,
+                                                                {
+                                                                    shouldValidate:
+                                                                        true,
+                                                                },
+                                                            )
+                                                        }
+                                                        style={[
+                                                            styles.option,
+                                                            isSelected &&
+                                                                styles.optionSelected,
+                                                        ]}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.optionText,
+                                                                isSelected &&
+                                                                    styles.optionTextSelected,
+                                                            ]}
+                                                        >
+                                                            {
+                                                                habitRequirementStatusLabels[
+                                                                    status
+                                                                ]
+                                                            }
+                                                        </Text>
+                                                    </Pressable>
+                                                )
+                                            },
+                                        )}
+                                    </View>
+                                </>
+                            ) : null}
+                            {errors.conditionHabitId ? (
+                                <Text style={styles.errorText}>
+                                    {errors.conditionHabitId.message}
+                                </Text>
+                            ) : null}
+                            {errors.conditionStatus ? (
+                                <Text style={styles.errorText}>
+                                    {errors.conditionStatus.message}
+                                </Text>
+                            ) : null}
+
                             <Text style={styles.label}>Priority</Text>
                             <Controller
                                 control={control}
@@ -389,16 +597,12 @@ export const AddHabitModal = ({
                                         control={control}
                                         name="estimatedDurationMinutes"
                                         render={({ field }) => (
-                                            <TextInput
+                                            <FormTextInput
                                                 accessibilityLabel="Estimated duration in minutes"
                                                 keyboardType="number-pad"
                                                 onChangeText={field.onChange}
                                                 onBlur={field.onBlur}
                                                 placeholder="Minutes"
-                                                placeholderTextColor={
-                                                    colors.textMuted
-                                                }
-                                                style={styles.input}
                                                 value={field.value}
                                             />
                                         )}
@@ -420,18 +624,122 @@ export const AddHabitModal = ({
                                         control={control}
                                         name="preferredTime"
                                         render={({ field }) => (
-                                            <TextInput
-                                                accessibilityLabel="Preferred habit time"
-                                                keyboardType="numbers-and-punctuation"
-                                                onChangeText={field.onChange}
-                                                onBlur={field.onBlur}
-                                                placeholder="HH:MM"
-                                                placeholderTextColor={
-                                                    colors.textMuted
-                                                }
-                                                style={styles.input}
-                                                value={field.value}
-                                            />
+                                            <View>
+                                                <View
+                                                    style={styles.timeInputRow}
+                                                >
+                                                    <FormTextInput
+                                                        accessibilityLabel="Preferred habit hour"
+                                                        keyboardType="number-pad"
+                                                        maxLength={2}
+                                                        onChangeText={value => {
+                                                            const digits =
+                                                                value.replace(
+                                                                    /\D/g,
+                                                                    '',
+                                                                )
+                                                            if (
+                                                                digits &&
+                                                                Number(digits) >
+                                                                    12
+                                                            )
+                                                                return
+                                                            field.onChange(
+                                                                digits,
+                                                            )
+                                                        }}
+                                                        onBlur={() => {
+                                                            field.onBlur()
+                                                            if (field.value)
+                                                                setValue(
+                                                                    'preferredTime',
+                                                                    field.value.padStart(
+                                                                        2,
+                                                                        '0',
+                                                                    ),
+                                                                    {
+                                                                        shouldValidate:
+                                                                            true,
+                                                                    },
+                                                                )
+                                                        }}
+                                                        placeholder="00"
+                                                        containerStyle={
+                                                            styles.hourInputContainer
+                                                        }
+                                                        style={styles.hourInput}
+                                                        value={field.value}
+                                                    />
+                                                    <Text
+                                                        style={
+                                                            styles.minuteText
+                                                        }
+                                                    >
+                                                        :00
+                                                    </Text>
+                                                    <Controller
+                                                        control={control}
+                                                        name="preferredTimePeriod"
+                                                        render={({
+                                                            field: periodField,
+                                                        }) => (
+                                                            <View
+                                                                style={
+                                                                    styles.periodOptions
+                                                                }
+                                                            >
+                                                                {(
+                                                                    [
+                                                                        'AM',
+                                                                        'PM',
+                                                                    ] as const
+                                                                ).map(
+                                                                    period => {
+                                                                        const isSelected =
+                                                                            periodField.value ===
+                                                                            period
+                                                                        return (
+                                                                            <Pressable
+                                                                                accessibilityLabel={`Select ${period}`}
+                                                                                accessibilityRole="radio"
+                                                                                accessibilityState={{
+                                                                                    selected:
+                                                                                        isSelected,
+                                                                                }}
+                                                                                key={
+                                                                                    period
+                                                                                }
+                                                                                onPress={() =>
+                                                                                    periodField.onChange(
+                                                                                        period,
+                                                                                    )
+                                                                                }
+                                                                                style={[
+                                                                                    styles.periodOption,
+                                                                                    isSelected &&
+                                                                                        styles.optionSelected,
+                                                                                ]}
+                                                                            >
+                                                                                <Text
+                                                                                    style={[
+                                                                                        styles.periodOptionText,
+                                                                                        isSelected &&
+                                                                                            styles.optionTextSelected,
+                                                                                    ]}
+                                                                                >
+                                                                                    {
+                                                                                        period
+                                                                                    }
+                                                                                </Text>
+                                                                            </Pressable>
+                                                                        )
+                                                                    },
+                                                                )}
+                                                            </View>
+                                                        )}
+                                                    />
+                                                </View>
+                                            </View>
                                         )}
                                     />
                                     {errors.preferredTime ? (
@@ -475,26 +783,20 @@ export const AddHabitModal = ({
                                     {submitError}
                                 </Text>
                             ) : null}
-                            <Pressable
-                                accessibilityLabel="Create habit"
-                                accessibilityRole="button"
+                            <FormActionButton
+                                accessibilityLabel={
+                                    habit
+                                        ? 'Save habit changes'
+                                        : 'Create habit'
+                                }
                                 disabled={isSubmitting}
+                                isLoading={isSubmitting}
                                 onPress={handleFormSubmit}
-                                style={[
-                                    styles.submitButton,
-                                    isSubmitting && styles.submitButtonDisabled,
-                                ]}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator color={colors.text} />
-                                ) : (
-                                    <Text style={styles.submitText}>
-                                        ADD HABIT
-                                    </Text>
-                                )}
-                            </Pressable>
+                                title={habit ? 'Save changes' : 'Add habit'}
+                                containerStyle={styles.submitButton}
+                            />
                         </ScrollView>
-                    </View>
+                    </Animated.View>
                 </KeyboardAvoidingView>
             </View>
         </Modal>
@@ -541,30 +843,24 @@ const styles = StyleSheet.create({
     sectionTitle: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '400',
-        marginBottom: 18,
+        marginTop: 40,
     },
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 17,
-        fontWeight: '600',
-        marginBottom: 8,
+        fontSize: 15,
+        fontWeight: '500',
+        marginBottom: spacing.xxs,
         marginTop: 18,
     },
-    input: {
-        backgroundColor: colors.surfaceInput,
-        borderRadius: 8,
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 17,
-        minHeight: 54,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+    multilineContainer: {
+        alignItems: 'flex-start',
+        minHeight: 92,
+        paddingVertical: spacing.xs,
     },
-    inputError: { borderColor: colors.danger, borderWidth: 1 },
-    multilineInput: { minHeight: 92 },
+    multilineText: { minHeight: 80, textAlignVertical: 'top' },
     errorText: {
         color: colors.danger,
         fontFamily: typography.fontFamily,
@@ -594,6 +890,26 @@ const styles = StyleSheet.create({
     },
     optionTextSelected: { color: colors.text },
     daysRow: { flexDirection: 'row', gap: 7, marginTop: 10 },
+    requirementOptions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    requirementOption: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        justifyContent: 'center',
+        minHeight: 44,
+        paddingHorizontal: 12,
+    },
+    helperText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+    },
     dayButton: {
         alignItems: 'center',
         backgroundColor: colors.surfaceMuted,
@@ -630,6 +946,35 @@ const styles = StyleSheet.create({
     },
     twoColumnRow: { flexDirection: 'row', gap: 12 },
     column: { flex: 1 },
+    timeInputRow: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: 4,
+    },
+    hourInputContainer: { flex: 1, minWidth: 36, paddingHorizontal: 0 },
+    hourInput: { textAlign: 'center' },
+    minuteText: {
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
+    },
+    periodOptions: { flexDirection: 'row', gap: 4 },
+    periodOption: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderRadius: 6,
+        borderWidth: 1,
+        justifyContent: 'center',
+        minHeight: 40,
+        minWidth: 39,
+        paddingHorizontal: 4,
+    },
+    periodOptionText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 12,
+    },
     focusRow: {
         alignItems: 'center',
         backgroundColor: colors.surfaceMuted,
@@ -659,19 +1004,5 @@ const styles = StyleSheet.create({
         marginTop: 14,
         textAlign: 'center',
     },
-    submitButton: {
-        alignItems: 'center',
-        backgroundColor: colors.priorityLow,
-        borderRadius: 8,
-        justifyContent: 'center',
-        marginTop: 22,
-        minHeight: 56,
-    },
-    submitButtonDisabled: { opacity: 0.65 },
-    submitText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 19,
-        fontWeight: '600',
-    },
+    submitButton: { marginTop: 22 },
 })
