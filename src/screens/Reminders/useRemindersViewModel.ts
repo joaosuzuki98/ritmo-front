@@ -81,13 +81,18 @@ export const useRemindersViewModel = () => {
 
     const addEvent = async (data: AddScheduleItemFormData) => {
         const dateTime = new Date(selectedDate)
-        dateTime.setHours(Number(data.startTime.slice(0, 2)), 0, 0, 0)
+        const [startHours, startMinutes] = data.startTime.split(':').map(Number)
+        dateTime.setHours(startHours, startMinutes, 0, 0)
+        const endTime = new Date(selectedDate)
+        const [endHours, endMinutes] = data.endTime.split(':').map(Number)
+        endTime.setHours(endHours, endMinutes, 0, 0)
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {
                 event.userId = 'local-user'
                 event.title = data.title.trim()
                 event.dateTime = dateTime
+                event.endTime = endTime
                 event.recurrence = 'none'
                 event.countdownEnabled = false
                 event.conversionOrigin = 'reminders'

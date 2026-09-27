@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
+    ActivityIndicator,
     Animated,
     KeyboardAvoidingView,
     Modal,
@@ -31,7 +32,7 @@ type AddScheduleItemModalProps = {
     initialStartHour: number
     isVisible: boolean
     onClose: () => void
-    onCreateItem: (data: AddScheduleItemFormData) => void
+    onCreateItem: (data: AddScheduleItemFormData) => Promise<void>
     title?: string
     subtitle?: string
     submitLabel?: string
@@ -55,6 +56,8 @@ export const AddScheduleItemModal = ({
     const { bottom } = useSafeAreaInsets()
     const { height, width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitError, setSubmitError] = useState('')
     const { backdropOpacity, isModalMounted, sheetTranslateY } =
         useBottomSheetAnimation(isVisible, height)
     const {
@@ -72,13 +75,23 @@ export const AddScheduleItemModal = ({
     }, [initialStartHour, isVisible, reset])
 
     const handleClose = () => {
+        if (isSubmitting) return
         reset(getInitialValues(initialStartHour))
+        setSubmitError('')
         onClose()
     }
-    const handleCreate = (data: AddScheduleItemFormData) => {
-        onCreateItem(data)
-        reset(getInitialValues(initialStartHour))
-        onClose()
+    const handleCreate = async (data: AddScheduleItemFormData) => {
+        setIsSubmitting(true)
+        setSubmitError('')
+        try {
+            await onCreateItem(data)
+            reset(getInitialValues(initialStartHour))
+            onClose()
+        } catch {
+            setSubmitError('Unable to save this schedule item. Please retry.')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -252,15 +265,28 @@ export const AddScheduleItemModal = ({
                                     </View>
                                 </View>
                             </View>
+                            {submitError ? (
+                                <Text style={styles.errorText}>
+                                    {submitError}
+                                </Text>
+                            ) : null}
                             <Pressable
                                 accessibilityLabel="Add schedule item"
                                 accessibilityRole="button"
+                                disabled={isSubmitting}
                                 onPress={() => handleSubmit(handleCreate)()}
-                                style={styles.submitButton}
+                                style={[
+                                    styles.submitButton,
+                                    isSubmitting && styles.submitButtonDisabled,
+                                ]}
                             >
-                                <Text style={styles.submitText}>
-                                    {submitLabel}
-                                </Text>
+                                {isSubmitting ? (
+                                    <ActivityIndicator color={colors.text} />
+                                ) : (
+                                    <Text style={styles.submitText}>
+                                        {submitLabel}
+                                    </Text>
+                                )}
                             </Pressable>
                         </ScrollView>
                     </Animated.View>
@@ -349,6 +375,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         minHeight: 56,
     },
+    submitButtonDisabled: { opacity: 0.65 },
     submitText: {
         color: colors.text,
         fontFamily: typography.fontFamily,

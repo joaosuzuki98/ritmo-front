@@ -138,10 +138,7 @@ export const ScheduleScreen = ({
                 initialStartHour={8}
                 isVisible={isAddItemModalVisible}
                 onClose={onCloseAddItemModal}
-                onCreateItem={data => {
-                    viewModel.addScheduleItem(data)
-                    onCloseAddItemModal()
-                }}
+                onCreateItem={viewModel.addScheduleItem}
             />
         </ScreenLayout>
     )

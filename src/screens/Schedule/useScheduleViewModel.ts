@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { database, type Event, type Habit } from '../../database'
 import type { AddScheduleItemFormData } from './addScheduleItemSchema'
-import type { ScheduleEntry } from './schedule.types'
-import { getEventScheduleEntries } from './schedule.utils'
+import {
+    getEventScheduleEntries,
+    getHabitScheduleEntries,
+} from './schedule.utils'
 
 const monthNames = [
     'January',
@@ -61,15 +63,27 @@ export const getCalendarDays = (month: Date): Array<Date | null> => {
 export const getHourLabel = (hour: number): string => {
     const normalizedHour = hour % 24
     const displayHour = normalizedHour % 12 || 12
-    const label = `${String(displayHour).padStart(2, '0')}:00`
+    const minutes = Math.round(
+        (normalizedHour - Math.floor(normalizedHour)) * 60,
+    )
+    const label = `${String(displayHour).padStart(2, '0')}:${String(
+        minutes,
+    ).padStart(2, '0')}`
 
     if (normalizedHour === 0) return `AM\n${label}`
     if (normalizedHour === 12) return `PM\n${label}`
-    return label
+    return `${label} ${normalizedHour < 12 ? 'AM' : 'PM'}`
 }
 
 export const parseScheduleHour = (time: string): number =>
     Number(time.slice(0, 2))
+
+const getScheduleDateTime = (date: Date, time: string): Date => {
+    const [hours, minutes] = time.split(':').map(Number)
+    const dateTime = new Date(date)
+    dateTime.setHours(hours, minutes, 0, 0)
+    return dateTime
+}
 
 export const useScheduleViewModel = () => {
     const today = startOfDay(new Date())
@@ -79,9 +93,6 @@ export const useScheduleViewModel = () => {
     )
     const [habits, setHabits] = useState<Habit[]>([])
     const [events, setEvents] = useState<Event[]>([])
-    const [manualItems, setManualItems] = useState<
-        Record<string, ScheduleEntry[]>
-    >({})
 
     useEffect(() => {
         setCalendarMonth(
@@ -132,39 +143,12 @@ export const useScheduleViewModel = () => {
     }, [])
 
     const entries = useMemo(() => {
-        const weekDay = selectedDate.getDay() || 7
         const eventEntries = getEventScheduleEntries(events, selectedDate)
-        const linkedEntries = habits.flatMap(habit => {
-            if (
-                habit.status === 'paused' ||
-                !habit.preferredTime ||
-                !habit.weekDays.includes(weekDay)
-            )
-                return []
-            const startHour = habit.preferredTime.getHours()
-            return [
-                {
-                    endHour:
-                        startHour +
-                        Math.max(
-                            1,
-                            Math.ceil(
-                                (habit.estimatedDurationMinutes ?? 60) / 60,
-                            ),
-                        ),
-                    habitId: habit.id,
-                    id: `habit-${habit.id}-${startHour}`,
-                    startHour,
-                    title: habit.name,
-                },
-            ]
-        })
-        return [
-            ...(manualItems[dateKey(selectedDate)] ?? []),
-            ...eventEntries,
-            ...linkedEntries,
-        ].sort((left, right) => left.startHour - right.startHour)
-    }, [events, habits, manualItems, selectedDate])
+        const linkedEntries = getHabitScheduleEntries(habits, selectedDate)
+        return [...eventEntries, ...linkedEntries].sort(
+            (left, right) => left.startHour - right.startHour,
+        )
+    }, [events, habits, selectedDate])
 
     const moveDate = (delta: number) => {
         setSelectedDate(current => {
@@ -185,25 +169,25 @@ export const useScheduleViewModel = () => {
         )
     }
 
-    const addScheduleItem = ({
+    const addScheduleItem = async ({
         endTime,
         startTime,
         title,
     }: AddScheduleItemFormData) => {
-        const key = dateKey(selectedDate)
-        const startHour = parseScheduleHour(startTime)
-        const endHour = parseScheduleHour(endTime)
-        const item: ScheduleEntry = {
-            endHour,
-            id: `manual-${Date.now()}`,
-            isManual: true,
-            startHour,
-            title: title.trim(),
-        }
-        setManualItems(current => ({
-            ...current,
-            [key]: [...(current[key] ?? []), item],
-        }))
+        const dateTime = getScheduleDateTime(selectedDate, startTime)
+        const scheduledEndTime = getScheduleDateTime(selectedDate, endTime)
+
+        await database.write(async () => {
+            await database.get<Event>('events').create(event => {
+                event.userId = 'local-user'
+                event.title = title.trim()
+                event.dateTime = dateTime
+                event.endTime = scheduledEndTime
+                event.recurrence = 'none'
+                event.countdownEnabled = false
+                event.conversionOrigin = 'schedule'
+            })
+        })
     }
 
     return {

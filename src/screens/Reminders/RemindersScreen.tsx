@@ -266,10 +266,7 @@ export const RemindersScreen = ({
                 title="Add event"
                 subtitle="Choose a time for this reminder."
                 submitLabel="ADD EVENT"
-                onCreateItem={async data => {
-                    await viewModel.addEvent(data)
-                    onCloseAddEventModal()
-                }}
+                onCreateItem={viewModel.addEvent}
             />
         </ScreenLayout>
     )
