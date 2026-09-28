@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: spacing.xs,
     },
-    submitButton: { marginTop: spacing.lg },
+    submitButton: { marginTop: spacing.xl },
     helperText: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,

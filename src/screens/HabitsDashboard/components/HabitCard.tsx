@@ -177,6 +177,7 @@ export const HabitCard = ({
                     paddingHorizontal: 24 * scale,
                     paddingVertical: 18 * scale,
                 },
+                habit.isFocusOfDay && styles.focusOfDay,
                 visualStyle,
                 dragStyle,
             ]}
@@ -241,12 +242,16 @@ export const HabitCard = ({
                                         : nextWidth,
                                 )
                             }}
-                            style={{
-                                color: colors.priorityText,
-                                fontFamily: typography.fontFamily,
-                                fontSize: 20 * scale,
-                                fontWeight: '600',
-                            }}
+                            style={[
+                                {
+                                    color: colors.priorityText,
+                                    fontFamily: typography.fontFamily,
+                                    fontSize: 20 * scale,
+                                },
+                                habit.isFocusOfDay
+                                    ? styles.focusText
+                                    : styles.mediumText,
+                            ]}
                         >
                             {habit.title}
                             {habit.categoryLabel
@@ -324,19 +329,24 @@ export const HabitCard = ({
                     </Text>
                 ) : null}
                 <Text
-                    style={{
-                        color:
-                            habit.status === 'completed'
-                                ? colors.priorityText
-                                : colors.white,
-                        fontFamily: typography.fontFamily,
-                        fontSize:
-                            (habit.status === 'completed' ? 26 : 18) * scale,
-                        fontWeight: '600',
-                        lineHeight: 26 * scale,
-                        marginTop: 21 * scale,
-                        maxWidth: '72%',
-                    }}
+                    style={[
+                        {
+                            color:
+                                habit.status === 'completed'
+                                    ? colors.priorityText
+                                    : colors.white,
+                            fontFamily: typography.fontFamily,
+                            fontSize:
+                                (habit.status === 'completed' ? 26 : 18) *
+                                scale,
+                            lineHeight: 26 * scale,
+                            marginTop: 21 * scale,
+                            maxWidth: '72%',
+                        },
+                        habit.isFocusOfDay
+                            ? styles.focusText
+                            : styles.mediumText,
+                    ]}
                 >
                     {habit.status === 'completed'
                         ? 'Completed'
@@ -384,6 +394,9 @@ export const HabitCard = ({
 }
 
 const styles = StyleSheet.create({
+    focusOfDay: { borderColor: colors.priorityText, borderWidth: 2 },
+    focusText: { fontWeight: '600' },
+    mediumText: { fontWeight: '500' },
     celebrationLayer: {
         bottom: 0,
         left: 0,
