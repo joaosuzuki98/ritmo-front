@@ -211,31 +211,47 @@ export const HabitsDashboardScreen = ({
                             </View>
                         ) : null}
                         {viewModel.state === 'empty' ? (
-                            <View>
+                            <View
+                                style={
+                                    viewModel.hasAnyHabits
+                                        ? {
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              minHeight: 180,
+                                          }
+                                        : undefined
+                                }
+                            >
                                 <Text
                                     style={{
                                         color: colors.textMuted,
                                         fontFamily: typography.fontFamily,
                                         paddingVertical: 24,
+                                        ...(viewModel.hasAnyHabits
+                                            ? { textAlign: 'center' as const }
+                                            : {}),
                                     }}
                                 >
                                     {viewModel.hasAnyHabits
                                         ? 'No habits for this day.'
                                         : 'No habits yet. Create your first habit to get started.'}
                                 </Text>
-                                <Pressable
-                                    accessibilityLabel="Add a habit"
-                                    onPress={onOpenAddHabitModal}
-                                >
-                                    <Text
-                                        style={{
-                                            color: colors.accent,
-                                            fontFamily: typography.fontFamily,
-                                        }}
+                                {!viewModel.hasAnyHabits ? (
+                                    <Pressable
+                                        accessibilityLabel="Add a habit"
+                                        onPress={onOpenAddHabitModal}
                                     >
-                                        Add habit
-                                    </Text>
-                                </Pressable>
+                                        <Text
+                                            style={{
+                                                color: colors.accent,
+                                                fontFamily:
+                                                    typography.fontFamily,
+                                            }}
+                                        >
+                                            Add habit
+                                        </Text>
+                                    </Pressable>
+                                ) : null}
                             </View>
                         ) : null}
                         {viewModel.state === 'no-results' ? (
