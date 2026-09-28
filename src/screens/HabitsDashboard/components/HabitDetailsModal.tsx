@@ -96,12 +96,6 @@ export const HabitDetailsModal = ({
         .map(day => weekDayLabels[day as WeekDay])
         .filter(Boolean)
         .join(', ')
-    const frequency =
-        habit.frequencyType === 'weekly'
-            ? 'Selected days'
-            : habit.frequencyType === 'daily'
-            ? 'Every day'
-            : 'Not set'
     const stats = [
         { label: 'Completed', value: String(habit.completedCount ?? 0) },
         { label: 'Partial', value: String(habit.partialCount ?? 0) },
@@ -233,6 +227,7 @@ export const HabitDetailsModal = ({
                                 onPress={onEdit}
                                 title="Edit habit"
                                 containerStyle={styles.secondaryActionButton}
+                                surfaceStyle={styles.secondaryActionSurface}
                             />
                             <FormActionButton
                                 accessibilityLabel={`Delete ${habit.title}`}
@@ -240,6 +235,7 @@ export const HabitDetailsModal = ({
                                 title="Delete"
                                 variant="destructive"
                                 containerStyle={styles.secondaryActionButton}
+                                surfaceStyle={styles.secondaryActionSurface}
                             />
                         </View>
 
@@ -282,7 +278,6 @@ export const HabitDetailsModal = ({
                         <Text style={styles.sectionTitle}>Schedule</Text>
                         <View style={styles.detailGrid}>
                             {[
-                                { label: 'Frequency', value: frequency },
                                 { label: 'Days', value: days || 'Not set' },
                                 {
                                     label: 'Estimated duration',
@@ -297,7 +292,11 @@ export const HabitDetailsModal = ({
                             ].map(detail => (
                                 <View
                                     key={detail.label}
-                                    style={styles.detailItem}
+                                    style={[
+                                        styles.detailItem,
+                                        detail.label === 'Days' &&
+                                            styles.detailItemFullWidth,
+                                    ]}
                                 >
                                     <Text style={styles.detailLabel}>
                                         {detail.label}
@@ -469,6 +468,7 @@ const styles = StyleSheet.create({
     },
     titleBlock: {
         borderLeftWidth: 5,
+        marginBottom: 10,
         paddingLeft: 14,
     },
     title: {
@@ -486,6 +486,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
+        marginBottom: 10,
         marginTop: 16,
     },
     actionsRow: {
@@ -495,6 +496,7 @@ const styles = StyleSheet.create({
     },
     logProgressButton: { marginTop: 18 },
     secondaryActionButton: { flex: 1, width: 'auto' },
+    secondaryActionSurface: { height: 40, paddingHorizontal: 12 },
     badge: {
         borderRadius: 8,
         paddingHorizontal: 11,
@@ -577,10 +579,12 @@ const styles = StyleSheet.create({
     detailItem: {
         backgroundColor: colors.surfaceMuted,
         borderRadius: 10,
+        flexGrow: 1,
         minWidth: '47%',
         paddingHorizontal: 13,
         paddingVertical: 11,
     },
+    detailItemFullWidth: { width: '100%' },
     detailLabel: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
@@ -603,11 +607,12 @@ const styles = StyleSheet.create({
     },
     statsRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 12,
     },
     statItem: {
         alignItems: 'center',
-        flex: 1,
+        width: '30%',
     },
     statValue: {
         color: colors.text,
