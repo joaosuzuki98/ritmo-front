@@ -114,23 +114,10 @@ export const TodoScreen = ({
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <Pressable
-                    accessibilityLabel="Choose task category"
-                    accessibilityRole="button"
-                    onPress={() => setIsCategoryPickerVisible(true)}
-                    style={styles.categoryButton}
-                >
-                    <SquaresFour
-                        color={colors.text}
-                        size={23}
-                        weight="regular"
-                    />
-                </Pressable>
-
                 <View style={styles.progressCard}>
                     <View style={styles.progressHeader}>
                         <View>
-                            <Text style={styles.progressEyebrow}>PROGRESS</Text>
+                            <Text style={styles.progressEyebrow}>Progress</Text>
                             <Text style={styles.progressTitle}>
                                 {category ?? 'No category selected'}
                             </Text>
@@ -149,10 +136,24 @@ export const TodoScreen = ({
                             ]}
                         />
                     </View>
-                    <Text style={styles.progressCaption}>
-                        {completedCount} of {categoryTasks.length} tasks
-                        completed
-                    </Text>
+                    <View style={styles.progressCaptionRow}>
+                        <Text style={styles.progressCaption}>
+                            {completedCount} of {categoryTasks.length} tasks
+                            completed
+                        </Text>
+                        <Pressable
+                            accessibilityLabel="Choose task category"
+                            accessibilityRole="button"
+                            onPress={() => setIsCategoryPickerVisible(true)}
+                            style={styles.categoryButton}
+                        >
+                            <SquaresFour
+                                color={colors.accent}
+                                size={20}
+                                weight="regular"
+                            />
+                        </Pressable>
+                    </View>
                 </View>
 
                 {tasksViewModel.loadError ? (
@@ -243,7 +244,6 @@ export const TodoScreen = ({
                 />
             </ScrollView>
             <AddTodoTaskModal
-                category={category ?? ''}
                 isVisible={isAddTaskModalVisible}
                 onClose={onCloseAddTaskModal}
                 onCreateTask={addTask}
@@ -337,13 +337,9 @@ const styles = StyleSheet.create({
     content: { paddingBottom: spacing.xl, paddingTop: spacing.lg },
     categoryButton: {
         alignItems: 'center',
-        borderColor: colors.border,
-        borderRadius: 14,
-        borderWidth: 1,
-        height: 48,
+        height: 40,
         justifyContent: 'center',
-        marginBottom: spacing.lg,
-        width: 48,
+        width: 40,
     },
     categoryModalOverlay: {
         alignItems: 'center',
@@ -461,8 +457,14 @@ const styles = StyleSheet.create({
     },
     progressCaption: {
         color: colors.textMuted,
+        flex: 1,
         fontFamily: typography.fontFamily,
         fontSize: 12,
+    },
+    progressCaptionRow: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         marginTop: spacing.sm,
     },
     tasksHeader: {
