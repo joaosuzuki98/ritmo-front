@@ -20,6 +20,7 @@ export const colors = {
     priorityHigh: '#8065C7',
     priorityFallback: '#9D9BAA',
     success: '#79D99B',
+    warning: '#F2C94C',
     danger: '#F2779A',
     priorityText: '#21134D',
     onboardingBackground: '#121318',

@@ -17,7 +17,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import { CheckCircle, Flame, Pause, Play } from 'phosphor-react-native'
+import { CheckCircle, Flame, Pause, Play, Warning } from 'phosphor-react-native'
 import type { SharedValue } from 'react-native-reanimated'
 
 import type { HabitCardViewData } from '../habitDashboard.types'
@@ -275,31 +275,40 @@ export const HabitCard = ({
                                 weight="fill"
                             />
                         ) : (
-                            <Pressable
-                                accessibilityLabel={`${
-                                    habit.isPaused ? 'Resume' : 'Pause'
-                                } ${habit.title}`}
-                                accessibilityRole="button"
-                                onPress={event => {
-                                    event.stopPropagation()
-                                    onPause()
-                                }}
-                                style={{ padding: 4 * scale }}
-                            >
-                                {habit.isPaused ? (
-                                    <Play
-                                        color={colors.priorityText}
+                            <>
+                                {habit.status === 'partial' ? (
+                                    <Warning
+                                        color={colors.warning}
                                         size={27 * scale}
-                                        weight="regular"
+                                        weight="fill"
                                     />
-                                ) : (
-                                    <Pause
-                                        color={colors.priorityText}
-                                        size={27 * scale}
-                                        weight="regular"
-                                    />
-                                )}
-                            </Pressable>
+                                ) : null}
+                                <Pressable
+                                    accessibilityLabel={`${
+                                        habit.isPaused ? 'Resume' : 'Pause'
+                                    } ${habit.title}`}
+                                    accessibilityRole="button"
+                                    onPress={event => {
+                                        event.stopPropagation()
+                                        onPause()
+                                    }}
+                                    style={{ padding: 4 * scale }}
+                                >
+                                    {habit.isPaused ? (
+                                        <Play
+                                            color={colors.priorityText}
+                                            size={27 * scale}
+                                            weight="regular"
+                                        />
+                                    ) : (
+                                        <Pause
+                                            color={colors.priorityText}
+                                            size={27 * scale}
+                                            weight="regular"
+                                        />
+                                    )}
+                                </Pressable>
+                            </>
                         )}
                     </View>
                 </View>
