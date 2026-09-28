@@ -24,13 +24,17 @@ export const useRemindersViewModel = (currentUserId: string) => {
     useEffect(() => {
         const subscription = database
             .get<Event>('events')
-            .query(Q.where('user_id', currentUserId))
+            .query(
+                Q.where('user_id', currentUserId),
+                Q.where('conversion_origin', 'reminders'),
+            )
             .observeWithColumns([
                 'title',
                 'date_time',
                 'end_time',
                 'location',
                 'description',
+                'conversion_origin',
             ])
             .subscribe({
                 next: setEvents,
