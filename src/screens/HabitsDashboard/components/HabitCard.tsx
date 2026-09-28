@@ -292,21 +292,19 @@ export const HabitCard = ({
                         {habit.blockingHabitTitles.join(', ')}
                     </Text>
                 ) : null}
-                {habit.description ? (
-                    <Text
-                        style={{
-                            color: colors.white,
-                            fontFamily: typography.fontFamily,
-                            fontSize: 18 * scale,
-                            fontWeight: '600',
-                            lineHeight: 26 * scale,
-                            marginTop: 21 * scale,
-                            maxWidth: '72%',
-                        }}
-                    >
-                        {habit.description}
-                    </Text>
-                ) : null}
+                <Text
+                    style={{
+                        color: colors.white,
+                        fontFamily: typography.fontFamily,
+                        fontSize: 18 * scale,
+                        fontWeight: '600',
+                        lineHeight: 26 * scale,
+                        marginTop: 21 * scale,
+                        maxWidth: '72%',
+                    }}
+                >
+                    {habit.description?.trim() || 'No description given'}
+                </Text>
                 <View
                     style={{
                         alignItems: 'center',
