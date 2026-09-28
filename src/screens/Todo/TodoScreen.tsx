@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
         minHeight: 52,
         paddingHorizontal: spacing.md,
     },
-    categoryOptionSelected: { backgroundColor: colors.scheduleCurrent },
+    categoryOptionSelected: { backgroundColor: colors.accent },
     categoryOptionText: {
         color: colors.text,
         fontFamily: typography.fontFamily,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md,
     },
     addCategoryText: {
-        color: colors.scheduleBackground,
+        color: colors.bottomBarMuted,
         fontFamily: typography.fontFamily,
         fontSize: 14,
         fontWeight: '600',
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
         marginTop: 3,
     },
     progressPercent: {
-        color: colors.scheduleBackground,
+        color: colors.accent,
         fontFamily: typography.fontFamily,
         fontSize: 25,
         fontWeight: '700',

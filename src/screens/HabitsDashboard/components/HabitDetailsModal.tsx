@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { X, Flame } from 'phosphor-react-native'
+import {
+    CheckCircle,
+    Flame,
+    PencilSimple,
+    Trash,
+    Warning,
+    X,
+} from 'phosphor-react-native'
 import {
     Animated,
     Modal,
@@ -14,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { getHabitStatusPresentation } from '../../../constants/habitStatuses'
 import { habitRequirementStatusLabels } from '../../../constants/habitRequirementStatuses'
-import { weekDayLabels, type WeekDay } from '../../../constants/weekDays'
+import { weekDays, weekDayLabels } from '../../../constants/weekDays'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
@@ -75,6 +82,10 @@ export const HabitDetailsModal = ({
     const { height, width } = useWindowDimensions()
     const { bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
+    const daySize = Math.min(
+        42 * scale,
+        (width - spacing.lg * scale * 2 - 6 * 7) / 7,
+    )
     const [retainedHabit, setRetainedHabit] = useState(incomingHabit)
     const { backdropOpacity, isModalMounted, sheetTranslateY } =
         useBottomSheetAnimation(isVisible, height)
@@ -92,10 +103,6 @@ export const HabitDetailsModal = ({
     const hasDistractionLock = history.some(
         record => record.distractionLockEnabled,
     )
-    const days = habit.weekDays
-        .map(day => weekDayLabels[day as WeekDay])
-        .filter(Boolean)
-        .join(', ')
     const stats = [
         { label: 'Completed', value: String(habit.completedCount ?? 0) },
         { label: 'Partial', value: String(habit.partialCount ?? 0) },
@@ -165,49 +172,84 @@ export const HabitDetailsModal = ({
                                 { borderLeftColor: habit.priorityColor },
                             ]}
                         >
-                            <Text
-                                style={[styles.title, { fontSize: 34 * scale }]}
-                            >
-                                {habit.title}
-                            </Text>
-                            {habit.categoryLabel ? (
-                                <Text style={styles.category}>
-                                    {habit.categoryLabel}
-                                </Text>
-                            ) : null}
+                            <View style={styles.titleHeader}>
+                                {habit.status === 'completed' ? (
+                                    <View style={styles.statusIcon}>
+                                        <CheckCircle
+                                            color={colors.success}
+                                            size={24 * scale}
+                                            weight="fill"
+                                        />
+                                    </View>
+                                ) : habit.status === 'partial' ? (
+                                    <View style={styles.statusIcon}>
+                                        <Warning
+                                            color={colors.warning}
+                                            size={24 * scale}
+                                            weight="fill"
+                                        />
+                                    </View>
+                                ) : null}
+                                <View style={styles.titleCopy}>
+                                    <Text
+                                        style={[
+                                            styles.title,
+                                            { fontSize: 34 * scale },
+                                        ]}
+                                    >
+                                        {habit.title}
+                                    </Text>
+                                    {habit.categoryLabel ? (
+                                        <Text style={styles.category}>
+                                            {habit.categoryLabel}
+                                        </Text>
+                                    ) : null}
+                                </View>
+                                <View style={styles.titleActions}>
+                                    <Pressable
+                                        accessibilityLabel={`Edit ${habit.title}`}
+                                        accessibilityRole="button"
+                                        onPress={onEdit}
+                                        style={styles.titleActionButton}
+                                    >
+                                        <PencilSimple
+                                            color={colors.text}
+                                            size={24 * scale}
+                                        />
+                                    </Pressable>
+                                    <Pressable
+                                        accessibilityLabel={`Delete ${habit.title}`}
+                                        accessibilityRole="button"
+                                        onPress={onDelete}
+                                        style={styles.titleActionButton}
+                                    >
+                                        <Trash
+                                            color={colors.danger}
+                                            size={24 * scale}
+                                        />
+                                    </Pressable>
+                                </View>
+                            </View>
                         </View>
 
-                        <View style={styles.badgesRow}>
-                            <View
-                                style={[
-                                    styles.badge,
-                                    { backgroundColor: habit.priorityColor },
-                                ]}
-                            >
-                                <Text style={styles.badgeText}>
-                                    {habit.priorityLabel} priority
-                                </Text>
+                        {habit.isFocusOfDay || hasDistractionLock ? (
+                            <View style={styles.badgesRow}>
+                                {habit.isFocusOfDay ? (
+                                    <View style={styles.focusBadge}>
+                                        <Text style={styles.focusBadgeText}>
+                                            Focus of the day
+                                        </Text>
+                                    </View>
+                                ) : null}
+                                {hasDistractionLock ? (
+                                    <View style={styles.lockBadge}>
+                                        <Text style={styles.lockBadgeText}>
+                                            Distraction lock used
+                                        </Text>
+                                    </View>
+                                ) : null}
                             </View>
-                            <View style={styles.statusBadge}>
-                                <Text style={styles.statusBadgeText}>
-                                    {habit.statusLabel}
-                                </Text>
-                            </View>
-                            {habit.isFocusOfDay ? (
-                                <View style={styles.focusBadge}>
-                                    <Text style={styles.focusBadgeText}>
-                                        Focus of the day
-                                    </Text>
-                                </View>
-                            ) : null}
-                            {hasDistractionLock ? (
-                                <View style={styles.lockBadge}>
-                                    <Text style={styles.lockBadgeText}>
-                                        Distraction lock used
-                                    </Text>
-                                </View>
-                            ) : null}
-                        </View>
+                        ) : null}
 
                         <FormActionButton
                             accessibilityLabel={`Record today's progress for ${habit.title}`}
@@ -220,24 +262,6 @@ export const HabitDetailsModal = ({
                             }
                             containerStyle={styles.logProgressButton}
                         />
-
-                        <View style={styles.actionsRow}>
-                            <FormActionButton
-                                accessibilityLabel={`Edit ${habit.title}`}
-                                onPress={onEdit}
-                                title="Edit habit"
-                                containerStyle={styles.secondaryActionButton}
-                                surfaceStyle={styles.secondaryActionSurface}
-                            />
-                            <FormActionButton
-                                accessibilityLabel={`Delete ${habit.title}`}
-                                onPress={onDelete}
-                                title="Delete"
-                                variant="destructive"
-                                containerStyle={styles.secondaryActionButton}
-                                surfaceStyle={styles.secondaryActionSurface}
-                            />
-                        </View>
 
                         {habit.description ? (
                             <Text style={styles.description}>
@@ -276,9 +300,47 @@ export const HabitDetailsModal = ({
                         ) : null}
 
                         <Text style={styles.sectionTitle}>Schedule</Text>
+                        <View
+                            style={[
+                                styles.detailItem,
+                                styles.detailItemFullWidth,
+                            ]}
+                        >
+                            <Text style={styles.detailLabel}>Days</Text>
+                            <View style={styles.scheduleDaysRow}>
+                                {weekDays.map(day => {
+                                    const isSelected =
+                                        habit.weekDays.includes(day)
+                                    return (
+                                        <View
+                                            key={day}
+                                            style={[
+                                                styles.scheduleDayCircle,
+                                                {
+                                                    borderRadius: daySize / 2,
+                                                    height: daySize,
+                                                    width: daySize,
+                                                },
+                                                isSelected &&
+                                                    styles.scheduleDayCircleSelected,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.scheduleDayText,
+                                                    isSelected &&
+                                                        styles.scheduleDayTextSelected,
+                                                ]}
+                                            >
+                                                {weekDayLabels[day].slice(0, 2)}
+                                            </Text>
+                                        </View>
+                                    )
+                                })}
+                            </View>
+                        </View>
                         <View style={styles.detailGrid}>
                             {[
-                                { label: 'Days', value: days || 'Not set' },
                                 {
                                     label: 'Estimated duration',
                                     value: formatDuration(
@@ -471,6 +533,24 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         paddingLeft: 14,
     },
+    titleHeader: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    titleCopy: { flex: 1 },
+    statusIcon: { marginRight: spacing.xs },
+    titleActions: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        marginLeft: spacing.sm,
+    },
+    titleActionButton: {
+        alignItems: 'center',
+        height: spacing.touchTarget,
+        justifyContent: 'center',
+        width: spacing.touchTarget,
+    },
     title: {
         color: colors.text,
         fontFamily: typography.fontFamily,
@@ -489,38 +569,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         marginTop: 16,
     },
-    actionsRow: {
-        flexDirection: 'row',
-        gap: 10,
-        marginTop: 18,
-    },
     logProgressButton: { marginTop: 18 },
-    secondaryActionButton: { flex: 1, width: 'auto' },
-    secondaryActionSurface: { height: 40, paddingHorizontal: 12 },
-    badge: {
-        borderRadius: 8,
-        paddingHorizontal: 11,
-        paddingVertical: 7,
-    },
-    badgeText: {
-        color: colors.priorityText,
-        fontFamily: typography.fontFamily,
-        fontSize: 13,
-        fontWeight: '600',
-    },
-    statusBadge: {
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 8,
-        borderWidth: 1,
-        paddingHorizontal: 11,
-        paddingVertical: 7,
-    },
-    statusBadgeText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 13,
-    },
     focusBadge: {
         backgroundColor: colors.accent,
         borderRadius: 8,
@@ -585,6 +634,28 @@ const styles = StyleSheet.create({
         paddingVertical: 11,
     },
     detailItemFullWidth: { width: '100%' },
+    scheduleDaysRow: {
+        flexDirection: 'row',
+        gap: 6,
+        marginTop: 8,
+    },
+    scheduleDayCircle: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderWidth: 1,
+        justifyContent: 'center',
+    },
+    scheduleDayCircleSelected: {
+        backgroundColor: colors.accentStrong,
+        borderColor: colors.accentStrong,
+    },
+    scheduleDayText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 12,
+    },
+    scheduleDayTextSelected: { color: colors.text },
     detailLabel: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
