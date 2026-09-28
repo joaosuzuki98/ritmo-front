@@ -15,8 +15,9 @@ describe('schedule date helpers', () => {
         const date = new Date(2026, 5, 12)
 
         expect(formatScheduleDate(date)).toBe('12 June')
-        expect(getHourLabel(6)).toBe('06:00 AM')
-        expect(getHourLabel(13)).toBe('01:00 PM')
+        expect(getHourLabel(6)).toBe('06:00')
+        expect(getHourLabel(13)).toBe('01:00')
+        expect(getHourLabel(12)).toBe('PM\n12:00')
     })
 
     it('creates a stable local date key', () => {

@@ -261,5 +261,25 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 10,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'events',
+                    columns: [
+                        {
+                            name: 'reminder_type',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            toVersion: 11,
+            steps: [],
+        },
     ],
 })

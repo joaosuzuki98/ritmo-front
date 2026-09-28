@@ -22,6 +22,7 @@ type EventRecord = {
     recurrence: string
     countdownEnabled: boolean
     conversionOrigin: string
+    reminderType?: string
     updatedAt?: Date
     update: (mutate: (record: EventRecord) => void) => Promise<EventRecord>
     markAsDeleted: () => Promise<void>
@@ -120,6 +121,7 @@ describe('useRemindersViewModel event persistence', () => {
                 endPeriod: 'AM',
                 location: 'Downtown clinic',
                 description: 'Bring insurance card',
+                reminderType: 'holiday',
             })
         })
 
@@ -128,6 +130,7 @@ describe('useRemindersViewModel event persistence', () => {
             location: 'Downtown clinic',
             description: 'Bring insurance card',
             conversionOrigin: 'reminders',
+            reminderType: 'holiday',
         })
     })
 
@@ -150,6 +153,7 @@ describe('useRemindersViewModel event persistence', () => {
                 endPeriod: 'PM',
                 location: 'New clinic',
                 description: 'Use the side entrance',
+                reminderType: 'important_day',
             })
         })
 
@@ -157,6 +161,7 @@ describe('useRemindersViewModel event persistence', () => {
             title: 'Dentist appointment',
             location: 'New clinic',
             description: 'Use the side entrance',
+            reminderType: 'important_day',
         })
         expect(event.dateTime.getHours()).toBe(11)
         expect(event.endTime?.getHours()).toBe(12)

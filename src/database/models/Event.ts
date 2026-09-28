@@ -14,6 +14,7 @@ export class Event extends Model {
     @field('notification_minutes_before') notificationMinutesBefore?: number
     @field('countdown_enabled') countdownEnabled!: boolean
     @field('conversion_origin') conversionOrigin!: string
+    @field('reminder_type') reminderType?: string
     @date('created_at') createdAt?: Date
     @date('updated_at') updatedAt?: Date
 }

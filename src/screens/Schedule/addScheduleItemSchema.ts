@@ -16,6 +16,7 @@ export const addScheduleItemSchema = z
         title: z.string().trim().min(1, 'Give this item a name.'),
         location: z.string().trim().optional(),
         description: z.string().trim().optional(),
+        reminderType: z.enum(['normal', 'holiday', 'important_day']).optional(),
     })
     .refine(
         values =>
