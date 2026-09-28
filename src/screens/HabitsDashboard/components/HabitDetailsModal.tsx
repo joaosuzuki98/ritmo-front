@@ -300,12 +300,7 @@ export const HabitDetailsModal = ({
                         ) : null}
 
                         <Text style={styles.sectionTitle}>Schedule</Text>
-                        <View
-                            style={[
-                                styles.detailItem,
-                                styles.detailItemFullWidth,
-                            ]}
-                        >
+                        <View style={styles.scheduleDaysSection}>
                             <Text style={styles.detailLabel}>Days</Text>
                             <View style={styles.scheduleDaysRow}>
                                 {weekDays.map(day => {
@@ -354,11 +349,7 @@ export const HabitDetailsModal = ({
                             ].map(detail => (
                                 <View
                                     key={detail.label}
-                                    style={[
-                                        styles.detailItem,
-                                        detail.label === 'Days' &&
-                                            styles.detailItemFullWidth,
-                                    ]}
+                                    style={styles.detailItem}
                                 >
                                     <Text style={styles.detailLabel}>
                                         {detail.label}
@@ -633,10 +624,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 13,
         paddingVertical: 11,
     },
-    detailItemFullWidth: { width: '100%' },
+    scheduleDaysSection: { marginBottom: 10 },
     scheduleDaysRow: {
         flexDirection: 'row',
-        gap: 6,
+        justifyContent: 'space-between',
         marginTop: 8,
     },
     scheduleDayCircle: {
