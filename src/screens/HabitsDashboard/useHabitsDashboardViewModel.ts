@@ -88,6 +88,137 @@ const getConditionStatus = (
     return habitRequirementStatuses.find(value => value === status)
 }
 
+const completeAfterHabitChain = async (
+    completedHabitId: string,
+    userId: string,
+    completionDate: Date,
+    completionTime: Date,
+) => {
+    const dateKey = localDateKey(completionDate)
+    const [habits, dependencies, conditions, records, streaks] =
+        await Promise.all([
+            database.get<Habit>('habits').query().fetch(),
+            database.get<HabitDependency>('habit_dependencies').query().fetch(),
+            database.get<HabitCondition>('habit_conditions').query().fetch(),
+            database
+                .get<CompletionRecord>('completion_records')
+                .query()
+                .fetch(),
+            database.get<Streak>('streaks').query().fetch(),
+        ])
+    const ownedHabits = new Map(
+        habits
+            .filter(habit => habit.userId === userId)
+            .map(habit => [habit.id, habit]),
+    )
+    const statusByHabitId = new Map<string, string>()
+    const latestRecordByHabitId = new Map<string, CompletionRecord>()
+    records
+        .filter(record => localDateKey(record.date) === dateKey)
+        .sort(
+            (left, right) =>
+                (left.updatedAt?.getTime() ?? left.date.getTime()) -
+                (right.updatedAt?.getTime() ?? right.date.getTime()),
+        )
+        .forEach(record => {
+            latestRecordByHabitId.set(record.habitId, record)
+            statusByHabitId.set(record.habitId, record.status)
+        })
+    statusByHabitId.set(completedHabitId, 'completed')
+
+    const queuedHabitIds = [completedHabitId]
+    const visitedHabitIds = new Set<string>()
+    const habitsToComplete = new Set<string>()
+    while (queuedHabitIds.length) {
+        const triggerHabitId = queuedHabitIds.shift()!
+        if (visitedHabitIds.has(triggerHabitId)) continue
+        visitedHabitIds.add(triggerHabitId)
+
+        dependencies
+            .filter(
+                dependency =>
+                    dependency.type === 'after_completion' &&
+                    dependency.triggerHabitId === triggerHabitId,
+            )
+            .forEach(dependency => {
+                const dependentHabit = ownedHabits.get(dependency.habitId)
+                if (!dependentHabit) return
+
+                const currentStatus = statusByHabitId.get(dependentHabit.id)
+                if (currentStatus === 'completed') {
+                    queuedHabitIds.push(dependentHabit.id)
+                    return
+                }
+                if (dependentHabit.status === 'paused') return
+
+                const condition = conditions.find(
+                    item =>
+                        item.habitId === dependentHabit.id &&
+                        item.conditionType === 'habit_status',
+                )
+                if (condition) {
+                    const requiredStatus = getConditionStatus(
+                        condition.conditionRule,
+                    )
+                    if (
+                        !requiredStatus ||
+                        statusByHabitId.get(condition.conditionHabitId) !==
+                            requiredStatus
+                    )
+                        return
+                }
+
+                statusByHabitId.set(dependentHabit.id, 'completed')
+                habitsToComplete.add(dependentHabit.id)
+                queuedHabitIds.push(dependentHabit.id)
+            })
+    }
+
+    if (!habitsToComplete.size) return
+
+    const streakByHabitId = new Map(
+        streaks.map(streak => [streak.habitId, streak]),
+    )
+
+    await database.write(async () => {
+        for (const habitId of habitsToComplete) {
+            const currentRecord = latestRecordByHabitId.get(habitId)
+            if (currentRecord) {
+                await currentRecord.update(record => {
+                    record.date = completionDate
+                    record.status = 'completed'
+                    record.completionTime = completionTime
+                    record.incompletionReasonId = undefined
+                })
+            } else {
+                await database
+                    .get<CompletionRecord>('completion_records')
+                    .create(record => {
+                        record.habitId = habitId
+                        record.date = completionDate
+                        record.status = 'completed'
+                        record.completionTime = completionTime
+                        record.distractionLockEnabled = false
+                    })
+            }
+
+            const streak = streakByHabitId.get(habitId)
+            if (streak) {
+                await streak.update(record => {
+                    record.currentStreak = Math.max(1, record.currentStreak)
+                    record.longestStreak = Math.max(1, record.longestStreak)
+                })
+            } else {
+                await database.get<Streak>('streaks').create(record => {
+                    record.habitId = habitId
+                    record.currentStreak = 1
+                    record.longestStreak = 1
+                })
+            }
+        }
+    })
+}
+
 export const composeHabitCards = (
     habits: readonly HabitSource[],
     categories: readonly CategorySource[],
@@ -1072,6 +1203,12 @@ export const useHabitsDashboardViewModel = (
                 })
             }
         })
+        await completeAfterHabitChain(
+            habitId,
+            currentUserId,
+            completionTime,
+            completionTime,
+        )
         setReloadToken(current => current + 1)
     }
 
@@ -1180,6 +1317,13 @@ export const useHabitsDashboardViewModel = (
                     })
                 }
             })
+            if (formData.status === 'completed')
+                await completeAfterHabitChain(
+                    habitId,
+                    currentUserId,
+                    date,
+                    completionTime,
+                )
         }
 
         const history = currentCard.completionHistory.some(
