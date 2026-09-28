@@ -17,7 +17,14 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import { CheckCircle, Flame, Pause, Play, Warning } from 'phosphor-react-native'
+import {
+    CheckCircle,
+    Flame,
+    Pause,
+    Play,
+    Sun,
+    Warning,
+} from 'phosphor-react-native'
 import type { SharedValue } from 'react-native-reanimated'
 
 import type { HabitCardViewData } from '../habitDashboard.types'
@@ -170,14 +177,15 @@ export const HabitCard = ({
             layout={reducedMotion ? undefined : LinearTransition.duration(220)}
             style={[
                 {
-                    backgroundColor: habit.priorityColor,
+                    backgroundColor: habit.isFocusOfDay
+                        ? colors.warning
+                        : habit.priorityColor,
                     borderRadius: 16 * scale,
                     marginBottom: 20 * scale,
                     minHeight: 168 * scale,
                     paddingHorizontal: 24 * scale,
                     paddingVertical: 18 * scale,
                 },
-                habit.isFocusOfDay && styles.focusOfDay,
                 visualStyle,
                 dragStyle,
             ]}
@@ -250,7 +258,7 @@ export const HabitCard = ({
                                 },
                                 habit.isFocusOfDay
                                     ? styles.focusText
-                                    : styles.mediumText,
+                                    : styles.semiboldText,
                             ]}
                         >
                             {habit.title}
@@ -287,6 +295,18 @@ export const HabitCard = ({
                                         size={27 * scale}
                                         weight="fill"
                                     />
+                                ) : null}
+                                {habit.isFocusOfDay ? (
+                                    <View
+                                        accessible
+                                        accessibilityLabel="Focus of the day"
+                                    >
+                                        <Sun
+                                            color={colors.priorityText}
+                                            size={24 * scale}
+                                            weight="fill"
+                                        />
+                                    </View>
                                 ) : null}
                                 <Pressable
                                     accessibilityLabel={`${
@@ -345,7 +365,7 @@ export const HabitCard = ({
                         },
                         habit.isFocusOfDay
                             ? styles.focusText
-                            : styles.mediumText,
+                            : styles.semiboldText,
                     ]}
                 >
                     {habit.status === 'completed'
@@ -369,7 +389,9 @@ export const HabitCard = ({
                     <Text
                         accessibilityLabel={`Streak ${habit.currentStreak} for ${habit.title}`}
                         style={{
-                            color: colors.white,
+                            color: habit.isFocusOfDay
+                                ? colors.priorityText
+                                : colors.white,
                             fontFamily: typography.fontFamily,
                             fontSize: 42 * scale,
                             fontWeight: '400',
@@ -394,9 +416,8 @@ export const HabitCard = ({
 }
 
 const styles = StyleSheet.create({
-    focusOfDay: { borderColor: colors.priorityText, borderWidth: 2 },
-    focusText: { fontWeight: '600' },
-    mediumText: { fontWeight: '500' },
+    focusText: { color: colors.priorityText, fontWeight: '400' },
+    semiboldText: { fontWeight: '600' },
     celebrationLayer: {
         bottom: 0,
         left: 0,
