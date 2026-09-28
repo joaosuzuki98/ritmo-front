@@ -981,6 +981,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
+        marginBottom: 20,
         marginTop: 22,
         paddingHorizontal: 16,
         paddingVertical: 13,
