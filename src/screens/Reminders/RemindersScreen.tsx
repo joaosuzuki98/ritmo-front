@@ -305,11 +305,6 @@ export const RemindersScreen = ({
                     else onCloseAddEventModal()
                 }}
                 title={editingEvent ? 'Edit event' : 'Add event'}
-                subtitle={
-                    editingEvent
-                        ? 'Update or remove this reminder.'
-                        : 'Choose a time for this reminder.'
-                }
                 submitLabel={editingEvent ? 'SAVE EVENT' : 'ADD EVENT'}
                 showEventDetails
                 onCreateItem={viewModel.addEvent}

@@ -41,7 +41,6 @@ type AddScheduleItemModalProps = {
     onDeleteItem?: () => Promise<void>
     onUpdateItem?: (data: AddScheduleItemFormData) => Promise<void>
     title?: string
-    subtitle?: string
     submitLabel?: string
     showEventDetails?: boolean
 }
@@ -84,7 +83,6 @@ export const AddScheduleItemModal = ({
     onDeleteItem,
     onUpdateItem,
     title,
-    subtitle,
     submitLabel,
     showEventDetails = false,
 }: AddScheduleItemModalProps) => {
@@ -211,17 +209,6 @@ export const AddScheduleItemModal = ({
                                         (item
                                             ? 'Edit schedule item'
                                             : 'Add schedule item')}
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.subtitle,
-                                        { fontSize: 13 * scale },
-                                    ]}
-                                >
-                                    {subtitle ??
-                                        (item
-                                            ? 'Update or remove this schedule item.'
-                                            : 'Habits are added automatically.')}
                                 </Text>
                             </View>
                             <Pressable
@@ -400,11 +387,6 @@ const styles = StyleSheet.create({
         color: colors.text,
         fontFamily: typography.fontFamily,
         fontWeight: '300',
-    },
-    subtitle: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        marginTop: 3,
     },
     closeButton: {
         alignItems: 'center',
