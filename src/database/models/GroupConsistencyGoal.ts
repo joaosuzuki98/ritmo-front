@@ -8,6 +8,7 @@ export class GroupConsistencyGoal extends Model {
 
     @field('user_id') userId!: string
     @field('target_percentage') targetPercentage!: number
+    @field('description') description?: string
     @json('included_habit_ids', sanitizeJson) includedHabitIds!: string[]
     @date('period_start') periodStart!: Date
     @date('period_end') periodEnd!: Date

@@ -1,15 +1,34 @@
-import { appSchema, tableSchema } from '@nozbe/watermelondb'
+import {
+    appSchema,
+    tableSchema as watermelonTableSchema,
+} from '@nozbe/watermelondb'
+
+type TableSchemaConfig = Parameters<typeof watermelonTableSchema>[0]
+
+const tableSchema = (config: TableSchemaConfig) =>
+    watermelonTableSchema({
+        ...config,
+        columns: config.columns.map(column =>
+            column.name === 'created_at' || column.name === 'updated_at'
+                ? { ...column, isOptional: false }
+                : column,
+        ),
+    })
 
 export const databaseSchema = appSchema({
-    version: 1,
+    version: 11,
     tables: [
         tableSchema({
             name: 'users',
             columns: [
                 { name: 'name', type: 'string' },
                 { name: 'email', type: 'string', isIndexed: true },
+                { name: 'password', type: 'string', isOptional: true },
+                { name: 'password_hash', type: 'string', isOptional: true },
+                { name: 'password_salt', type: 'string', isOptional: true },
                 { name: 'total_points', type: 'number' },
                 { name: 'level', type: 'number' },
+                { name: 'is_logged_in', type: 'boolean', isOptional: true },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],
@@ -79,7 +98,9 @@ export const databaseSchema = appSchema({
                 { name: 'user_id', type: 'string', isIndexed: true },
                 { name: 'title', type: 'string' },
                 { name: 'date_time', type: 'number' },
+                { name: 'end_time', type: 'number', isOptional: true },
                 { name: 'location', type: 'string', isOptional: true },
+                { name: 'description', type: 'string', isOptional: true },
                 { name: 'recurrence', type: 'string' },
                 {
                     name: 'notification_minutes_before',
@@ -88,6 +109,7 @@ export const databaseSchema = appSchema({
                 },
                 { name: 'countdown_enabled', type: 'boolean' },
                 { name: 'conversion_origin', type: 'string' },
+                { name: 'reminder_type', type: 'string', isOptional: true },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],
@@ -165,6 +187,7 @@ export const databaseSchema = appSchema({
             columns: [
                 { name: 'user_id', type: 'string', isIndexed: true },
                 { name: 'target_percentage', type: 'number' },
+                { name: 'description', type: 'string', isOptional: true },
                 { name: 'included_habit_ids', type: 'string' },
                 { name: 'period_start', type: 'number' },
                 { name: 'period_end', type: 'number' },
@@ -232,6 +255,36 @@ export const databaseSchema = appSchema({
                 { name: 'name', type: 'string' },
                 { name: 'included_habit_ids', type: 'string' },
                 { name: 'included_events', type: 'string' },
+                { name: 'created_at', type: 'number', isOptional: true },
+                { name: 'updated_at', type: 'number', isOptional: true },
+            ],
+        }),
+        tableSchema({
+            name: 'habit_display_preferences',
+            columns: [
+                { name: 'user_id', type: 'string', isIndexed: true },
+                { name: 'week_day', type: 'number', isIndexed: true },
+                { name: 'ordered_habit_ids', type: 'string' },
+                { name: 'created_at', type: 'number', isOptional: true },
+                { name: 'updated_at', type: 'number', isOptional: true },
+            ],
+        }),
+        tableSchema({
+            name: 'todo_tasks',
+            columns: [
+                { name: 'user_id', type: 'string', isIndexed: true },
+                { name: 'title', type: 'string' },
+                { name: 'category', type: 'string', isIndexed: true },
+                { name: 'is_complete', type: 'boolean' },
+                { name: 'created_at', type: 'number', isOptional: true },
+                { name: 'updated_at', type: 'number', isOptional: true },
+            ],
+        }),
+        tableSchema({
+            name: 'todo_categories',
+            columns: [
+                { name: 'user_id', type: 'string', isIndexed: true },
+                { name: 'name', type: 'string' },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],

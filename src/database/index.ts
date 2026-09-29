@@ -9,6 +9,7 @@ import { EventSubtask } from './models/EventSubtask'
 import { Goal } from './models/Goal'
 import { GroupConsistencyGoal } from './models/GroupConsistencyGoal'
 import { Habit } from './models/Habit'
+import { HabitDisplayPreference } from './models/HabitDisplayPreference'
 import { HabitCondition } from './models/HabitCondition'
 import { HabitDependency } from './models/HabitDependency'
 import { IncompletionReason } from './models/IncompletionReason'
@@ -17,6 +18,8 @@ import { Reward } from './models/Reward'
 import { RoutineTemplate } from './models/RoutineTemplate'
 import { Streak } from './models/Streak'
 import { TemporaryChallenge } from './models/TemporaryChallenge'
+import { TodoTask } from './models/TodoTask'
+import { TodoCategory } from './models/TodoCategory'
 import { User } from './models/User'
 import { databaseMigrations } from './migrations'
 import { databaseSchema } from './schema'
@@ -34,6 +37,7 @@ export const database = new Database({
         User,
         Category,
         Habit,
+        HabitDisplayPreference,
         HabitDependency,
         HabitCondition,
         Event,
@@ -48,6 +52,8 @@ export const database = new Database({
         Reward,
         Reminder,
         RoutineTemplate,
+        TodoTask,
+        TodoCategory,
     ],
 })
 
@@ -59,6 +65,7 @@ export * from './models/EventSubtask'
 export * from './models/Goal'
 export * from './models/GroupConsistencyGoal'
 export * from './models/Habit'
+export * from './models/HabitDisplayPreference'
 export * from './models/HabitCondition'
 export * from './models/HabitDependency'
 export * from './models/IncompletionReason'
@@ -67,4 +74,6 @@ export * from './models/Reward'
 export * from './models/RoutineTemplate'
 export * from './models/Streak'
 export * from './models/TemporaryChallenge'
+export * from './models/TodoTask'
+export * from './models/TodoCategory'
 export * from './models/User'

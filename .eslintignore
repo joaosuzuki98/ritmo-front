@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+coverage/
+*.min.js
+.git/
+android/build/
+ios/build/
+specs/
