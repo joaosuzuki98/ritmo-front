@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { X } from 'phosphor-react-native'
+import { CaretDown, X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -43,6 +43,7 @@ type AddHabitModalProps = {
     initialWeekDay: WeekDay
     habit?: HabitCardViewData | null
     habitOptions: readonly HabitOption[]
+    categoryOptions: readonly string[]
     onClose: () => void
     onCreateHabit: (data: AddHabitFormData) => Promise<void>
     onUpdateHabit?: (habitId: string, data: AddHabitFormData) => Promise<void>
@@ -78,6 +79,7 @@ export const AddHabitModal = ({
     initialWeekDay,
     habit = null,
     habitOptions,
+    categoryOptions,
     onClose,
     onCreateHabit,
     onUpdateHabit,
@@ -91,6 +93,8 @@ export const AddHabitModal = ({
     )
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
+    const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false)
+    const [isEnteringNewCategory, setIsEnteringNewCategory] = useState(false)
     const { backdropOpacity, isModalMounted, sheetTranslateY } =
         useBottomSheetAnimation(isVisible, height)
     const {
@@ -111,15 +115,22 @@ export const AddHabitModal = ({
     const dependencyHabitId = watch('dependencyHabitId')
     const conditionHabitId = watch('conditionHabitId')
     const conditionStatus = watch('conditionStatus')
+    const categoryName = watch('categoryName')
 
     useEffect(() => {
-        if (isVisible) reset(getInitialValues(initialWeekDay, habit))
+        if (isVisible) {
+            reset(getInitialValues(initialWeekDay, habit))
+            setIsCategoryMenuOpen(false)
+            setIsEnteringNewCategory(false)
+        }
     }, [habit, initialWeekDay, isVisible, reset])
 
     const handleClose = () => {
         if (isSubmitting) return
         reset(getInitialValues(initialWeekDay))
         setSubmitError('')
+        setIsCategoryMenuOpen(false)
+        setIsEnteringNewCategory(false)
         onClose()
     }
 
@@ -253,20 +264,125 @@ export const AddHabitModal = ({
                             />
 
                             <Text style={styles.label}>Category</Text>
-                            <Controller
-                                control={control}
-                                name="categoryName"
-                                render={({ field }) => (
-                                    <FormTextInput
-                                        accessibilityLabel="Habit category"
-                                        autoCapitalize="words"
-                                        onChangeText={field.onChange}
-                                        onBlur={field.onBlur}
-                                        placeholder="e.g. Personal growth"
-                                        value={field.value}
+                            {categoryOptions.length > 0 &&
+                            !isEnteringNewCategory ? (
+                                <>
+                                    <Pressable
+                                        accessibilityLabel="Choose habit category"
+                                        accessibilityRole="button"
+                                        accessibilityState={{
+                                            expanded: isCategoryMenuOpen,
+                                        }}
+                                        onPress={() =>
+                                            setIsCategoryMenuOpen(open => !open)
+                                        }
+                                        style={styles.categoryPicker}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.optionText,
+                                                categoryName &&
+                                                    styles.categoryPickerSelectedText,
+                                            ]}
+                                        >
+                                            {categoryName ||
+                                                'Choose a category'}
+                                        </Text>
+                                        <CaretDown
+                                            color={colors.textMuted}
+                                            size={18}
+                                        />
+                                    </Pressable>
+                                    {isCategoryMenuOpen ? (
+                                        <View style={styles.categoryMenu}>
+                                            {categoryOptions.map(option => (
+                                                <Pressable
+                                                    accessibilityRole="radio"
+                                                    accessibilityState={{
+                                                        selected:
+                                                            categoryName ===
+                                                            option,
+                                                    }}
+                                                    key={option}
+                                                    onPress={() => {
+                                                        setValue(
+                                                            'categoryName',
+                                                            option,
+                                                        )
+                                                        setIsCategoryMenuOpen(
+                                                            false,
+                                                        )
+                                                    }}
+                                                    style={
+                                                        styles.categoryMenuOption
+                                                    }
+                                                >
+                                                    <Text
+                                                        style={
+                                                            styles.optionText
+                                                        }
+                                                    >
+                                                        {option}
+                                                    </Text>
+                                                </Pressable>
+                                            ))}
+                                            <Pressable
+                                                accessibilityRole="button"
+                                                onPress={() => {
+                                                    setValue('categoryName', '')
+                                                    setIsEnteringNewCategory(
+                                                        true,
+                                                    )
+                                                    setIsCategoryMenuOpen(false)
+                                                }}
+                                                style={
+                                                    styles.categoryMenuOption
+                                                }
+                                            >
+                                                <Text
+                                                    style={
+                                                        styles.newCategoryText
+                                                    }
+                                                >
+                                                    Add a new category
+                                                </Text>
+                                            </Pressable>
+                                        </View>
+                                    ) : null}
+                                </>
+                            ) : (
+                                <>
+                                    <Controller
+                                        control={control}
+                                        name="categoryName"
+                                        render={({ field }) => (
+                                            <FormTextInput
+                                                accessibilityLabel="Habit category"
+                                                autoCapitalize="words"
+                                                onChangeText={field.onChange}
+                                                onBlur={field.onBlur}
+                                                placeholder="e.g. Personal growth"
+                                                value={field.value}
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
+                                    {categoryOptions.length > 0 ? (
+                                        <Pressable
+                                            accessibilityRole="button"
+                                            onPress={() =>
+                                                setIsEnteringNewCategory(false)
+                                            }
+                                            style={styles.backToCategories}
+                                        >
+                                            <Text
+                                                style={styles.newCategoryText}
+                                            >
+                                                Choose an existing category
+                                            </Text>
+                                        </Pressable>
+                                    ) : null}
+                                </>
+                            )}
 
                             <Text style={styles.label}>Frequency</Text>
                             <Controller
@@ -889,6 +1005,37 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     optionTextSelected: { color: colors.text },
+    categoryPicker: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        minHeight: 48,
+        paddingHorizontal: 12,
+    },
+    categoryPickerSelectedText: { color: colors.text },
+    categoryMenu: {
+        backgroundColor: colors.surfaceMuted,
+        borderColor: colors.border,
+        borderRadius: 8,
+        borderWidth: 1,
+        marginTop: spacing.xs,
+        overflow: 'hidden',
+    },
+    categoryMenuOption: {
+        minHeight: 44,
+        justifyContent: 'center',
+        paddingHorizontal: 12,
+    },
+    newCategoryText: {
+        color: colors.accent,
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
+    },
+    backToCategories: { alignSelf: 'flex-start', marginTop: spacing.xs },
     daysRow: { flexDirection: 'row', gap: 7, marginTop: 10 },
     requirementOptions: {
         flexDirection: 'row',

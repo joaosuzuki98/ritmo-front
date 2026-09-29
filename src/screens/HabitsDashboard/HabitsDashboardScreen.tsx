@@ -314,6 +314,7 @@ export const HabitsDashboardScreen = ({
             </ScrollView>
             <AddHabitModal
                 habitOptions={viewModel.habitOptions}
+                categoryOptions={viewModel.categoryOptions}
                 initialWeekDay={viewModel.weekDay}
                 habit={habitBeingEdited}
                 isVisible={isAddHabitModalVisible || habitBeingEdited !== null}
