@@ -75,7 +75,7 @@ export const getHourLabel = (hour: number): string => {
 
     if (normalizedHour === 0) return `AM\n${label}`
     if (normalizedHour === 12) return `PM\n${label}`
-    return `${label} ${normalizedHour < 12 ? 'AM' : 'PM'}`
+    return label
 }
 
 export const parseScheduleHour = (time: string): number =>

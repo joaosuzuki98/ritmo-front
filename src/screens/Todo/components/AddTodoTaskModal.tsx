@@ -29,14 +29,12 @@ import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
 
 type AddTodoTaskModalProps = {
-    category: string
     isVisible: boolean
     onClose: () => void
     onCreateTask: (title: string) => Promise<void>
 }
 
 export const AddTodoTaskModal = ({
-    category,
     isVisible,
     onClose,
     onCreateTask,
@@ -79,7 +77,7 @@ export const AddTodoTaskModal = ({
             reset({ title: '' })
             onClose()
         } catch {
-            setSubmitError('Não foi possível salvar a tarefa. Tente novamente.')
+            setSubmitError('Unable to save the task. Please try again.')
         } finally {
             setIsSubmitting(false)
         }
@@ -99,7 +97,7 @@ export const AddTodoTaskModal = ({
                     style={[styles.backdrop, { opacity: backdropOpacity }]}
                 >
                     <Pressable
-                        accessibilityLabel="Fechar criação de tarefa"
+                        accessibilityLabel="Close task modal"
                         onPress={handleClose}
                         style={StyleSheet.absoluteFill}
                     />
@@ -122,26 +120,13 @@ export const AddTodoTaskModal = ({
                         ]}
                     >
                         <View style={styles.header}>
-                            <View style={styles.titleBlock}>
-                                <Text
-                                    style={[
-                                        styles.title,
-                                        { fontSize: 34 * scale },
-                                    ]}
-                                >
-                                    Nova tarefa
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.subtitle,
-                                        { fontSize: 14 * scale },
-                                    ]}
-                                >
-                                    {category}
-                                </Text>
-                            </View>
+                            <Text
+                                style={[styles.title, { fontSize: 34 * scale }]}
+                            >
+                                Add task
+                            </Text>
                             <Pressable
-                                accessibilityLabel="Fechar criação de tarefa"
+                                accessibilityLabel="Close task modal"
                                 accessibilityRole="button"
                                 disabled={isSubmitting}
                                 onPress={handleClose}
@@ -154,28 +139,24 @@ export const AddTodoTaskModal = ({
                             contentContainerStyle={styles.content}
                             keyboardShouldPersistTaps="handled"
                             style={styles.formScroll}
+                            showsVerticalScrollIndicator={false}
                         >
                             <View>
-                                <Text
-                                    style={[
-                                        styles.label,
-                                        { fontSize: 15 * scale },
-                                    ]}
-                                >
-                                    O que você precisa fazer?
+                                <Text style={styles.label}>
+                                    What do you need to do?
                                 </Text>
                                 <Controller
                                     control={control}
                                     name="title"
                                     render={({ field }) => (
                                         <FormTextInput
-                                            accessibilityLabel="Nome da tarefa"
+                                            accessibilityLabel="Task name"
                                             autoCapitalize="sentences"
                                             autoFocus
                                             onBlur={field.onBlur}
                                             onChangeText={field.onChange}
                                             onSubmitEditing={submitTask}
-                                            placeholder="Ex.: Revisar anotações"
+                                            placeholder="e.g. Review notes"
                                             returnKeyType="done"
                                             hasError={Boolean(errors.title)}
                                             value={field.value}
@@ -194,11 +175,11 @@ export const AddTodoTaskModal = ({
                                 ) : null}
                             </View>
                             <FormActionButton
-                                accessibilityLabel="Adicionar tarefa"
+                                accessibilityLabel="Add task"
                                 disabled={isSubmitting}
                                 isLoading={isSubmitting}
                                 onPress={submitTask}
-                                title="Adicionar tarefa"
+                                title="ADD TASK"
                                 containerStyle={styles.submitButton}
                             />
                         </ScrollView>
@@ -230,25 +211,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: spacing.md,
     },
-    titleBlock: { flex: 1 },
     formScroll: { flex: 1 },
     content: {
         flexGrow: 1,
         justifyContent: 'space-between',
-        paddingBottom: spacing.xl,
+        paddingBottom: spacing.lg,
     },
     title: {
         color: colors.text,
         fontFamily: typography.fontFamily,
         fontWeight: '300',
-    },
-    subtitle: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 14,
-        marginTop: spacing.xxs,
     },
     closeButton: {
         alignItems: 'center',

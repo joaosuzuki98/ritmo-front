@@ -14,6 +14,7 @@ import { typography } from '../../styles/typography'
 export type FormActionButtonProps = {
     accessibilityLabel?: string
     containerStyle?: StyleProp<ViewStyle>
+    surfaceStyle?: StyleProp<ViewStyle>
     disabled?: boolean
     isLoading?: boolean
     onPress: () => void
@@ -24,6 +25,7 @@ export type FormActionButtonProps = {
 export const FormActionButton = ({
     accessibilityLabel,
     containerStyle,
+    surfaceStyle,
     disabled = false,
     isLoading = false,
     onPress,
@@ -49,6 +51,7 @@ export const FormActionButton = ({
                 style={[
                     styles.buttonSurface,
                     variant === 'destructive' && styles.destructiveSurface,
+                    surfaceStyle,
                 ]}
             >
                 {isLoading ? (

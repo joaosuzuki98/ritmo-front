@@ -15,10 +15,10 @@ export const bottomBarStyles = StyleSheet.create({
     },
     routeSlot: { flex: 1 },
     route: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-    routeIcon: { color: '#6875A4' },
+    routeIcon: { color: colors.bottomBarMuted },
     routeIconActive: { color: colors.text },
     routeLabel: {
-        color: '#6875A4',
+        color: colors.bottomBarMuted,
         fontFamily: typography.fontFamily,
         fontSize: 19,
         fontWeight: '300',

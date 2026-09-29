@@ -17,7 +17,14 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import { CheckCircle, Flame, Pause, Play } from 'phosphor-react-native'
+import {
+    CheckCircle,
+    Flame,
+    Pause,
+    Play,
+    Sun,
+    Warning,
+} from 'phosphor-react-native'
 import type { SharedValue } from 'react-native-reanimated'
 
 import type { HabitCardViewData } from '../habitDashboard.types'
@@ -61,6 +68,7 @@ export const HabitCard = ({
     const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
     const lastTapAt = useRef(0)
     const [showCelebration, setShowCelebration] = useState(false)
+    const [titleTextWidth, setTitleTextWidth] = useState(0)
     const wasCompleted = useRef(habit.status === 'completed')
     const dragStep = 188 * scale
     const pauseOpacity = useSharedValue(habit.isPaused ? 0.48 : 1)
@@ -169,13 +177,10 @@ export const HabitCard = ({
             layout={reducedMotion ? undefined : LinearTransition.duration(220)}
             style={[
                 {
-                    backgroundColor: habit.priorityColor,
+                    backgroundColor: habit.isFocusOfDay
+                        ? colors.warning
+                        : habit.priorityColor,
                     borderRadius: 16 * scale,
-                    borderColor:
-                        habit.status === 'completed'
-                            ? colors.success
-                            : 'transparent',
-                    borderWidth: 2,
                     marginBottom: 20 * scale,
                     minHeight: 168 * scale,
                     paddingHorizontal: 24 * scale,
@@ -233,19 +238,48 @@ export const HabitCard = ({
                         justifyContent: 'space-between',
                     }}
                 >
-                    <Text
-                        numberOfLines={1}
-                        style={{
-                            color: colors.priorityText,
-                            flex: 1,
-                            fontFamily: typography.fontFamily,
-                            fontSize: 20 * scale,
-                            fontWeight: '600',
-                        }}
-                    >
-                        {habit.title}
-                        {habit.categoryLabel ? ` - ${habit.categoryLabel}` : ''}
-                    </Text>
+                    <View style={{ flex: 1, position: 'relative' }}>
+                        <Text
+                            numberOfLines={1}
+                            onTextLayout={event => {
+                                const nextWidth =
+                                    event.nativeEvent.lines[0]?.width ?? 0
+                                setTitleTextWidth(currentWidth =>
+                                    currentWidth === nextWidth
+                                        ? currentWidth
+                                        : nextWidth,
+                                )
+                            }}
+                            style={[
+                                {
+                                    color: colors.priorityText,
+                                    fontFamily: typography.fontFamily,
+                                    fontSize: 20 * scale,
+                                },
+                                habit.isFocusOfDay
+                                    ? styles.focusText
+                                    : styles.semiboldText,
+                            ]}
+                        >
+                            {habit.title}
+                            {habit.categoryLabel
+                                ? ` - ${habit.categoryLabel}`
+                                : ''}
+                        </Text>
+                        {habit.status === 'completed' && titleTextWidth > 0 ? (
+                            <View
+                                pointerEvents="none"
+                                style={{
+                                    backgroundColor: colors.priorityText,
+                                    height: 2,
+                                    left: 0,
+                                    position: 'absolute',
+                                    top: 12 * scale,
+                                    width: titleTextWidth,
+                                }}
+                            />
+                        ) : null}
+                    </View>
                     <View style={styles.headerActions}>
                         {habit.status === 'completed' ? (
                             <CheckCircle
@@ -253,32 +287,54 @@ export const HabitCard = ({
                                 size={27 * scale}
                                 weight="fill"
                             />
-                        ) : null}
-                        <Pressable
-                            accessibilityLabel={`${
-                                habit.isPaused ? 'Resume' : 'Pause'
-                            } ${habit.title}`}
-                            accessibilityRole="button"
-                            onPress={event => {
-                                event.stopPropagation()
-                                onPause()
-                            }}
-                            style={{ padding: 4 * scale }}
-                        >
-                            {habit.isPaused ? (
-                                <Play
-                                    color={colors.priorityText}
-                                    size={27 * scale}
-                                    weight="regular"
-                                />
-                            ) : (
-                                <Pause
-                                    color={colors.priorityText}
-                                    size={27 * scale}
-                                    weight="regular"
-                                />
-                            )}
-                        </Pressable>
+                        ) : (
+                            <>
+                                {habit.status === 'partial' ? (
+                                    <Warning
+                                        color={colors.warning}
+                                        size={27 * scale}
+                                        weight="fill"
+                                    />
+                                ) : null}
+                                {habit.isFocusOfDay ? (
+                                    <View
+                                        accessible
+                                        accessibilityLabel="Focus of the day"
+                                    >
+                                        <Sun
+                                            color={colors.priorityText}
+                                            size={24 * scale}
+                                            weight="fill"
+                                        />
+                                    </View>
+                                ) : null}
+                                <Pressable
+                                    accessibilityLabel={`${
+                                        habit.isPaused ? 'Resume' : 'Pause'
+                                    } ${habit.title}`}
+                                    accessibilityRole="button"
+                                    onPress={event => {
+                                        event.stopPropagation()
+                                        onPause()
+                                    }}
+                                    style={{ padding: 4 * scale }}
+                                >
+                                    {habit.isPaused ? (
+                                        <Play
+                                            color={colors.priorityText}
+                                            size={27 * scale}
+                                            weight="regular"
+                                        />
+                                    ) : (
+                                        <Pause
+                                            color={colors.priorityText}
+                                            size={27 * scale}
+                                            weight="regular"
+                                        />
+                                    )}
+                                </Pressable>
+                            </>
+                        )}
                     </View>
                 </View>
                 {habit.isPrerequisiteOnly ? (
@@ -292,21 +348,30 @@ export const HabitCard = ({
                         {habit.blockingHabitTitles.join(', ')}
                     </Text>
                 ) : null}
-                {habit.description ? (
-                    <Text
-                        style={{
-                            color: colors.white,
+                <Text
+                    style={[
+                        {
+                            color:
+                                habit.status === 'completed'
+                                    ? colors.priorityText
+                                    : colors.white,
                             fontFamily: typography.fontFamily,
-                            fontSize: 18 * scale,
-                            fontWeight: '600',
+                            fontSize:
+                                (habit.status === 'completed' ? 26 : 18) *
+                                scale,
                             lineHeight: 26 * scale,
                             marginTop: 21 * scale,
                             maxWidth: '72%',
-                        }}
-                    >
-                        {habit.description}
-                    </Text>
-                ) : null}
+                        },
+                        habit.isFocusOfDay
+                            ? styles.focusText
+                            : styles.semiboldText,
+                    ]}
+                >
+                    {habit.status === 'completed'
+                        ? 'Completed'
+                        : habit.description?.trim() || 'No description given'}
+                </Text>
                 <View
                     style={{
                         alignItems: 'center',
@@ -324,7 +389,9 @@ export const HabitCard = ({
                     <Text
                         accessibilityLabel={`Streak ${habit.currentStreak} for ${habit.title}`}
                         style={{
-                            color: colors.white,
+                            color: habit.isFocusOfDay
+                                ? colors.priorityText
+                                : colors.white,
                             fontFamily: typography.fontFamily,
                             fontSize: 42 * scale,
                             fontWeight: '400',
@@ -349,6 +416,8 @@ export const HabitCard = ({
 }
 
 const styles = StyleSheet.create({
+    focusText: { color: colors.priorityText, fontWeight: '400' },
+    semiboldText: { fontWeight: '600' },
     celebrationLayer: {
         bottom: 0,
         left: 0,

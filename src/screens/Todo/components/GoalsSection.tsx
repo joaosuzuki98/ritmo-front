@@ -74,7 +74,7 @@ export const GoalsSection = ({
                         habitOptions.length === 0 && styles.disabledButton,
                     ]}
                 >
-                    <Plus color={colors.text} size={18} weight="bold" />
+                    <Plus color={colors.accentStrong} size={18} weight="bold" />
                     <Text style={styles.addButtonText}>Add goal</Text>
                 </Pressable>
             </View>
@@ -203,16 +203,14 @@ const styles = StyleSheet.create({
     },
     addButton: {
         alignItems: 'center',
-        backgroundColor: colors.accent,
-        borderRadius: 10,
         flexDirection: 'row',
         gap: spacing.xs,
         minHeight: 42,
-        paddingHorizontal: spacing.sm,
+        paddingLeft: spacing.sm,
     },
     disabledButton: { opacity: 0.45 },
     addButtonText: {
-        color: colors.text,
+        color: colors.accentStrong,
         fontFamily: typography.fontFamily,
         fontSize: 12,
         fontWeight: '600',

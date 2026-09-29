@@ -41,10 +41,16 @@ type AddScheduleItemModalProps = {
     onDeleteItem?: () => Promise<void>
     onUpdateItem?: (data: AddScheduleItemFormData) => Promise<void>
     title?: string
-    subtitle?: string
     submitLabel?: string
     showEventDetails?: boolean
+    showReminderType?: boolean
 }
+
+const reminderTypeOptions = [
+    ['normal', 'Normal'],
+    ['holiday', 'Holiday'],
+    ['important_day', 'Important day'],
+] as const
 
 const getInitialValues = (
     startHour: number,
@@ -72,6 +78,11 @@ const getInitialValues = (
         title: item?.title ?? '',
         location: item?.location ?? '',
         description: item?.description ?? '',
+        reminderType:
+            item?.reminderType === 'holiday' ||
+            item?.reminderType === 'important_day'
+                ? item.reminderType
+                : 'normal',
     }
 }
 
@@ -84,9 +95,9 @@ export const AddScheduleItemModal = ({
     onDeleteItem,
     onUpdateItem,
     title,
-    subtitle,
     submitLabel,
     showEventDetails = false,
+    showReminderType = false,
 }: AddScheduleItemModalProps) => {
     const { bottom } = useSafeAreaInsets()
     const { height, width } = useWindowDimensions()
@@ -100,6 +111,8 @@ export const AddScheduleItemModal = ({
         formState: { errors },
         handleSubmit,
         reset,
+        setValue,
+        watch,
     } = useForm<AddScheduleItemFormData>({
         defaultValues: getInitialValues(initialStartHour, item),
         resolver: zodResolver(addScheduleItemSchema),
@@ -115,6 +128,7 @@ export const AddScheduleItemModal = ({
         setSubmitError('')
         onClose()
     }
+    const selectedReminderType = watch('reminderType')
     const handleSave = async (data: AddScheduleItemFormData) => {
         setIsSubmitting(true)
         setSubmitError('')
@@ -212,17 +226,6 @@ export const AddScheduleItemModal = ({
                                             ? 'Edit schedule item'
                                             : 'Add schedule item')}
                                 </Text>
-                                <Text
-                                    style={[
-                                        styles.subtitle,
-                                        { fontSize: 13 * scale },
-                                    ]}
-                                >
-                                    {subtitle ??
-                                        (item
-                                            ? 'Update or remove this schedule item.'
-                                            : 'Habits are added automatically.')}
-                                </Text>
                             </View>
                             <Pressable
                                 accessibilityLabel="Close schedule item modal"
@@ -310,6 +313,53 @@ export const AddScheduleItemModal = ({
                                             )}
                                         />
                                     </>
+                                ) : null}
+                                {showReminderType ? (
+                                    <View>
+                                        <Text style={styles.label}>
+                                            Reminder type
+                                        </Text>
+                                        <View style={styles.reminderTypes}>
+                                            {reminderTypeOptions.map(
+                                                ([value, label]) => {
+                                                    const isSelected =
+                                                        selectedReminderType ===
+                                                        value
+                                                    return (
+                                                        <Pressable
+                                                            accessibilityRole="button"
+                                                            accessibilityState={{
+                                                                selected:
+                                                                    isSelected,
+                                                            }}
+                                                            key={value}
+                                                            onPress={() =>
+                                                                setValue(
+                                                                    'reminderType',
+                                                                    value,
+                                                                )
+                                                            }
+                                                            style={[
+                                                                styles.reminderType,
+                                                                isSelected &&
+                                                                    styles.selectedReminderType,
+                                                            ]}
+                                                        >
+                                                            <Text
+                                                                style={[
+                                                                    styles.reminderTypeText,
+                                                                    isSelected &&
+                                                                        styles.selectedReminderTypeText,
+                                                                ]}
+                                                            >
+                                                                {label}
+                                                            </Text>
+                                                        </Pressable>
+                                                    )
+                                                },
+                                            )}
+                                        </View>
+                                    </View>
                                 ) : null}
                                 <View style={styles.timeRow}>
                                     <View style={styles.timeColumn}>
@@ -401,11 +451,6 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontWeight: '300',
     },
-    subtitle: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        marginTop: 3,
-    },
     closeButton: {
         alignItems: 'center',
         height: spacing.touchTarget,
@@ -440,5 +485,23 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     descriptionInput: { minHeight: 78, textAlignVertical: 'top' },
+    reminderTypes: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    reminderType: {
+        borderColor: colors.border,
+        borderRadius: 18,
+        borderWidth: 1,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+    },
+    selectedReminderType: {
+        backgroundColor: colors.accent,
+        borderColor: colors.accent,
+    },
+    reminderTypeText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
+    },
+    selectedReminderTypeText: { color: colors.text },
     actions: { gap: spacing.sm },
 })

@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     actions: {
-        alignItems: 'center',
+        alignItems: 'stretch',
         flexDirection: 'column-reverse',
         gap: spacing.sm,
         justifyContent: 'flex-end',

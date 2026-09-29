@@ -12,6 +12,15 @@ const startOfDay = (date: Date): Date => {
     return value
 }
 
+export type ReminderType = NonNullable<AddScheduleItemFormData['reminderType']>
+
+export const getReminderType = (
+    reminderType: string | undefined,
+): ReminderType =>
+    reminderType === 'holiday' || reminderType === 'important_day'
+        ? reminderType
+        : 'normal'
+
 export const useRemindersViewModel = (currentUserId: string) => {
     const [events, setEvents] = useState<Event[]>([])
     const [visibleMonth, setVisibleMonth] = useState(() => {
@@ -24,13 +33,18 @@ export const useRemindersViewModel = (currentUserId: string) => {
     useEffect(() => {
         const subscription = database
             .get<Event>('events')
-            .query(Q.where('user_id', currentUserId))
+            .query(
+                Q.where('user_id', currentUserId),
+                Q.where('conversion_origin', 'reminders'),
+            )
             .observeWithColumns([
                 'title',
                 'date_time',
                 'end_time',
                 'location',
                 'description',
+                'conversion_origin',
+                'reminder_type',
             ])
             .subscribe({
                 next: setEvents,
@@ -61,7 +75,7 @@ export const useRemindersViewModel = (currentUserId: string) => {
         return days
     }, [visibleMonth])
 
-    const eventsForSelectedDate = events.filter(event => {
+    const selectedDateEvents = events.filter(event => {
         const date = event.dateTime
         return (
             date.getFullYear() === selectedDate.getFullYear() &&
@@ -69,6 +83,15 @@ export const useRemindersViewModel = (currentUserId: string) => {
             date.getDate() === selectedDate.getDate()
         )
     })
+    const eventsForSelectedDate = selectedDateEvents.filter(
+        event => getReminderType(event.reminderType) === 'normal',
+    )
+    const holidaysForSelectedDate = selectedDateEvents.filter(
+        event => getReminderType(event.reminderType) === 'holiday',
+    )
+    const importantDaysForSelectedDate = selectedDateEvents.filter(
+        event => getReminderType(event.reminderType) === 'important_day',
+    )
 
     const moveMonth = (delta: number) => {
         setVisibleMonth(
@@ -128,6 +151,7 @@ export const useRemindersViewModel = (currentUserId: string) => {
                 event.recurrence = 'none'
                 event.countdownEnabled = false
                 event.conversionOrigin = 'reminders'
+                event.reminderType = data.reminderType ?? 'normal'
             })
         })
     }
@@ -173,6 +197,7 @@ export const useRemindersViewModel = (currentUserId: string) => {
                 record.endTime = endTime
                 record.location = data.location?.trim() || undefined
                 record.description = data.description?.trim() || undefined
+                record.reminderType = data.reminderType ?? 'normal'
                 record.updatedAt = new Date()
             })
         })
@@ -190,6 +215,8 @@ export const useRemindersViewModel = (currentUserId: string) => {
         deleteEvent,
         calendarDays,
         eventsForSelectedDate,
+        holidaysForSelectedDate,
+        importantDaysForSelectedDate,
         events,
         moveMonth,
         selectMonth,

@@ -14,7 +14,8 @@ import {
 } from 'react-native'
 import type { ImageSourcePropType } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { SpeakerHigh } from 'phosphor-react-native'
+import Sound from 'react-native-sound'
+import { SpeakerHigh, SpeakerSlash } from 'phosphor-react-native'
 
 import RitmoLogo from '../../assets/images/ritmo-logo.svg'
 import Star from '../../assets/images/star.svg'
@@ -86,7 +87,10 @@ const onboardingFontFamily =
 
 export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
     const [currentPage, setCurrentPage] = useState(0)
+    const [isAudioMuted, setIsAudioMuted] = useState(false)
     const drift = useRef(new Animated.Value(0)).current
+    const soundtrackRef = useRef<Sound | null>(null)
+    const isAudioMutedRef = useRef(false)
     const { height, width } = useWindowDimensions()
     const page = onboardingPages[currentPage]
     const isLastPage = currentPage === onboardingPages.length - 1
@@ -120,6 +124,36 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
         return () => animation.stop()
     }, [drift])
 
+    useEffect(() => {
+        let isActive = true
+        Sound.setCategory('Playback')
+        const soundtrack = new Sound(
+            'onboarding_track.mp3',
+            Sound.MAIN_BUNDLE,
+            error => {
+                const loadedSoundtrack = soundtrackRef.current
+                if (!isActive || !loadedSoundtrack) return
+                if (error) {
+                    loadedSoundtrack.release()
+                    soundtrackRef.current = null
+                    return
+                }
+
+                loadedSoundtrack.setNumberOfLoops(-1)
+                loadedSoundtrack.setVolume(isAudioMutedRef.current ? 0 : 1)
+                loadedSoundtrack.play()
+            },
+        )
+        soundtrackRef.current = soundtrack
+
+        return () => {
+            isActive = false
+            soundtrack.stop()
+            soundtrack.release()
+            soundtrackRef.current = null
+        }
+    }, [])
+
     const handleContinue = () => {
         if (isLastPage) {
             onComplete()
@@ -127,6 +161,13 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
         }
 
         setCurrentPage(index => index + 1)
+    }
+
+    const handleToggleAudio = () => {
+        const nextIsMuted = !isAudioMutedRef.current
+        isAudioMutedRef.current = nextIsMuted
+        setIsAudioMuted(nextIsMuted)
+        soundtrackRef.current?.setVolume(nextIsMuted ? 0 : 1)
     }
 
     const renderStarField = () => (
@@ -262,20 +303,35 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
             {renderStarField()}
             <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
                 <View style={styles.screen}>
-                    {isLastPage ? (
-                        <View style={styles.topBarSpacer} />
-                    ) : (
-                        <View style={styles.topBar}>
-                            <View
-                                accessibilityElementsHidden
-                                importantForAccessibility="no-hide-descendants"
-                            >
+                    <View style={styles.topBar}>
+                        <Pressable
+                            accessibilityLabel={
+                                isAudioMuted
+                                    ? 'Ativar áudio da apresentação'
+                                    : 'Silenciar áudio da apresentação'
+                            }
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: isAudioMuted }}
+                            hitSlop={spacing.sm}
+                            onPress={handleToggleAudio}
+                        >
+                            {isAudioMuted ? (
+                                <SpeakerSlash
+                                    color={colors.onboardingMuted}
+                                    size={20}
+                                    weight="regular"
+                                />
+                            ) : (
                                 <SpeakerHigh
                                     color={colors.onboardingMuted}
                                     size={20}
                                     weight="regular"
                                 />
-                            </View>
+                            )}
+                        </Pressable>
+                        {isLastPage ? (
+                            <View style={styles.topBarSpacer} />
+                        ) : (
                             <Pressable
                                 accessibilityLabel="Pular apresentação"
                                 accessibilityRole="button"
@@ -284,8 +340,8 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
                             >
                                 <Text style={styles.skipText}>Pular</Text>
                             </Pressable>
-                        </View>
-                    )}
+                        )}
+                    </View>
 
                     <ScrollView
                         bounces={false}

@@ -14,6 +14,7 @@
 		DE64FFEDA937472F9407B56F /* quicksand.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3FCCDBDBE85F436F95EF2A04 /* quicksand.ttf */; };
 		4414BC6DB67747519E36594F /* quattrocento-sans.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B2C53BCF441941DF8AFAB22A /* quattrocento-sans.ttf */; };
 		BE93119A4166476FAECF40C4 /* quattrocento-sans-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5DA894D962B347DCA5A85D92 /* quattrocento-sans-OFL.txt */; };
+		A8E2B7D34F1C5A910D6E7C22 /* onboarding_track.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B8E2B7D34F1C5A910D6E7C22 /* onboarding_track.mp3 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		3FCCDBDBE85F436F95EF2A04 /* quicksand.ttf */ = {isa = PBXFileReference; name = "quicksand.ttf"; path = "../src/assets/fonts/quicksand.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		B2C53BCF441941DF8AFAB22A /* quattrocento-sans.ttf */ = {isa = PBXFileReference; name = "quattrocento-sans.ttf"; path = "../src/assets/fonts/quattrocento-sans.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		5DA894D962B347DCA5A85D92 /* quattrocento-sans-OFL.txt */ = {isa = PBXFileReference; name = "quattrocento-sans-OFL.txt"; path = "../src/assets/fonts/quattrocento-sans-OFL.txt"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		B8E2B7D34F1C5A910D6E7C22 /* onboarding_track.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = onboarding_track.mp3; path = "../src/assets/audio/onboarding-track.mp3"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +112,7 @@
 				3FCCDBDBE85F436F95EF2A04 /* quicksand.ttf */,
 				B2C53BCF441941DF8AFAB22A /* quattrocento-sans.ttf */,
 				5DA894D962B347DCA5A85D92 /* quattrocento-sans-OFL.txt */,
+				B8E2B7D34F1C5A910D6E7C22 /* onboarding_track.mp3 */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -180,6 +183,7 @@
 				DE64FFEDA937472F9407B56F /* quicksand.ttf in Resources */,
 				4414BC6DB67747519E36594F /* quattrocento-sans.ttf in Resources */,
 				BE93119A4166476FAECF40C4 /* quattrocento-sans-OFL.txt in Resources */,
+				A8E2B7D34F1C5A910D6E7C22 /* onboarding_track.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

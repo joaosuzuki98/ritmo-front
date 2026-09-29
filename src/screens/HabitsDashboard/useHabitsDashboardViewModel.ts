@@ -38,6 +38,7 @@ import { parsePreferredTime } from './preferredTime'
 import { findHabitScheduleConflict } from '../../utils/scheduleConflict'
 import type { LogHabitProgressFormData } from './logHabitProgressSchema'
 import { wouldCreateHabitRequirementCycle } from './habitRequirementUtils'
+import { calculateHabitStreak } from './streakUtils'
 
 type HabitSource = Pick<
     Habit,
@@ -86,6 +87,152 @@ const getConditionStatus = (
     if (!rule || typeof rule !== 'object') return undefined
     const status = (rule as Record<string, unknown>).status
     return habitRequirementStatuses.find(value => value === status)
+}
+
+const updateHabitStreak = async (habitId: string, today = new Date()) => {
+    const [habit, records, streaks] = await Promise.all([
+        database
+            .get<Habit>('habits')
+            .find(habitId)
+            .catch(() => null),
+        database.get<CompletionRecord>('completion_records').query().fetch(),
+        database.get<Streak>('streaks').query().fetch(),
+    ])
+    if (!habit) return
+
+    const streakValues = calculateHabitStreak(
+        records.filter(record => record.habitId === habitId),
+        habit.weekDays,
+        today,
+    )
+    const streak = streaks.find(item => item.habitId === habitId)
+    await database.write(async () => {
+        if (streak) {
+            await streak.update(record => {
+                record.currentStreak = streakValues.currentStreak
+                record.longestStreak = streakValues.longestStreak
+            })
+        } else {
+            await database.get<Streak>('streaks').create(record => {
+                record.habitId = habitId
+                record.currentStreak = streakValues.currentStreak
+                record.longestStreak = streakValues.longestStreak
+            })
+        }
+    })
+}
+
+const completeAfterHabitChain = async (
+    completedHabitId: string,
+    userId: string,
+    completionDate: Date,
+    completionTime: Date,
+) => {
+    const dateKey = localDateKey(completionDate)
+    const [habits, dependencies, conditions, records] = await Promise.all([
+        database.get<Habit>('habits').query().fetch(),
+        database.get<HabitDependency>('habit_dependencies').query().fetch(),
+        database.get<HabitCondition>('habit_conditions').query().fetch(),
+        database.get<CompletionRecord>('completion_records').query().fetch(),
+    ])
+    const ownedHabits = new Map(
+        habits
+            .filter(habit => habit.userId === userId)
+            .map(habit => [habit.id, habit]),
+    )
+    const statusByHabitId = new Map<string, string>()
+    const latestRecordByHabitId = new Map<string, CompletionRecord>()
+    records
+        .filter(record => localDateKey(record.date) === dateKey)
+        .sort(
+            (left, right) =>
+                (left.updatedAt?.getTime() ?? left.date.getTime()) -
+                (right.updatedAt?.getTime() ?? right.date.getTime()),
+        )
+        .forEach(record => {
+            latestRecordByHabitId.set(record.habitId, record)
+            statusByHabitId.set(record.habitId, record.status)
+        })
+    statusByHabitId.set(completedHabitId, 'completed')
+
+    const queuedHabitIds = [completedHabitId]
+    const visitedHabitIds = new Set<string>()
+    const habitsToComplete = new Set<string>()
+    while (queuedHabitIds.length) {
+        const triggerHabitId = queuedHabitIds.shift()!
+        if (visitedHabitIds.has(triggerHabitId)) continue
+        visitedHabitIds.add(triggerHabitId)
+
+        dependencies
+            .filter(
+                dependency =>
+                    dependency.type === 'after_completion' &&
+                    dependency.triggerHabitId === triggerHabitId,
+            )
+            .forEach(dependency => {
+                const dependentHabit = ownedHabits.get(dependency.habitId)
+                if (!dependentHabit) return
+
+                const currentStatus = statusByHabitId.get(dependentHabit.id)
+                if (currentStatus === 'completed') {
+                    queuedHabitIds.push(dependentHabit.id)
+                    return
+                }
+                if (dependentHabit.status === 'paused') return
+
+                const condition = conditions.find(
+                    item =>
+                        item.habitId === dependentHabit.id &&
+                        item.conditionType === 'habit_status',
+                )
+                if (condition) {
+                    const requiredStatus = getConditionStatus(
+                        condition.conditionRule,
+                    )
+                    if (
+                        !requiredStatus ||
+                        statusByHabitId.get(condition.conditionHabitId) !==
+                            requiredStatus
+                    )
+                        return
+                }
+
+                statusByHabitId.set(dependentHabit.id, 'completed')
+                habitsToComplete.add(dependentHabit.id)
+                queuedHabitIds.push(dependentHabit.id)
+            })
+    }
+
+    if (!habitsToComplete.size) return
+
+    await database.write(async () => {
+        for (const habitId of habitsToComplete) {
+            const currentRecord = latestRecordByHabitId.get(habitId)
+            if (currentRecord) {
+                await currentRecord.update(record => {
+                    record.date = completionDate
+                    record.status = 'completed'
+                    record.completionTime = completionTime
+                    record.incompletionReasonId = undefined
+                })
+            } else {
+                await database
+                    .get<CompletionRecord>('completion_records')
+                    .create(record => {
+                        record.habitId = habitId
+                        record.date = completionDate
+                        record.status = 'completed'
+                        record.completionTime = completionTime
+                        record.distractionLockEnabled = false
+                    })
+            }
+        }
+    })
+    await Promise.all(
+        [...habitsToComplete].map(habitId =>
+            updateHabitStreak(habitId, completionDate),
+        ),
+    )
 }
 
 export const composeHabitCards = (
@@ -256,6 +403,10 @@ export const composeHabitCards = (
             ).length
             const attempts = completedCount + partialCount + skippedCount
             const streak = streakByHabit.get(habit.id)
+            const calculatedStreak = calculateHabitStreak(
+                history,
+                habit.weekDays,
+            )
             const card: HabitCardViewData = {
                 id: habit.id,
                 title: habit.name,
@@ -295,8 +446,12 @@ export const composeHabitCards = (
                 successRate: attempts
                     ? ((completedCount + partialCount / 2) / attempts) * 100
                     : 0,
-                currentStreak: streak?.current ?? 0,
-                longestStreak: streak?.longest ?? 0,
+                currentStreak: history.length
+                    ? calculatedStreak.currentStreak
+                    : streak?.current ?? 0,
+                longestStreak: history.length
+                    ? calculatedStreak.longestStreak
+                    : streak?.longest ?? 0,
                 completionHistory: history.map(record => ({
                     date: record.date,
                     status: record.status,
@@ -543,6 +698,7 @@ type DashboardData = {
     user: User | null
     cards: HabitCardViewData[]
     habitOptions: HabitOption[]
+    categoryOptions: string[]
     preference: HabitDisplayPreference | null
     hasAnyHabits: boolean
 }
@@ -560,6 +716,7 @@ export const useHabitsDashboardViewModel = (
         user: null,
         cards: [],
         habitOptions: [],
+        categoryOptions: [],
         preference: null,
         hasAnyHabits: false,
     })
@@ -651,6 +808,17 @@ export const useHabitsDashboardViewModel = (
                                 habit.name.trim().length > 0,
                         )
                         .map(habit => ({ id: habit.id, title: habit.name })),
+                    categoryOptions: Array.from(
+                        new Set(
+                            categories
+                                .filter(
+                                    category =>
+                                        category.userId === currentUserId &&
+                                        category.name.trim().length > 0,
+                                )
+                                .map(category => category.name.trim()),
+                        ),
+                    ).sort((left, right) => left.localeCompare(right)),
                     preference,
                     hasAnyHabits: habits.some(
                         habit =>
@@ -1004,8 +1172,11 @@ export const useHabitsDashboardViewModel = (
                                         attempts) *
                                     100
                                   : 0,
-                              currentStreak: Math.max(1, card.currentStreak),
-                              longestStreak: Math.max(1, card.longestStreak),
+                              ...calculateHabitStreak(
+                                  completionHistory,
+                                  card.weekDays,
+                                  completionTime,
+                              ),
                               completionHistory,
                           }
                         : card,
@@ -1037,9 +1208,6 @@ export const useHabitsDashboardViewModel = (
                     (right.updatedAt?.getTime() ?? right.date.getTime()) -
                     (left.updatedAt?.getTime() ?? left.date.getTime()),
             )[0]
-        const streaks = await database.get<Streak>('streaks').query().fetch()
-        const streak = streaks.find(item => item.habitId === habitId)
-
         await database.write(async () => {
             if (currentRecord) {
                 await currentRecord.update(record => {
@@ -1058,20 +1226,14 @@ export const useHabitsDashboardViewModel = (
                         record.distractionLockEnabled = false
                     })
             }
-
-            if (streak) {
-                await streak.update(record => {
-                    record.currentStreak = Math.max(1, record.currentStreak)
-                    record.longestStreak = Math.max(1, record.longestStreak)
-                })
-            } else {
-                await database.get<Streak>('streaks').create(record => {
-                    record.habitId = habitId
-                    record.currentStreak = 1
-                    record.longestStreak = 1
-                })
-            }
         })
+        await updateHabitStreak(habitId, completionTime)
+        await completeAfterHabitChain(
+            habitId,
+            currentUserId,
+            completionTime,
+            completionTime,
+        )
         setReloadToken(current => current + 1)
     }
 
@@ -1128,11 +1290,6 @@ export const useHabitsDashboardViewModel = (
             const existingReason = reasons.find(
                 reason => reason.description === reasonDescription,
             )
-            const streaks =
-                formData.status === 'completed'
-                    ? await database.get<Streak>('streaks').query().fetch()
-                    : []
-            const streak = streaks.find(item => item.habitId === habitId)
             let incompletionReasonId = existingReason?.id
 
             await database.write(async () => {
@@ -1166,20 +1323,15 @@ export const useHabitsDashboardViewModel = (
                             record.distractionLockEnabled = false
                         })
                 }
-
-                if (streak) {
-                    await streak.update(record => {
-                        record.currentStreak = Math.max(1, record.currentStreak)
-                        record.longestStreak = Math.max(1, record.longestStreak)
-                    })
-                } else if (formData.status === 'completed') {
-                    await database.get<Streak>('streaks').create(record => {
-                        record.habitId = habitId
-                        record.currentStreak = 1
-                        record.longestStreak = 1
-                    })
-                }
             })
+            await updateHabitStreak(habitId, date)
+            if (formData.status === 'completed')
+                await completeAfterHabitChain(
+                    habitId,
+                    currentUserId,
+                    date,
+                    completionTime,
+                )
         }
 
         const history = currentCard.completionHistory.some(
@@ -1237,14 +1389,7 @@ export const useHabitsDashboardViewModel = (
                                     attempts) *
                                 100
                               : 0,
-                          currentStreak:
-                              formData.status === 'completed'
-                                  ? Math.max(1, card.currentStreak)
-                                  : card.currentStreak,
-                          longestStreak:
-                              formData.status === 'completed'
-                                  ? Math.max(1, card.longestStreak)
-                                  : card.longestStreak,
+                          ...calculateHabitStreak(history, card.weekDays, date),
                           completionHistory: history,
                       }
                     : card,

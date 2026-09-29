@@ -18,7 +18,11 @@ import { typography } from '../../styles/typography'
 import type { Event, User } from '../../database'
 import { AddScheduleItemModal } from '../Schedule/components/AddScheduleItemModal'
 import { MonthYearModal } from './components/MonthYearModal'
-import { useRemindersViewModel } from './useRemindersViewModel'
+import {
+    getReminderType,
+    useRemindersViewModel,
+    type ReminderType,
+} from './useRemindersViewModel'
 
 type RemindersScreenProps = {
     currentUser: User
@@ -65,6 +69,39 @@ export const RemindersScreen = ({
     const [editingEvent, setEditingEvent] = useState<Event | null>(null)
     const [isMonthYearModalVisible, setIsMonthYearModalVisible] =
         useState(false)
+    const renderEvents = (events: Event[]) =>
+        events.map(event => (
+            <Pressable
+                accessibilityLabel={`Edit event ${event.title}`}
+                accessibilityRole="button"
+                key={event.id}
+                onPress={() => setEditingEvent(event)}
+                style={styles.eventCard}
+            >
+                <Text style={[styles.eventText, { fontSize: 16 * scale }]}>
+                    {formatEventDate(event.dateTime)} - {event.title}
+                </Text>
+                {event.location ? (
+                    <Text
+                        style={[styles.eventDetail, { fontSize: 14 * scale }]}
+                    >
+                        {event.location}
+                    </Text>
+                ) : null}
+                {event.description ? (
+                    <Text
+                        style={[styles.eventDetail, { fontSize: 14 * scale }]}
+                    >
+                        {event.description}
+                    </Text>
+                ) : null}
+            </Pressable>
+        ))
+    const dotColors: Record<ReminderType, string> = {
+        normal: colors.success,
+        holiday: colors.onboardingPurple,
+        important_day: colors.priorityHigh,
+    }
 
     return (
         <ScreenLayout
@@ -152,16 +189,28 @@ export const RemindersScreen = ({
                 </View>
                 <View style={styles.calendarGrid}>
                     {viewModel.calendarDays.map((day, index) => {
-                        const hasEvent =
-                            day !== null &&
-                            viewModel.events.some(
-                                event =>
-                                    event.dateTime.getFullYear() ===
-                                        viewModel.visibleMonth.getFullYear() &&
-                                    event.dateTime.getMonth() ===
-                                        viewModel.visibleMonth.getMonth() &&
-                                    event.dateTime.getDate() === day,
-                            )
+                        const eventTypes =
+                            day === null
+                                ? []
+                                : Array.from(
+                                      new Set(
+                                          viewModel.events
+                                              .filter(
+                                                  event =>
+                                                      event.dateTime.getFullYear() ===
+                                                          viewModel.visibleMonth.getFullYear() &&
+                                                      event.dateTime.getMonth() ===
+                                                          viewModel.visibleMonth.getMonth() &&
+                                                      event.dateTime.getDate() ===
+                                                          day,
+                                              )
+                                              .map(event =>
+                                                  getReminderType(
+                                                      event.reminderType,
+                                                  ),
+                                              ),
+                                      ),
+                                  )
                         const isSelected =
                             day !== null &&
                             viewModel.selectedDate.getFullYear() ===
@@ -200,8 +249,23 @@ export const RemindersScreen = ({
                                         >
                                             {day}
                                         </Text>
-                                        {hasEvent ? (
-                                            <View style={styles.eventDot} />
+                                        {eventTypes.length ? (
+                                            <View style={styles.eventDots}>
+                                                {eventTypes.map(type => (
+                                                    <View
+                                                        key={type}
+                                                        style={[
+                                                            styles.eventDot,
+                                                            {
+                                                                backgroundColor:
+                                                                    dotColors[
+                                                                        type
+                                                                    ],
+                                                            },
+                                                        ]}
+                                                    />
+                                                ))}
+                                            </View>
                                         ) : null}
                                     </>
                                 ) : null}
@@ -216,45 +280,7 @@ export const RemindersScreen = ({
                     >
                         Upcoming events
                     </Text>
-                    {viewModel.eventsForSelectedDate.map(event => (
-                        <Pressable
-                            accessibilityLabel={`Edit event ${event.title}`}
-                            accessibilityRole="button"
-                            key={event.id}
-                            onPress={() => setEditingEvent(event)}
-                            style={styles.eventCard}
-                        >
-                            <Text
-                                style={[
-                                    styles.eventText,
-                                    { fontSize: 16 * scale },
-                                ]}
-                            >
-                                {formatEventDate(event.dateTime)} -{' '}
-                                {event.title}
-                            </Text>
-                            {event.location ? (
-                                <Text
-                                    style={[
-                                        styles.eventDetail,
-                                        { fontSize: 14 * scale },
-                                    ]}
-                                >
-                                    {event.location}
-                                </Text>
-                            ) : null}
-                            {event.description ? (
-                                <Text
-                                    style={[
-                                        styles.eventDetail,
-                                        { fontSize: 14 * scale },
-                                    ]}
-                                >
-                                    {event.description}
-                                </Text>
-                            ) : null}
-                        </Pressable>
-                    ))}
+                    {renderEvents(viewModel.eventsForSelectedDate)}
                     {viewModel.eventsForSelectedDate.length === 0 ? (
                         <Text
                             style={[styles.emptyText, { fontSize: 15 * scale }]}
@@ -272,9 +298,15 @@ export const RemindersScreen = ({
                     >
                         Upcoming holidays
                     </Text>
-                    <Text style={[styles.emptyText, { fontSize: 15 * scale }]}>
-                        No upcoming holidays.
-                    </Text>
+                    {viewModel.holidaysForSelectedDate.length > 0 ? (
+                        renderEvents(viewModel.holidaysForSelectedDate)
+                    ) : (
+                        <Text
+                            style={[styles.emptyText, { fontSize: 15 * scale }]}
+                        >
+                            No upcoming holidays.
+                        </Text>
+                    )}
                 </View>
                 <View style={[styles.section, { marginTop: 26 * scale }]}>
                     <Text
@@ -282,9 +314,15 @@ export const RemindersScreen = ({
                     >
                         Upcoming important days
                     </Text>
-                    <Text style={[styles.emptyText, { fontSize: 15 * scale }]}>
-                        No important days yet.
-                    </Text>
+                    {viewModel.importantDaysForSelectedDate.length > 0 ? (
+                        renderEvents(viewModel.importantDaysForSelectedDate)
+                    ) : (
+                        <Text
+                            style={[styles.emptyText, { fontSize: 15 * scale }]}
+                        >
+                            No important days yet.
+                        </Text>
+                    )}
                 </View>
             </ScrollView>
             <MonthYearModal
@@ -305,13 +343,9 @@ export const RemindersScreen = ({
                     else onCloseAddEventModal()
                 }}
                 title={editingEvent ? 'Edit event' : 'Add event'}
-                subtitle={
-                    editingEvent
-                        ? 'Update or remove this reminder.'
-                        : 'Choose a time for this reminder.'
-                }
                 submitLabel={editingEvent ? 'SAVE EVENT' : 'ADD EVENT'}
                 showEventDetails
+                showReminderType
                 onCreateItem={viewModel.addEvent}
                 onUpdateItem={data =>
                     editingEvent
@@ -386,17 +420,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 7,
         paddingTop: 7,
     },
-    selectedDay: { backgroundColor: colors.scheduleBackground },
+    selectedDay: { backgroundColor: colors.accent },
     dayText: {
         color: colors.text,
         fontFamily: typography.fontFamily,
     },
     selectedDayText: { color: colors.white, fontWeight: '700' },
+    eventDots: { flexDirection: 'row', gap: 4, marginTop: 5 },
     eventDot: {
-        backgroundColor: colors.success,
         borderRadius: 3,
         height: 6,
-        marginTop: 5,
         width: 6,
     },
     section: { gap: spacing.sm },

@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 9,
+    version: 11,
     tables: [
         tableSchema({
             name: 'users',
@@ -109,6 +109,7 @@ export const databaseSchema = appSchema({
                 },
                 { name: 'countdown_enabled', type: 'boolean' },
                 { name: 'conversion_origin', type: 'string' },
+                { name: 'reminder_type', type: 'string', isOptional: true },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],

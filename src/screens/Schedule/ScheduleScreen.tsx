@@ -1,5 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+} from 'react-native-reanimated'
 import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native'
 
 import { ScreenLayout } from '../../components/ScreenLayout'
@@ -32,10 +37,23 @@ export const ScheduleScreen = ({
     const viewModel = useScheduleViewModel(currentUser.id)
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
     const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+    const timelineOpacity = useSharedValue(1)
+    const timelineTranslationX = useSharedValue(0)
     const calendarButtonSize = 24 * scale
     const calendarButtonHitSlop = (spacing.touchTarget - calendarButtonSize) / 2
     const dateButtonOffset =
         ((typography.screenSubtitle.fontSize - spacing.touchTarget) * scale) / 2
+    const timelineAnimationStyle = useAnimatedStyle(() => ({
+        opacity: timelineOpacity.value,
+        transform: [{ translateX: timelineTranslationX.value }],
+    }))
+
+    useEffect(() => {
+        timelineOpacity.value = 0.35
+        timelineTranslationX.value = 12 * scale
+        timelineOpacity.value = withTiming(1, { duration: 220 })
+        timelineTranslationX.value = withTiming(0, { duration: 220 })
+    }, [scale, viewModel.selectedDate, timelineOpacity, timelineTranslationX])
 
     return (
         <ScreenLayout
@@ -122,7 +140,7 @@ export const ScheduleScreen = ({
             totalPoints={currentUser.totalPoints}
             userName={currentUser.name}
         >
-            <View style={styles.timeline}>
+            <Animated.View style={[styles.timeline, timelineAnimationStyle]}>
                 <ScheduleTimeline
                     entries={viewModel.entries}
                     getHourLabel={viewModel.getHourLabel}
@@ -134,7 +152,7 @@ export const ScheduleScreen = ({
                     }}
                     selectedDate={viewModel.selectedDate}
                 />
-            </View>
+            </Animated.View>
             <CalendarModal
                 isVisible={isCalendarVisible}
                 month={viewModel.calendarMonth}

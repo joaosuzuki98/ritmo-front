@@ -105,6 +105,31 @@ describe('dashboard transformations', () => {
         )
     })
 
+    it('shows streak values recalculated from completed habit history', () => {
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+        const weekDay = today.getDay() || 7
+        const cards = composeHabitCards(
+            [habit({ weekDays: [1, 2, 3, 4, 5, 6, 7] })],
+            [],
+            [
+                { habitId: 'habit-1', date: yesterday, status: 'completed' },
+                { habitId: 'habit-1', date: today, status: 'completed' },
+            ] as never,
+            'user-1',
+            weekDay as never,
+            today,
+            [],
+            [{ habitId: 'habit-1', currentStreak: 1, longestStreak: 1 }],
+        )
+
+        expect(cards[0]).toMatchObject({
+            currentStreak: 2,
+            longestStreak: 2,
+        })
+    })
+
     it('blocks chained habits until their prerequisite is completed that day', () => {
         const dependent = habit({
             id: 'dependent',
