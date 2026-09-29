@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.accent,
         borderColor: colors.accentStrong,
     },
-    termOptions: { gap: spacing.xs },
+    termOptions: { gap: spacing.sm },
     termOption: {
         backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
@@ -498,6 +498,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         justifyContent: 'center',
         minHeight: 42,
+        marginBottom: spacing.xxs,
         paddingHorizontal: spacing.md,
     },
     errorText: {

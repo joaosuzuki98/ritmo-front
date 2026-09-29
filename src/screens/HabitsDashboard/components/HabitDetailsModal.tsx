@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         marginTop: 16,
     },
-    logProgressButton: { marginTop: 18 },
+    logProgressButton: { marginTop: 24 },
     focusBadge: {
         backgroundColor: colors.accent,
         borderRadius: 8,
