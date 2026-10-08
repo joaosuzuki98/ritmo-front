@@ -89,6 +89,16 @@ const getConditionStatus = (
     return habitRequirementStatuses.find(value => value === status)
 }
 
+export const getDateForWeekDay = (
+    targetWeekDay: WeekDay,
+    today = new Date(),
+): Date => {
+    const todayWeekDay = clampWeekDay(today.getDay() || 7)
+    const resolved = new Date(today)
+    resolved.setDate(today.getDate() + (targetWeekDay - todayWeekDay))
+    return resolved
+}
+
 const updateHabitStreak = async (habitId: string, today = new Date()) => {
     const [habit, records, streaks] = await Promise.all([
         database
@@ -791,7 +801,7 @@ export const useHabitsDashboardViewModel = (
                     completions,
                     currentUserId,
                     weekDay,
-                    new Date(),
+                    getDateForWeekDay(weekDay),
                     preference?.orderedHabitIds ?? [],
                     streaks,
                     incompletionReasons,
@@ -841,6 +851,7 @@ export const useHabitsDashboardViewModel = (
         () => filterAndSortCards(data.cards, query, sort),
         [data.cards, query, sort],
     )
+    const selectedDate = useMemo(() => getDateForWeekDay(weekDay), [weekDay])
     const moveDay = (delta: number) =>
         setWeekDay(current => cycleWeekDay(current + delta))
 
@@ -1125,7 +1136,8 @@ export const useHabitsDashboardViewModel = (
         if (!currentCard || currentCard.isPaused || currentCard.isBlocked)
             return
 
-        const completionTime = new Date()
+        const now = new Date()
+        const completionTime = getDateForWeekDay(weekDay, now)
         const dateKey = localDateKey(completionTime)
         const alreadyCompleted = currentCard.status === 'completed'
         const completedCount = alreadyCompleted
@@ -1175,7 +1187,7 @@ export const useHabitsDashboardViewModel = (
                               ...calculateHabitStreak(
                                   completionHistory,
                                   card.weekDays,
-                                  completionTime,
+                                  now,
                               ),
                               completionHistory,
                           }
@@ -1227,7 +1239,7 @@ export const useHabitsDashboardViewModel = (
                     })
             }
         })
-        await updateHabitStreak(habitId, completionTime)
+        await updateHabitStreak(habitId, now)
         await completeAfterHabitChain(
             habitId,
             currentUserId,
@@ -1246,7 +1258,8 @@ export const useHabitsDashboardViewModel = (
             return
 
         const [hours, minutes] = formData.time.split(':').map(Number)
-        const date = new Date()
+        const now = new Date()
+        const date = getDateForWeekDay(weekDay, now)
         date.setHours(0, 0, 0, 0)
         const completionTime = new Date(date)
         completionTime.setHours(hours, minutes, 0, 0)
@@ -1324,7 +1337,7 @@ export const useHabitsDashboardViewModel = (
                         })
                 }
             })
-            await updateHabitStreak(habitId, date)
+            await updateHabitStreak(habitId, now)
             if (formData.status === 'completed')
                 await completeAfterHabitChain(
                     habitId,
@@ -1389,7 +1402,7 @@ export const useHabitsDashboardViewModel = (
                                     attempts) *
                                 100
                               : 0,
-                          ...calculateHabitStreak(history, card.weekDays, date),
+                          ...calculateHabitStreak(history, card.weekDays, now),
                           completionHistory: history,
                       }
                     : card,
@@ -1405,6 +1418,7 @@ export const useHabitsDashboardViewModel = (
                 ? 'no-results'
                 : state,
         weekDay,
+        selectedDate,
         query,
         sort,
         visibleCards,

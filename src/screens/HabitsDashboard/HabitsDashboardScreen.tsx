@@ -344,6 +344,7 @@ export const HabitsDashboardScreen = ({
             <LogHabitProgressModal
                 habit={habitToLog}
                 isVisible={habitToLog !== null}
+                selectedDate={viewModel.selectedDate}
                 onClose={() => setHabitToLog(null)}
                 onSave={viewModel.recordHabitProgress}
             />
