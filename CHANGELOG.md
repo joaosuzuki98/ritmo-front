@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.1](https://github.com/joaosuzuki98/ritmo-front/compare/v1.0.0...v1.0.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* Correct conditional streaks and restrict habit completion to today ([4c7e5f1](https://github.com/joaosuzuki98/ritmo-front/commit/4c7e5f1735781dcbc1dc32cb54c904e9207ced88))
+* ignore ineligible days in conditional habit streaks ([0f15ad2](https://github.com/joaosuzuki98/ritmo-front/commit/0f15ad26ec8e24dcf39b06c2d68c75f81b40dc8c))
+* prevent cards from jumping during reorder ([c19a2f5](https://github.com/joaosuzuki98/ritmo-front/commit/c19a2f5ad15a3d1c0eeccdd99a0ddd69ac4a3d81))
+* prevent completing habits on other days ([340daa9](https://github.com/joaosuzuki98/ritmo-front/commit/340daa986d4da4854085794dcb3141df36c22997))
+* prevent jumps while reordering habits ([2651390](https://github.com/joaosuzuki98/ritmo-front/commit/26513903604b9dd87e774979be9af3ebdfd70e4d))
+* scope habit completion to the selected day instead of today ([52bbd4b](https://github.com/joaosuzuki98/ritmo-front/commit/52bbd4bd83e24deeb92e17e58889096ab173752e))
+* stabilize habit card animations ([d3de07f](https://github.com/joaosuzuki98/ritmo-front/commit/d3de07f8f89ef1300eba727f71d6e204eebcee33))
+* Stabilize Habit Card Reordering ([e216057](https://github.com/joaosuzuki98/ritmo-front/commit/e216057dc419453ee34e00e2ffd3f6fb492543ad))
+
 ## 1.0.0 (2026-09-29)
 
 
