@@ -34,16 +34,21 @@ import {
 type LogHabitProgressModalProps = {
     habit: HabitCardViewData | null
     isVisible: boolean
+    selectedDate?: Date
     onClose: () => void
-    onSave: (habitId: string, data: LogHabitProgressFormData) => Promise<void>
+    onSave: (
+        habitId: string,
+        data: LogHabitProgressFormData,
+    ) => Promise<boolean | void>
 }
 
 const getInitialValues = (
     habit: HabitCardViewData | null,
+    selectedDate = new Date(),
 ): LogHabitProgressFormData => {
-    const todayKey = localDateKey(new Date())
+    const selectedKey = localDateKey(selectedDate)
     const record = habit?.completionHistory.find(
-        item => localDateKey(item.date) === todayKey,
+        item => localDateKey(item.date) === selectedKey,
     )
     const time = record?.completionTime ?? new Date()
     const status = record?.status
@@ -71,6 +76,7 @@ const statusOptions = [
 export const LogHabitProgressModal = ({
     habit,
     isVisible,
+    selectedDate,
     onClose,
     onSave,
 }: LogHabitProgressModalProps) => {
@@ -87,7 +93,7 @@ export const LogHabitProgressModal = ({
         setValue,
         watch,
     } = useForm<LogHabitProgressFormData>({
-        defaultValues: getInitialValues(habit),
+        defaultValues: getInitialValues(habit, selectedDate),
         resolver: zodResolver(logHabitProgressSchema),
     })
     const selectedStatus = watch('status')
@@ -95,18 +101,18 @@ export const LogHabitProgressModal = ({
 
     useEffect(() => {
         if (isVisible) {
-            reset(getInitialValues(habit))
+            reset(getInitialValues(habit, selectedDate))
             setSubmitError('')
         }
-    }, [habit, isVisible, reset])
+    }, [habit, isVisible, reset, selectedDate])
 
     const handleSave = async (data: LogHabitProgressFormData) => {
         if (!habit) return
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            await onSave(habit.id, data)
-            onClose()
+            const saved = await onSave(habit.id, data)
+            if (saved !== false) onClose()
         } catch {
             setSubmitError('Unable to save progress. Please try again.')
         } finally {
