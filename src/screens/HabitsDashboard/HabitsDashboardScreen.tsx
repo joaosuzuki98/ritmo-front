@@ -125,6 +125,28 @@ export const HabitsDashboardScreen = ({
         )
     }
 
+    const handleCompleteHabit = async (habitId: string) => {
+        const completed = await viewModel.completeHabit(habitId)
+        if (completed === false)
+            Alert.alert(
+                'Cannot complete habit',
+                'You can only complete a habit for today.',
+            )
+    }
+
+    const handleSaveHabitProgress = async (
+        habitId: string,
+        formData: Parameters<typeof viewModel.recordHabitProgress>[1],
+    ) => {
+        const saved = await viewModel.recordHabitProgress(habitId, formData)
+        if (saved === false)
+            Alert.alert(
+                'Cannot complete habit',
+                'You can only complete a habit for today.',
+            )
+        return saved
+    }
+
     return (
         <ScreenLayout
             title={title}
@@ -290,7 +312,7 @@ export const HabitsDashboardScreen = ({
                                         viewModel.toggleHabitPause(habit.id)
                                     }
                                     onComplete={() =>
-                                        viewModel.completeHabit(habit.id)
+                                        handleCompleteHabit(habit.id)
                                     }
                                     index={index}
                                     totalCards={viewModel.visibleCards.length}
@@ -346,7 +368,7 @@ export const HabitsDashboardScreen = ({
                 isVisible={habitToLog !== null}
                 selectedDate={viewModel.selectedDate}
                 onClose={() => setHabitToLog(null)}
-                onSave={viewModel.recordHabitProgress}
+                onSave={handleSaveHabitProgress}
             />
             <DoubleTapHintModal
                 isVisible={isDoubleTapHintVisible}

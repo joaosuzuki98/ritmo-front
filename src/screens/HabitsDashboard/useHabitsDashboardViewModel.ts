@@ -1158,11 +1158,14 @@ export const useHabitsDashboardViewModel = (
     }
 
     const completeHabit = async (habitId: string) => {
+        const now = new Date()
+        if (localDateKey(getDateForWeekDay(weekDay, now)) !== localDateKey(now))
+            return false
+
         const currentCard = data.cards.find(card => card.id === habitId)
         if (!currentCard || currentCard.isPaused || currentCard.isBlocked)
             return
 
-        const now = new Date()
         const completionTime = getDateForWeekDay(weekDay, now)
         const dateKey = localDateKey(completionTime)
         const alreadyCompleted = currentCard.status === 'completed'
@@ -1228,7 +1231,7 @@ export const useHabitsDashboardViewModel = (
 
         if (!persistedHabit) {
             applyLocalCompletion()
-            return
+            return true
         }
 
         const records = await database
@@ -1273,18 +1276,25 @@ export const useHabitsDashboardViewModel = (
             completionTime,
         )
         setReloadToken(current => current + 1)
+        return true
     }
 
     const recordHabitProgress = async (
         habitId: string,
         formData: LogHabitProgressFormData,
     ) => {
+        const now = new Date()
+        if (
+            formData.status === 'completed' &&
+            localDateKey(getDateForWeekDay(weekDay, now)) !== localDateKey(now)
+        )
+            return false
+
         const currentCard = data.cards.find(card => card.id === habitId)
         if (!currentCard || currentCard.isPaused || currentCard.isBlocked)
             return
 
         const [hours, minutes] = formData.time.split(':').map(Number)
-        const now = new Date()
         const date = getDateForWeekDay(weekDay, now)
         date.setHours(0, 0, 0, 0)
         const completionTime = new Date(date)

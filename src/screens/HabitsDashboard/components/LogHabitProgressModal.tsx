@@ -36,7 +36,10 @@ type LogHabitProgressModalProps = {
     isVisible: boolean
     selectedDate?: Date
     onClose: () => void
-    onSave: (habitId: string, data: LogHabitProgressFormData) => Promise<void>
+    onSave: (
+        habitId: string,
+        data: LogHabitProgressFormData,
+    ) => Promise<boolean | void>
 }
 
 const getInitialValues = (
@@ -108,8 +111,8 @@ export const LogHabitProgressModal = ({
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            await onSave(habit.id, data)
-            onClose()
+            const saved = await onSave(habit.id, data)
+            if (saved !== false) onClose()
         } catch {
             setSubmitError('Unable to save progress. Please try again.')
         } finally {
