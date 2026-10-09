@@ -38,7 +38,10 @@ import { parsePreferredTime } from './preferredTime'
 import { findHabitScheduleConflict } from '../../utils/scheduleConflict'
 import type { LogHabitProgressFormData } from './logHabitProgressSchema'
 import { wouldCreateHabitRequirementCycle } from './habitRequirementUtils'
-import { calculateHabitStreak } from './streakUtils'
+import {
+    calculateHabitStreak,
+    getConditionEligibleDateKeys,
+} from './streakUtils'
 
 type HabitSource = Pick<
     Habit,
@@ -100,20 +103,35 @@ export const getDateForWeekDay = (
 }
 
 const updateHabitStreak = async (habitId: string, today = new Date()) => {
-    const [habit, records, streaks] = await Promise.all([
+    const [habit, records, streaks, conditions] = await Promise.all([
         database
             .get<Habit>('habits')
             .find(habitId)
             .catch(() => null),
         database.get<CompletionRecord>('completion_records').query().fetch(),
         database.get<Streak>('streaks').query().fetch(),
+        database.get<HabitCondition>('habit_conditions').query().fetch(),
     ])
     if (!habit) return
 
+    const condition = conditions.find(
+        item =>
+            item.habitId === habitId && item.conditionType === 'habit_status',
+    )
+    const requiredStatus = condition
+        ? getConditionStatus(condition.conditionRule)
+        : undefined
     const streakValues = calculateHabitStreak(
         records.filter(record => record.habitId === habitId),
         habit.weekDays,
         today,
+        condition && requiredStatus
+            ? getConditionEligibleDateKeys(
+                  records,
+                  condition.conditionHabitId,
+                  requiredStatus,
+              )
+            : undefined,
     )
     const streak = streaks.find(item => item.habitId === habitId)
     await database.write(async () => {
@@ -416,6 +434,14 @@ export const composeHabitCards = (
             const calculatedStreak = calculateHabitStreak(
                 history,
                 habit.weekDays,
+                new Date(),
+                condition && requiredConditionStatus
+                    ? getConditionEligibleDateKeys(
+                          completions,
+                          condition.conditionHabitId,
+                          requiredConditionStatus,
+                      )
+                    : undefined,
             )
             const card: HabitCardViewData = {
                 id: habit.id,
