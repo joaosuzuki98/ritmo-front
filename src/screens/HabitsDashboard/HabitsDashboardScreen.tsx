@@ -68,6 +68,7 @@ export const HabitsDashboardScreen = ({
     const scale = getResponsiveScale(width)
     const draggedIndex = useSharedValue(-1)
     const draggedHabitId = useSharedValue<string | null>(null)
+    const cardStepByHabitId = useSharedValue<Record<string, number>>({})
     const dragTranslationY = useSharedValue(0)
     const dragReleaseOffset = useSharedValue(0)
     const dayTranslationX = useSharedValue(0)
@@ -195,6 +196,7 @@ export const HabitsDashboardScreen = ({
         () => setIsCommittingReorder(false),
         [],
     )
+    const orderedHabitIds = viewModel.visibleCards.map(habit => habit.id)
 
     return (
         <ScreenLayout
@@ -371,9 +373,10 @@ export const HabitsDashboardScreen = ({
                                         handleCompleteHabit(habit.id)
                                     }
                                     index={index}
-                                    totalCards={viewModel.visibleCards.length}
+                                    orderedHabitIds={orderedHabitIds}
                                     draggedIndex={draggedIndex}
                                     draggedHabitId={draggedHabitId}
+                                    cardStepByHabitId={cardStepByHabitId}
                                     dragTranslationY={dragTranslationY}
                                     dragReleaseOffset={dragReleaseOffset}
                                     isDragging={false}

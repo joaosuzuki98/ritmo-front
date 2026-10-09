@@ -19,6 +19,7 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
+import type { LayoutChangeEvent } from 'react-native'
 import {
     CheckCircle,
     Flame,
@@ -30,6 +31,10 @@ import {
 import type { SharedValue } from 'react-native-reanimated'
 
 import type { HabitCardViewData } from '../habitDashboard.types'
+import {
+    getDragTargetIndex,
+    getDragTranslationToIndex,
+} from '../habitDragUtils'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { typography } from '../../../styles/typography'
@@ -49,9 +54,10 @@ type HabitCardProps = {
     isCommittingReorder: boolean
     index: number
     reducedMotion: boolean
-    totalCards: number
+    orderedHabitIds: readonly string[]
     draggedIndex: SharedValue<number>
     draggedHabitId: SharedValue<string | null>
+    cardStepByHabitId: SharedValue<Record<string, number>>
     dragTranslationY: SharedValue<number>
     dragReleaseOffset: SharedValue<number>
 }
@@ -69,15 +75,18 @@ export const HabitCard = ({
     isCommittingReorder,
     index,
     reducedMotion,
-    totalCards,
+    orderedHabitIds,
     draggedIndex,
     draggedHabitId,
+    cardStepByHabitId,
     dragTranslationY,
     dragReleaseOffset,
 }: HabitCardProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const habitId = habit.id
+    const cardMarginBottom = 20 * scale
+    const defaultDragStep = 188 * scale
     const [isGestureDragging, setIsGestureDragging] = useState(false)
     const lastTranslationY = useRef(0)
     const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -88,7 +97,6 @@ export const HabitCard = ({
         dayKey,
         token: celebrationToken,
     })
-    const dragStep = 188 * scale
     const pauseOpacity = useSharedValue(habit.isPaused ? 0.48 : 1)
     useEffect(() => {
         const nextOpacity = habit.isPaused ? 0.48 : 1
@@ -100,7 +108,10 @@ export const HabitCard = ({
         opacity:
             pauseOpacity.value *
             (isCommittingReorder
-                ? 1
+                ? withTiming(1, {
+                      duration: 120,
+                      easing: Easing.out(Easing.cubic),
+                  })
                 : isDragging || isGestureDragging
                 ? 0.7
                 : 1),
@@ -129,7 +140,7 @@ export const HabitCard = ({
 
         dragReleaseOffset.value = withTiming(
             0,
-            { duration: 160, easing: Easing.out(Easing.cubic) },
+            { duration: 120, easing: Easing.out(Easing.cubic) },
             finished => {
                 if (finished) runOnJS(finishReorderAnimation)()
             },
@@ -189,6 +200,14 @@ export const HabitCard = ({
             return {
                 transform: [
                     {
+                        scale: isDraggedCard
+                            ? withTiming(1, {
+                                  duration: 120,
+                                  easing: Easing.out(Easing.cubic),
+                              })
+                            : 1,
+                    },
+                    {
                         translateY: isDraggedCard ? dragReleaseOffset.value : 0,
                     },
                 ],
@@ -210,12 +229,13 @@ export const HabitCard = ({
                 zIndex: 0,
             }
 
-        const targetIndex = Math.max(
-            0,
-            Math.min(
-                totalCards - 1,
-                sourceIndex + Math.round(dragTranslationY.value / dragStep),
-            ),
+        const targetIndex = getDragTargetIndex(
+            sourceIndex,
+            dragTranslationY.value,
+            orderedHabitIds,
+            cardStepByHabitId.value,
+            defaultDragStep,
+            cardMarginBottom,
         )
         if (index === sourceIndex)
             return {
@@ -234,13 +254,16 @@ export const HabitCard = ({
             targetIndex < sourceIndex &&
             index >= targetIndex &&
             index < sourceIndex
-        const offset = isMovingDown ? -dragStep : isMovingUp ? dragStep : 0
+        const sourceStep =
+            cardStepByHabitId.value[orderedHabitIds[sourceIndex]] ??
+            defaultDragStep
+        const offset = isMovingDown ? -sourceStep : isMovingUp ? sourceStep : 0
         return {
             transform: [
                 {
-                    translateY: withSpring(offset, {
-                        damping: 18,
-                        stiffness: 180,
+                    translateY: withTiming(offset, {
+                        duration: 100,
+                        easing: Easing.out(Easing.cubic),
                     }),
                 },
             ],
@@ -254,6 +277,21 @@ export const HabitCard = ({
         dragTranslationY.value = lastTranslationY.current
         if (Math.abs(lastTranslationY.current) > 8) setIsGestureDragging(true)
     }
+    const handleCardLayout = (event: LayoutChangeEvent) => {
+        const nextStep = event.nativeEvent.layout.height + cardMarginBottom
+        if (
+            Math.abs(
+                (cardStepByHabitId.value[habitId] ?? defaultDragStep) -
+                    nextStep,
+            ) < 0.5
+        )
+            return
+
+        cardStepByHabitId.value = {
+            ...cardStepByHabitId.value,
+            [habitId]: nextStep,
+        }
+    }
     const clearDrag = () => {
         draggedIndex.value = -1
         draggedHabitId.value = null
@@ -261,15 +299,16 @@ export const HabitCard = ({
         dragReleaseOffset.value = 0
         setIsGestureDragging(false)
     }
-    const handleGestureEnd = () => {
+    const handleGestureEnd = (translationY: number) => {
         draggedIndex.value = index
         draggedHabitId.value = habitId
-        const targetIndex = Math.max(
-            0,
-            Math.min(
-                totalCards - 1,
-                index + Math.round(lastTranslationY.current / dragStep),
-            ),
+        const targetIndex = getDragTargetIndex(
+            index,
+            translationY,
+            orderedHabitIds,
+            cardStepByHabitId.value,
+            defaultDragStep,
+            cardMarginBottom,
         )
         lastTranslationY.current = 0
 
@@ -277,13 +316,15 @@ export const HabitCard = ({
             clearDrag()
             return
         }
-        const releaseOffset =
-            dragTranslationY.value - (targetIndex - index) * dragStep
-        dragReleaseOffset.value = Math.max(
-            -dragStep / 2,
-            Math.min(dragStep / 2, releaseOffset),
+        dragTranslationY.value = translationY
+        const targetTranslationY = getDragTranslationToIndex(
+            index,
+            targetIndex,
+            orderedHabitIds,
+            cardStepByHabitId.value,
+            defaultDragStep,
         )
-        setIsGestureDragging(false)
+        dragReleaseOffset.value = translationY - targetTranslationY
         onDragEnd(targetIndex)
 
         if (reducedMotion) {
@@ -294,6 +335,7 @@ export const HabitCard = ({
     }
     const content = (
         <Animated.View
+            onLayout={handleCardLayout}
             layout={
                 reducedMotion || isCommittingReorder
                     ? undefined
@@ -305,7 +347,7 @@ export const HabitCard = ({
                         ? colors.warning
                         : habit.priorityColor,
                     borderRadius: 16 * scale,
-                    marginBottom: 20 * scale,
+                    marginBottom: cardMarginBottom,
                     minHeight: 168 * scale,
                     paddingHorizontal: 24 * scale,
                     paddingVertical: 18 * scale,
@@ -532,7 +574,14 @@ export const HabitCard = ({
         <PanGestureHandler
             activeOffsetY={[-10, 10]}
             enabled={!isCommittingReorder}
-            onEnded={handleGestureEnd}
+            onEnded={event => {
+                const translationY = Number(event.nativeEvent.translationY)
+                handleGestureEnd(
+                    Number.isFinite(translationY)
+                        ? translationY
+                        : lastTranslationY.current,
+                )
+            }}
             onGestureEvent={handleGestureEvent}
         >
             {content}
