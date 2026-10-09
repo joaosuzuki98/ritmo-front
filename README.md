@@ -1,4 +1,4 @@
-# Ritmo App Backend
+# Ritmo App Frontend
 
 ## 🚀 Technologies
 

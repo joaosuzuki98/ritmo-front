@@ -1,4 +1,7 @@
-import { calculateHabitStreak } from '../../../src/screens/HabitsDashboard/streakUtils'
+import {
+    calculateHabitStreak,
+    getConditionEligibleDateKeys,
+} from '../../../src/screens/HabitsDashboard/streakUtils'
 
 describe('calculateHabitStreak', () => {
     it('counts consecutive daily completions and recognizes missed days', () => {
@@ -58,5 +61,40 @@ describe('calculateHabitStreak', () => {
         )
 
         expect(streak).toEqual({ currentStreak: 0, longestStreak: 0 })
+    })
+
+    it('ignores scheduled days when a conditional habit was not eligible', () => {
+        const eligibleDateKeys = getConditionEligibleDateKeys(
+            [
+                {
+                    habitId: 'condition',
+                    date: new Date(2026, 8, 21),
+                    status: 'completed',
+                },
+                {
+                    habitId: 'condition',
+                    date: new Date(2026, 8, 22),
+                    status: 'skipped',
+                },
+                {
+                    habitId: 'condition',
+                    date: new Date(2026, 8, 23),
+                    status: 'completed',
+                },
+            ],
+            'condition',
+            'completed',
+        )
+        const streak = calculateHabitStreak(
+            [
+                { date: new Date(2026, 8, 21), status: 'completed' },
+                { date: new Date(2026, 8, 23), status: 'completed' },
+            ],
+            [1, 2, 3, 4, 5, 6, 7],
+            new Date(2026, 8, 23),
+            eligibleDateKeys,
+        )
+
+        expect(streak).toEqual({ currentStreak: 2, longestStreak: 2 })
     })
 })

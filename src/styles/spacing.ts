@@ -8,4 +8,6 @@ export const spacing = {
     touchTarget: 44,
     dateNavigationWidth: 296,
     dateNavigationButtonWidth: 48,
+    habitCardMinHeight: 168,
+    habitCardGap: 20,
 } as const
