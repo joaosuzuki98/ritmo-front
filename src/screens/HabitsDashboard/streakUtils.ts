@@ -9,15 +9,43 @@ export type HabitStreakCompletion = {
     updatedAt?: Date
 }
 
+type ConditionCompletion = HabitStreakCompletion & { habitId: string }
+
 export type HabitStreak = {
     currentStreak: number
     longestStreak: number
+}
+
+export const getConditionEligibleDateKeys = (
+    completions: readonly ConditionCompletion[],
+    conditionHabitId: string,
+    requiredStatus: string,
+): Set<string> => {
+    const latestByDate = new Map<string, HabitStreakCompletion>()
+    completions.forEach(completion => {
+        if (completion.habitId !== conditionHabitId) return
+        const key = localDateKey(completion.date)
+        const current = latestByDate.get(key)
+        if (
+            !current ||
+            (completion.updatedAt?.getTime() ?? completion.date.getTime()) >=
+                (current.updatedAt?.getTime() ?? current.date.getTime())
+        )
+            latestByDate.set(key, completion)
+    })
+
+    return new Set(
+        [...latestByDate.entries()]
+            .filter(([, completion]) => completion.status === requiredStatus)
+            .map(([dateKey]) => dateKey),
+    )
 }
 
 export const calculateHabitStreak = (
     completions: readonly HabitStreakCompletion[],
     weekDays: readonly number[],
     today = new Date(),
+    eligibleDateKeys?: ReadonlySet<string>,
 ): HabitStreak => {
     const scheduledDays = new Set(weekDays)
     if (!scheduledDays.size || !completions.length)
@@ -59,7 +87,11 @@ export const calculateHabitStreak = (
         date <= todayDate;
         date.setDate(date.getDate() + 1)
     ) {
-        if (!scheduledDays.has(getWeekDay(date))) continue
+        if (
+            !scheduledDays.has(getWeekDay(date)) ||
+            (eligibleDateKeys && !eligibleDateKeys.has(localDateKey(date)))
+        )
+            continue
         if (completedDates.has(localDateKey(date))) {
             currentLongestStreak += 1
             longestStreak = Math.max(longestStreak, currentLongestStreak)
@@ -77,7 +109,11 @@ export const calculateHabitStreak = (
         cursor.setDate(cursor.getDate() - 1)
 
     for (; cursor >= firstDate; cursor.setDate(cursor.getDate() - 1)) {
-        if (!scheduledDays.has(getWeekDay(cursor))) continue
+        if (
+            !scheduledDays.has(getWeekDay(cursor)) ||
+            (eligibleDateKeys && !eligibleDateKeys.has(localDateKey(cursor)))
+        )
+            continue
         if (!completedDates.has(localDateKey(cursor))) break
         currentStreak += 1
     }
