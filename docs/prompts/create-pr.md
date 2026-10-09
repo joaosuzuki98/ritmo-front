@@ -34,7 +34,7 @@ Analyze the changes for this task and create a pull request, following these ins
 
   # 🧪 How to test
 
-  1. [Test step and expected/actual result, or state which checks were not run]
+  1. [Preconditions or setup, concrete action/input, and expected observable result]
 
   # 🎯 Checklist
 
@@ -50,8 +50,10 @@ Analyze the changes for this task and create a pull request, following these ins
   ```
 
 - Write all pull request description content in English. Keep the template's headings, emojis, section order, checklist items, and overall structure. Replace its example text with concise, task-specific content; do not add, remove, rename, or reorder sections or checklist items.
-- List the actual key changes under `# 🔧 Changes`. Under `# 🧪 How to test`, describe relevant test steps and their expected/actual results. Do not claim checks passed unless they were run; clearly state any checks that were not run or failed.
-- Mark checklist items accurately: check an item only when the change and available evidence support it. In particular, do not mark tests added/updated, documentation updated, or lints passed unless that is true; report unrun or failed checks in `# 🧪 How to test`.
+- List the actual key changes under `# 🔧 Changes`. Use `# 🧪 How to test` as a manual, task-specific verification guide: give any required setup or preconditions, concrete actions and input values, and the observable result the reviewer should expect. For example: `Open the Add Habit modal, enter “Read”, select Monday, save; confirm that “Read” appears on Monday.`
+- Do not use `# 🧪 How to test` to report automated test counts, suite totals, pass/fail summaries, or commands as a substitute for feature-verification steps. Report automated checks and their results separately in the final response to the user.
+- Do not claim manual scenarios were performed unless they were. If manual verification was not run, still provide the steps and expected results, and state that manual verification was not run.
+- Mark checklist items accurately: check an item only when the change and available evidence support it. In particular, do not mark tests added/updated, documentation updated, or lints passed unless that is true. Report automated check failures or checks that were not run separately from the manual `# 🧪 How to test` instructions.
 - Use an issue number only when it is provided by the user in the input accompanying this prompt. Do not infer one from the branch name, task context, commits, or repository. In `# 🔗 Issue`, write `Closes #<number>` when the user provided an issue number; otherwise write exactly `N/A`.
 - If `.github/pull_request_template.md` is missing or unreadable, do not invent a replacement description. Report the problem and ask how to proceed.
 
