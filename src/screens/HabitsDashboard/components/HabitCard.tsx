@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Animated, {
+    Easing,
     FadeOut,
     LinearTransition,
     ZoomIn,
+    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
@@ -34,42 +36,58 @@ import { typography } from '../../../styles/typography'
 
 type HabitCardProps = {
     habit: HabitCardViewData
+    dayKey: string
+    celebrationToken: number
     onPress: () => void
     onPause: () => void
     onComplete: () => void
     onMoveUp: () => void
     onMoveDown: () => void
     onDragEnd: (targetIndex: number) => void
+    onReorderAnimationComplete: () => void
     isDragging: boolean
+    isCommittingReorder: boolean
     index: number
     reducedMotion: boolean
     totalCards: number
     draggedIndex: SharedValue<number>
+    draggedHabitId: SharedValue<string | null>
     dragTranslationY: SharedValue<number>
+    dragReleaseOffset: SharedValue<number>
 }
 
 export const HabitCard = ({
     habit,
+    dayKey,
+    celebrationToken,
     onPress,
     onPause,
     onComplete,
     onDragEnd,
+    onReorderAnimationComplete,
     isDragging,
+    isCommittingReorder,
     index,
     reducedMotion,
     totalCards,
     draggedIndex,
+    draggedHabitId,
     dragTranslationY,
+    dragReleaseOffset,
 }: HabitCardProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const habitId = habit.id
     const [isGestureDragging, setIsGestureDragging] = useState(false)
     const lastTranslationY = useRef(0)
     const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
     const lastTapAt = useRef(0)
     const [showCelebration, setShowCelebration] = useState(false)
     const [titleTextWidth, setTitleTextWidth] = useState(0)
-    const wasCompleted = useRef(habit.status === 'completed')
+    const previousCelebration = useRef({
+        dayKey,
+        token: celebrationToken,
+    })
     const dragStep = 188 * scale
     const pauseOpacity = useSharedValue(habit.isPaused ? 0.48 : 1)
     useEffect(() => {
@@ -80,17 +98,68 @@ export const HabitCard = ({
     }, [habit.isPaused, pauseOpacity, reducedMotion])
     const visualStyle = useAnimatedStyle(() => ({
         opacity:
-            pauseOpacity.value * (isDragging || isGestureDragging ? 0.7 : 1),
+            pauseOpacity.value *
+            (isCommittingReorder
+                ? 1
+                : isDragging || isGestureDragging
+                ? 0.7
+                : 1),
     }))
+    const finishReorderAnimation = useCallback(() => {
+        draggedIndex.value = -1
+        draggedHabitId.value = null
+        dragTranslationY.value = 0
+        dragReleaseOffset.value = 0
+        setIsGestureDragging(false)
+        onReorderAnimationComplete()
+    }, [
+        dragReleaseOffset,
+        dragTranslationY,
+        draggedHabitId,
+        draggedIndex,
+        onReorderAnimationComplete,
+    ])
     useEffect(() => {
-        if (habit.status === 'completed' && !wasCompleted.current) {
-            setShowCelebration(true)
-            const timeout = setTimeout(() => setShowCelebration(false), 760)
-            wasCompleted.current = true
-            return () => clearTimeout(timeout)
+        if (!isCommittingReorder || draggedHabitId.value !== habitId) return
+
+        if (reducedMotion) {
+            finishReorderAnimation()
+            return
         }
-        wasCompleted.current = habit.status === 'completed'
-    }, [habit.status])
+
+        dragReleaseOffset.value = withTiming(
+            0,
+            { duration: 160, easing: Easing.out(Easing.cubic) },
+            finished => {
+                if (finished) runOnJS(finishReorderAnimation)()
+            },
+        )
+    }, [
+        draggedHabitId,
+        dragReleaseOffset,
+        finishReorderAnimation,
+        habitId,
+        isCommittingReorder,
+        reducedMotion,
+    ])
+    useEffect(() => {
+        const previous = previousCelebration.current
+        previousCelebration.current = { dayKey, token: celebrationToken }
+
+        if (previous.dayKey !== dayKey) {
+            if (tapTimeout.current) clearTimeout(tapTimeout.current)
+            tapTimeout.current = null
+            lastTapAt.current = 0
+            setIsGestureDragging(false)
+            setShowCelebration(false)
+            return
+        }
+        if (previous.token === celebrationToken) return
+
+        setShowCelebration(true)
+        const timeout = setTimeout(() => setShowCelebration(false), 760)
+        return () => clearTimeout(timeout)
+    }, [celebrationToken, dayKey])
     useEffect(
         () => () => {
             if (tapTimeout.current) clearTimeout(tapTimeout.current)
@@ -115,9 +184,31 @@ export const HabitCard = ({
         }, 280)
     }
     const dragStyle = useAnimatedStyle(() => {
+        if (isCommittingReorder) {
+            const isDraggedCard = draggedHabitId.value === habitId
+            return {
+                transform: [
+                    {
+                        translateY: isDraggedCard ? dragReleaseOffset.value : 0,
+                    },
+                ],
+                zIndex: isDraggedCard ? 2 : 0,
+            }
+        }
+
         const sourceIndex = draggedIndex.value
         if (sourceIndex < 0)
-            return { transform: [{ translateY: withSpring(0) }], zIndex: 0 }
+            return {
+                transform: [
+                    {
+                        translateY: withSpring(0, {
+                            damping: 18,
+                            stiffness: 180,
+                        }),
+                    },
+                ],
+                zIndex: 0,
+            }
 
         const targetIndex = Math.max(
             0,
@@ -159,22 +250,55 @@ export const HabitCard = ({
     const handleGestureEvent = (event: PanGestureHandlerGestureEvent) => {
         lastTranslationY.current = event.nativeEvent.translationY
         draggedIndex.value = index
+        draggedHabitId.value = habitId
         dragTranslationY.value = lastTranslationY.current
         if (Math.abs(lastTranslationY.current) > 8) setIsGestureDragging(true)
     }
-    const handleGestureEnd = () => {
-        const targetIndex =
-            index + Math.round(lastTranslationY.current / dragStep)
-        lastTranslationY.current = 0
+    const clearDrag = () => {
         draggedIndex.value = -1
+        draggedHabitId.value = null
         dragTranslationY.value = 0
+        dragReleaseOffset.value = 0
+        setIsGestureDragging(false)
+    }
+    const handleGestureEnd = () => {
+        draggedIndex.value = index
+        draggedHabitId.value = habitId
+        const targetIndex = Math.max(
+            0,
+            Math.min(
+                totalCards - 1,
+                index + Math.round(lastTranslationY.current / dragStep),
+            ),
+        )
+        lastTranslationY.current = 0
+
+        if (targetIndex === index) {
+            clearDrag()
+            return
+        }
+        const releaseOffset =
+            dragTranslationY.value - (targetIndex - index) * dragStep
+        dragReleaseOffset.value = Math.max(
+            -dragStep / 2,
+            Math.min(dragStep / 2, releaseOffset),
+        )
         setIsGestureDragging(false)
         onDragEnd(targetIndex)
+
+        if (reducedMotion) {
+            clearDrag()
+            onReorderAnimationComplete()
+            return
+        }
     }
     const content = (
         <Animated.View
-            entering={reducedMotion ? undefined : ZoomIn.delay(index * 45)}
-            layout={reducedMotion ? undefined : LinearTransition.duration(220)}
+            layout={
+                reducedMotion || isCommittingReorder
+                    ? undefined
+                    : LinearTransition.springify().damping(18).stiffness(180)
+            }
             style={[
                 {
                     backgroundColor: habit.isFocusOfDay
@@ -407,6 +531,7 @@ export const HabitCard = ({
     return (
         <PanGestureHandler
             activeOffsetY={[-10, 10]}
+            enabled={!isCommittingReorder}
             onEnded={handleGestureEnd}
             onGestureEvent={handleGestureEvent}
         >

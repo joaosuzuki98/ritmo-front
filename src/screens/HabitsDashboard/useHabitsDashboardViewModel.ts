@@ -759,6 +759,8 @@ export const useHabitsDashboardViewModel = (
     const [state, setState] = useState<DashboardRenderState>('loading')
     const [isReducedMotion, setIsReducedMotion] = useState(false)
     const [reloadToken, setReloadToken] = useState(0)
+    const [resolvedDataKey, setResolvedDataKey] = useState<string | null>(null)
+    const dataKey = `${currentUserId}:${weekDay}`
 
     useEffect(() => {
         AccessibilityInfo.isReduceMotionEnabled().then(setIsReducedMotion)
@@ -863,15 +865,19 @@ export const useHabitsDashboardViewModel = (
                     ),
                 })
                 setState(cards.length === 0 ? 'empty' : 'success')
+                setResolvedDataKey(dataKey)
             } catch {
-                if (active) setState('error')
+                if (active) {
+                    setState('error')
+                    setResolvedDataKey(dataKey)
+                }
             }
         }
         void load()
         return () => {
             active = false
         }
-    }, [currentUserId, reloadToken, weekDay])
+    }, [currentUserId, dataKey, reloadToken, weekDay])
 
     const visibleCards = useMemo(
         () => filterAndSortCards(data.cards, query, sort),
@@ -882,22 +888,6 @@ export const useHabitsDashboardViewModel = (
         setWeekDay(current => cycleWeekDay(current + delta))
 
     const persistOrder = async (ids: string[]) => {
-        await database.write(async () => {
-            const collection = database.get<HabitDisplayPreference>(
-                'habit_display_preferences',
-            )
-            const current =
-                data.preference ??
-                (await collection.create(record => {
-                    record.userId = currentUserId
-                    record.weekDay = weekDay
-                    record.orderedHabitIds = ids
-                }))
-            if (data.preference)
-                await current.update(record => {
-                    record.orderedHabitIds = ids
-                })
-        })
         setData(current => ({
             ...current,
             cards: current.cards
@@ -906,8 +896,26 @@ export const useHabitsDashboardViewModel = (
                     (left, right) =>
                         ids.indexOf(left.id) - ids.indexOf(right.id),
                 ),
-            preference: current.preference,
         }))
+
+        const preference = await database.write(async () => {
+            const collection = database.get<HabitDisplayPreference>(
+                'habit_display_preferences',
+            )
+            if (data.preference) {
+                await data.preference.update(record => {
+                    record.orderedHabitIds = ids
+                })
+                return data.preference
+            }
+
+            return collection.create(record => {
+                record.userId = currentUserId
+                record.weekDay = weekDay
+                record.orderedHabitIds = ids
+            })
+        })
+        setData(current => ({ ...current, preference }))
     }
 
     const createHabit = async (formData: AddHabitFormData) => {
@@ -1445,12 +1453,16 @@ export const useHabitsDashboardViewModel = (
             ),
         }))
         setReloadToken(current => current + 1)
+        return true
     }
 
     return {
         ...data,
+        isDayReady: resolvedDataKey === dataKey,
         state:
-            query && visibleCards.length === 0 && data.cards.length > 0
+            resolvedDataKey !== dataKey
+                ? 'loading'
+                : query && visibleCards.length === 0 && data.cards.length > 0
                 ? 'no-results'
                 : state,
         weekDay,

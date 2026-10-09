@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PanGestureHandler } from 'react-native-gesture-handler'
 import type { PanGestureHandlerGestureEvent } from 'react-native-gesture-handler'
 import {
@@ -57,15 +57,40 @@ export const HabitsDashboardScreen = ({
     const [habitBeingEdited, setHabitBeingEdited] =
         useState<HabitCardViewData | null>(null)
     const [habitToLog, setHabitToLog] = useState<HabitCardViewData | null>(null)
+    const [celebrationTokens, setCelebrationTokens] = useState<
+        Record<string, number>
+    >({})
+    const [pendingDayEnterFrom, setPendingDayEnterFrom] = useState<
+        number | null
+    >(null)
+    const [isCommittingReorder, setIsCommittingReorder] = useState(false)
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const draggedIndex = useSharedValue(-1)
+    const draggedHabitId = useSharedValue<string | null>(null)
     const dragTranslationY = useSharedValue(0)
+    const dragReleaseOffset = useSharedValue(0)
     const dayTranslationX = useSharedValue(0)
     const lastTranslationX = useRef(0)
     const daySwipeStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: dayTranslationX.value }],
     }))
+    useEffect(() => {
+        if (pendingDayEnterFrom === null || !viewModel.isDayReady) return
+
+        const frame = requestAnimationFrame(() => {
+            dayTranslationX.value = viewModel.isReducedMotion
+                ? 0
+                : withTiming(0, { duration: 220 })
+            setPendingDayEnterFrom(null)
+        })
+        return () => cancelAnimationFrame(frame)
+    }, [
+        dayTranslationX,
+        pendingDayEnterFrom,
+        viewModel.isDayReady,
+        viewModel.isReducedMotion,
+    ])
 
     const handleSwipe = (event: PanGestureHandlerGestureEvent) => {
         lastTranslationX.current = event.nativeEvent.translationX
@@ -75,9 +100,7 @@ export const HabitsDashboardScreen = ({
     const finishDaySwipe = (delta: number, enterFrom: number) => {
         viewModel.moveDay(delta)
         dayTranslationX.value = enterFrom
-        requestAnimationFrame(() => {
-            dayTranslationX.value = withTiming(0, { duration: 220 })
-        })
+        setPendingDayEnterFrom(enterFrom)
     }
 
     const handleSwipeEnd = () => {
@@ -126,7 +149,15 @@ export const HabitsDashboardScreen = ({
     }
 
     const handleCompleteHabit = async (habitId: string) => {
+        const shouldCelebrate =
+            viewModel.visibleCards.find(habit => habit.id === habitId)
+                ?.status !== 'completed'
         const completed = await viewModel.completeHabit(habitId)
+        if (completed && shouldCelebrate)
+            setCelebrationTokens(current => ({
+                ...current,
+                [habitId]: (current[habitId] ?? 0) + 1,
+            }))
         if (completed === false)
             Alert.alert(
                 'Cannot complete habit',
@@ -138,7 +169,16 @@ export const HabitsDashboardScreen = ({
         habitId: string,
         formData: Parameters<typeof viewModel.recordHabitProgress>[1],
     ) => {
+        const shouldCelebrate =
+            formData.status === 'completed' &&
+            viewModel.visibleCards.find(habit => habit.id === habitId)
+                ?.status !== 'completed'
         const saved = await viewModel.recordHabitProgress(habitId, formData)
+        if (saved && shouldCelebrate)
+            setCelebrationTokens(current => ({
+                ...current,
+                [habitId]: (current[habitId] ?? 0) + 1,
+            }))
         if (saved === false)
             Alert.alert(
                 'Cannot complete habit',
@@ -147,15 +187,26 @@ export const HabitsDashboardScreen = ({
         return saved
     }
 
+    const handleReorder = (sourceIndex: number, targetIndex: number) => {
+        setIsCommittingReorder(true)
+        viewModel.reorder(sourceIndex, targetIndex)
+    }
+    const handleReorderAnimationComplete = useCallback(
+        () => setIsCommittingReorder(false),
+        [],
+    )
+
     return (
         <ScreenLayout
             title={title}
             subtitle={
                 <DaySelector
                     weekDay={viewModel.weekDay}
-                    onChange={next =>
+                    onChange={next => {
+                        setPendingDayEnterFrom(null)
+                        dayTranslationX.value = 0
                         viewModel.moveDay(next - viewModel.weekDay)
-                    }
+                    }}
                 />
             }
             userName={currentUser.name}
@@ -185,6 +236,7 @@ export const HabitsDashboardScreen = ({
                 ) : null}
                 <PanGestureHandler
                     activeOffsetX={[-50, 50]}
+                    enabled={!isCommittingReorder}
                     onEnded={handleSwipeEnd}
                     onGestureEvent={handleSwipe}
                 >
@@ -305,8 +357,12 @@ export const HabitsDashboardScreen = ({
                         {viewModel.state === 'success' &&
                             viewModel.visibleCards.map((habit, index) => (
                                 <HabitCard
-                                    key={`${viewModel.weekDay}-${habit.id}`}
+                                    key={habit.id}
                                     habit={habit}
+                                    dayKey={viewModel.selectedDate.toISOString()}
+                                    celebrationToken={
+                                        celebrationTokens[habit.id] ?? 0
+                                    }
                                     onPress={() => setSelectedHabit(habit)}
                                     onPause={() =>
                                         viewModel.toggleHabitPause(habit.id)
@@ -317,11 +373,17 @@ export const HabitsDashboardScreen = ({
                                     index={index}
                                     totalCards={viewModel.visibleCards.length}
                                     draggedIndex={draggedIndex}
+                                    draggedHabitId={draggedHabitId}
                                     dragTranslationY={dragTranslationY}
+                                    dragReleaseOffset={dragReleaseOffset}
                                     isDragging={false}
+                                    isCommittingReorder={isCommittingReorder}
+                                    onReorderAnimationComplete={
+                                        handleReorderAnimationComplete
+                                    }
                                     reducedMotion={viewModel.isReducedMotion}
                                     onDragEnd={target =>
-                                        viewModel.reorder(index, target)
+                                        handleReorder(index, target)
                                     }
                                     onMoveUp={() =>
                                         viewModel.reorder(index, index - 1)
