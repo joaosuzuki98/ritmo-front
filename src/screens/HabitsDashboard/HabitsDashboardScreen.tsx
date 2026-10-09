@@ -21,6 +21,7 @@ import { ScreenLayout } from '../../components/ScreenLayout'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { getResponsiveScale } from '../../styles/responsive'
+import { theme } from '../../styles/theme'
 import { typography } from '../../styles/typography'
 import { DaySelector } from './components/DaySelector'
 import { AddHabitModal } from './components/AddHabitModal'
@@ -35,6 +36,7 @@ import type {
     HabitCardViewData,
 } from './habitDashboard.types'
 import { useHabitsDashboardViewModel } from './useHabitsDashboardViewModel'
+import { getHabitCardOffset } from './habitDragUtils'
 
 export const HabitsDashboardScreen = ({
     currentUser,
@@ -197,6 +199,16 @@ export const HabitsDashboardScreen = ({
         [],
     )
     const orderedHabitIds = viewModel.visibleCards.map(habit => habit.id)
+    const defaultDragStep =
+        (theme.spacing.habitCardMinHeight + theme.spacing.habitCardGap) * scale
+    const habitListStyle = useAnimatedStyle(() => ({
+        height: getHabitCardOffset(
+            orderedHabitIds.length,
+            orderedHabitIds,
+            cardStepByHabitId.value,
+            defaultDragStep,
+        ),
+    }))
 
     return (
         <ScreenLayout
@@ -356,46 +368,53 @@ export const HabitsDashboardScreen = ({
                                 </Pressable>
                             </View>
                         ) : null}
-                        {viewModel.state === 'success' &&
-                            viewModel.visibleCards.map((habit, index) => (
-                                <HabitCard
-                                    key={habit.id}
-                                    habit={habit}
-                                    dayKey={viewModel.selectedDate.toISOString()}
-                                    celebrationToken={
-                                        celebrationTokens[habit.id] ?? 0
-                                    }
-                                    onPress={() => setSelectedHabit(habit)}
-                                    onPause={() =>
-                                        viewModel.toggleHabitPause(habit.id)
-                                    }
-                                    onComplete={() =>
-                                        handleCompleteHabit(habit.id)
-                                    }
-                                    index={index}
-                                    orderedHabitIds={orderedHabitIds}
-                                    draggedIndex={draggedIndex}
-                                    draggedHabitId={draggedHabitId}
-                                    cardStepByHabitId={cardStepByHabitId}
-                                    dragTranslationY={dragTranslationY}
-                                    dragReleaseOffset={dragReleaseOffset}
-                                    isDragging={false}
-                                    isCommittingReorder={isCommittingReorder}
-                                    onReorderAnimationComplete={
-                                        handleReorderAnimationComplete
-                                    }
-                                    reducedMotion={viewModel.isReducedMotion}
-                                    onDragEnd={target =>
-                                        handleReorder(index, target)
-                                    }
-                                    onMoveUp={() =>
-                                        viewModel.reorder(index, index - 1)
-                                    }
-                                    onMoveDown={() =>
-                                        viewModel.reorder(index, index + 1)
-                                    }
-                                />
-                            ))}
+                        {viewModel.state === 'success' ? (
+                            <Animated.View style={habitListStyle}>
+                                {viewModel.visibleCards.map((habit, index) => (
+                                    <HabitCard
+                                        key={habit.id}
+                                        habit={habit}
+                                        dayKey={viewModel.selectedDate.toISOString()}
+                                        celebrationToken={
+                                            celebrationTokens[habit.id] ?? 0
+                                        }
+                                        onPress={() => setSelectedHabit(habit)}
+                                        onPause={() =>
+                                            viewModel.toggleHabitPause(habit.id)
+                                        }
+                                        onComplete={() =>
+                                            handleCompleteHabit(habit.id)
+                                        }
+                                        index={index}
+                                        orderedHabitIds={orderedHabitIds}
+                                        draggedIndex={draggedIndex}
+                                        draggedHabitId={draggedHabitId}
+                                        cardStepByHabitId={cardStepByHabitId}
+                                        dragTranslationY={dragTranslationY}
+                                        dragReleaseOffset={dragReleaseOffset}
+                                        isDragging={false}
+                                        isCommittingReorder={
+                                            isCommittingReorder
+                                        }
+                                        onReorderAnimationComplete={
+                                            handleReorderAnimationComplete
+                                        }
+                                        reducedMotion={
+                                            viewModel.isReducedMotion
+                                        }
+                                        onDragEnd={target =>
+                                            handleReorder(index, target)
+                                        }
+                                        onMoveUp={() =>
+                                            viewModel.reorder(index, index - 1)
+                                        }
+                                        onMoveDown={() =>
+                                            viewModel.reorder(index, index + 1)
+                                        }
+                                    />
+                                ))}
+                            </Animated.View>
+                        ) : null}
                     </Animated.View>
                 </PanGestureHandler>
             </ScrollView>

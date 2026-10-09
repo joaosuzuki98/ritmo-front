@@ -2,12 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Animated, {
     Easing,
     FadeOut,
-    LinearTransition,
     ZoomIn,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
-    withSpring,
     withTiming,
 } from 'react-native-reanimated'
 import { PanGestureHandler } from 'react-native-gesture-handler'
@@ -34,9 +32,11 @@ import type { HabitCardViewData } from '../habitDashboard.types'
 import {
     getDragTargetIndex,
     getDragTranslationToIndex,
+    getHabitCardOffset,
 } from '../habitDragUtils'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
+import { theme } from '../../../styles/theme'
 import { typography } from '../../../styles/typography'
 
 type HabitCardProps = {
@@ -85,8 +85,9 @@ export const HabitCard = ({
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const habitId = habit.id
-    const cardMarginBottom = 20 * scale
-    const defaultDragStep = 188 * scale
+    const cardMarginBottom = theme.spacing.habitCardGap * scale
+    const defaultDragStep =
+        (theme.spacing.habitCardMinHeight + theme.spacing.habitCardGap) * scale
     const [isGestureDragging, setIsGestureDragging] = useState(false)
     const lastTranslationY = useRef(0)
     const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -195,20 +196,34 @@ export const HabitCard = ({
         }, 280)
     }
     const dragStyle = useAnimatedStyle(() => {
+        const cardTop = getHabitCardOffset(
+            index,
+            orderedHabitIds,
+            cardStepByHabitId.value,
+            defaultDragStep,
+        )
         if (isCommittingReorder) {
             const isDraggedCard = draggedHabitId.value === habitId
             return {
                 transform: [
                     {
-                        scale: isDraggedCard
-                            ? withTiming(1, {
+                        translateY: isDraggedCard
+                            ? cardTop + dragReleaseOffset.value
+                            : reducedMotion
+                            ? cardTop
+                            : withTiming(cardTop, {
                                   duration: 120,
                                   easing: Easing.out(Easing.cubic),
-                              })
-                            : 1,
+                              }),
                     },
                     {
-                        translateY: isDraggedCard ? dragReleaseOffset.value : 0,
+                        scale:
+                            isDraggedCard && !reducedMotion
+                                ? withTiming(1, {
+                                      duration: 120,
+                                      easing: Easing.out(Easing.cubic),
+                                  })
+                                : 1,
                     },
                 ],
                 zIndex: isDraggedCard ? 2 : 0,
@@ -220,11 +235,14 @@ export const HabitCard = ({
             return {
                 transform: [
                     {
-                        translateY: withSpring(0, {
-                            damping: 18,
-                            stiffness: 180,
-                        }),
+                        translateY: reducedMotion
+                            ? cardTop
+                            : withTiming(cardTop, {
+                                  duration: 120,
+                                  easing: Easing.out(Easing.cubic),
+                              }),
                     },
+                    { scale: 1 },
                 ],
                 zIndex: 0,
             }
@@ -240,8 +258,8 @@ export const HabitCard = ({
         if (index === sourceIndex)
             return {
                 transform: [
+                    { translateY: cardTop + dragTranslationY.value },
                     { scale: 1.02 },
-                    { translateY: dragTranslationY.value },
                 ],
                 zIndex: 2,
             }
@@ -261,11 +279,14 @@ export const HabitCard = ({
         return {
             transform: [
                 {
-                    translateY: withTiming(offset, {
-                        duration: 100,
-                        easing: Easing.out(Easing.cubic),
-                    }),
+                    translateY: reducedMotion
+                        ? cardTop + offset
+                        : withTiming(cardTop + offset, {
+                              duration: 100,
+                              easing: Easing.out(Easing.cubic),
+                          }),
                 },
+                { scale: 1 },
             ],
             zIndex: 0,
         }
@@ -333,22 +354,19 @@ export const HabitCard = ({
             return
         }
     }
+    // Keep the native origin fixed so a React reorder cannot add a second
+    // displacement to the drag transform before the UI thread updates it.
     const content = (
         <Animated.View
+            className="absolute inset-x-0 top-0"
             onLayout={handleCardLayout}
-            layout={
-                reducedMotion || isCommittingReorder
-                    ? undefined
-                    : LinearTransition.springify().damping(18).stiffness(180)
-            }
             style={[
                 {
                     backgroundColor: habit.isFocusOfDay
                         ? colors.warning
                         : habit.priorityColor,
                     borderRadius: 16 * scale,
-                    marginBottom: cardMarginBottom,
-                    minHeight: 168 * scale,
+                    minHeight: theme.spacing.habitCardMinHeight * scale,
                     paddingHorizontal: 24 * scale,
                     paddingVertical: 18 * scale,
                 },

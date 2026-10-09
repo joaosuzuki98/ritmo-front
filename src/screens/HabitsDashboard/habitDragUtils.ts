@@ -1,5 +1,24 @@
 export type HabitCardSteps = Readonly<Record<string, number>>
 
+export const getHabitCardOffset = (
+    index: number,
+    orderedHabitIds: readonly string[],
+    stepsByHabitId: HabitCardSteps,
+    fallbackStep: number,
+): number => {
+    'worklet'
+
+    let offset = 0
+    for (
+        let cardIndex = 0;
+        cardIndex < Math.min(index, orderedHabitIds.length);
+        cardIndex += 1
+    )
+        offset += stepsByHabitId[orderedHabitIds[cardIndex]] ?? fallbackStep
+
+    return offset
+}
+
 export const getDragTargetIndex = (
     sourceIndex: number,
     translationY: number,
@@ -19,9 +38,12 @@ export const getDragTargetIndex = (
 
     const getStep = (index: number) =>
         stepsByHabitId[orderedHabitIds[index]] ?? fallbackStep
-    let sourceTop = 0
-    for (let index = 0; index < sourceIndex; index += 1)
-        sourceTop += getStep(index)
+    const sourceTop = getHabitCardOffset(
+        sourceIndex,
+        orderedHabitIds,
+        stepsByHabitId,
+        fallbackStep,
+    )
 
     const sourceHeight = Math.max(0, getStep(sourceIndex) - marginBottom)
     const draggedCenter = sourceTop + sourceHeight / 2 + translationY
