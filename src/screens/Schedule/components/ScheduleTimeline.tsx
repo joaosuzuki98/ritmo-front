@@ -62,13 +62,8 @@ export const ScheduleTimeline = ({
                         key={hour}
                         style={[
                             styles.hourRow,
-                            {
-                                height: hourHeight,
-                                backgroundColor:
-                                    hour === currentHour
-                                        ? colors.scheduleCurrent
-                                        : 'transparent',
-                            },
+                            hour === currentHour && styles.currentHourRow,
+                            { height: hourHeight },
                         ]}
                     >
                         <View
@@ -158,10 +153,12 @@ export const ScheduleTimeline = ({
 const styles = StyleSheet.create({
     container: { backgroundColor: colors.scheduleBackground, flex: 1 },
     hourRow: {
+        backgroundColor: 'transparent',
         borderBottomColor: colors.scheduleLine,
         borderBottomWidth: 1,
         position: 'relative',
     },
+    currentHourRow: { backgroundColor: colors.scheduleCurrent },
     timeLabel: { position: 'absolute', zIndex: 2 },
     timeText: {
         color: colors.text,

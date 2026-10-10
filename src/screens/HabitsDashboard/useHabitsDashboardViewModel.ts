@@ -873,7 +873,7 @@ export const useHabitsDashboardViewModel = (
                 }
             }
         }
-        void load()
+        load()
         return () => {
             active = false
         }
@@ -1489,9 +1489,7 @@ export const useHabitsDashboardViewModel = (
             const ids = data.cards.map(card => card.id)
             const sourcePosition = ids.indexOf(sourceId)
             const targetPosition = ids.indexOf(targetId)
-            void persistOrder(
-                reorderHabitIds(ids, sourcePosition, targetPosition),
-            )
+            persistOrder(reorderHabitIds(ids, sourcePosition, targetPosition))
         },
     }
 }

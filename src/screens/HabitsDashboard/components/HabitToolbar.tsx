@@ -23,10 +23,8 @@ export const HabitToolbar = ({
 
     return (
         <View
+            className="flex-row items-center justify-end"
             style={{
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'flex-end',
                 paddingBottom: 28 * scale,
                 paddingTop: 8 * scale,
             }}
