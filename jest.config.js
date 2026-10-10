@@ -7,6 +7,8 @@ module.exports = {
         '^react-native-safe-area-context$':
             '<rootDir>/__mocks__/safeAreaContextMock.js',
         '^react-native-sound$': '<rootDir>/__mocks__/react-native-sound.js',
+        '^react-native-bootsplash$':
+            '<rootDir>/__mocks__/react-native-bootsplash.js',
         '^react-native-reanimated$':
             '<rootDir>/__mocks__/react-native-reanimated.js',
         '^react-native-gesture-handler$':

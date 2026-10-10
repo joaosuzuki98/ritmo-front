@@ -266,7 +266,7 @@ export const HabitsDashboardScreen = ({
                                 style={{
                                     color: colors.textMuted,
                                     fontFamily: typography.fontFamily,
-                                    paddingVertical: 24,
+                                    paddingVertical: spacing.lg,
                                 }}
                             >
                                 Loading habits…
@@ -278,7 +278,7 @@ export const HabitsDashboardScreen = ({
                                     style={{
                                         color: colors.text,
                                         fontFamily: typography.fontFamily,
-                                        paddingVertical: 16,
+                                        paddingVertical: spacing.md,
                                     }}
                                 >
                                     Unable to load habits.
@@ -300,13 +300,9 @@ export const HabitsDashboardScreen = ({
                         ) : null}
                         {viewModel.state === 'empty' ? (
                             <View
-                                style={
+                                className={
                                     viewModel.hasAnyHabits
-                                        ? {
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              minHeight: 180,
-                                          }
+                                        ? 'min-h-[180px] items-center justify-center'
                                         : undefined
                                 }
                             >
@@ -314,7 +310,7 @@ export const HabitsDashboardScreen = ({
                                     style={{
                                         color: colors.textMuted,
                                         fontFamily: typography.fontFamily,
-                                        paddingVertical: 24,
+                                        paddingVertical: spacing.lg,
                                         ...(viewModel.hasAnyHabits
                                             ? { textAlign: 'center' as const }
                                             : {}),
@@ -348,7 +344,7 @@ export const HabitsDashboardScreen = ({
                                     style={{
                                         color: colors.textMuted,
                                         fontFamily: typography.fontFamily,
-                                        paddingVertical: 24,
+                                        paddingVertical: spacing.lg,
                                     }}
                                 >
                                     No habits match your search.

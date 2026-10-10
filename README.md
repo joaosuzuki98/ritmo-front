@@ -54,3 +54,8 @@ iOS (simulator or connected device):
 ```bash
 npm run ios
 ```
+
+## Android releases
+
+For signed APKs, release versioning and manual builds, see
+[Android releases](./docs/androidReleases.md).
