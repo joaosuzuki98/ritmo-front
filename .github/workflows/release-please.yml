@@ -1,20 +1,39 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
 
 permissions:
-  contents: write
-  pull-requests: write
+    contents: write
+    issues: write
+    pull-requests: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+    release:
+        runs-on: ubuntu-latest
+        outputs:
+            created: ${{ steps.release.outputs.release_created }}
+            version: ${{ steps.release.outputs.version }}
+            tag: ${{ steps.release.outputs.tag_name }}
+            sha: ${{ steps.release.outputs.sha }}
 
-    steps:
-      - name: Release Please
-        uses: googleapis/release-please-action@v4
+        steps:
+            - name: Release Please
+              id: release
+              uses: googleapis/release-please-action@v4
+              with:
+                  release-type: simple
+
+    apk:
+        needs: release
+        if: needs.release.outputs.created == 'true'
+        permissions:
+            contents: write
+        uses: ./.github/workflows/build-apk.yml
         with:
-          release-type: simple
+            version: ${{ needs.release.outputs.version }}
+            tag: ${{ needs.release.outputs.tag }}
+            sha: ${{ needs.release.outputs.sha }}
+        secrets: inherit

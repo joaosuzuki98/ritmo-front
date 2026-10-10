@@ -1,0 +1,183 @@
+name: Build release APK
+
+on:
+    workflow_call:
+        inputs:
+            tag:
+                required: true
+                type: string
+            version:
+                required: true
+                type: string
+            sha:
+                required: true
+                type: string
+        secrets:
+            ANDROID_KEYSTORE_BASE64:
+                required: true
+            ANDROID_KEYSTORE_PASSWORD:
+                required: true
+            ANDROID_KEY_ALIAS:
+                required: true
+            ANDROID_KEY_PASSWORD:
+                required: true
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: Existing stable release tag (for example, v1.0.2)
+                required: true
+                type: string
+
+permissions:
+    contents: write
+
+concurrency:
+    group: release-apk-${{ inputs.tag }}
+    cancel-in-progress: false
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        defaults:
+            run:
+                shell: bash
+
+        steps:
+            - name: Validate release version
+              id: version
+              env:
+                  RELEASE_TAG: ${{ inputs.tag }}
+                  RELEASE_VERSION: ${{ inputs.version }}
+              run: |
+                  if [[ ! "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]{0,3})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$ ]]; then
+                    echo "::error::Expected a stable vMAJOR.MINOR.PATCH tag with minor and patch below 1000."
+                    exit 1
+                  fi
+                  versionCode=$((BASH_REMATCH[1] * 1000000 + BASH_REMATCH[2] * 1000 + BASH_REMATCH[3]))
+                  versionName="${RELEASE_TAG#v}"
+                  if ((versionCode < 1 || versionCode > 2100000000)); then
+                    echo "::error::versionCode is outside the Android publishing range."
+                    exit 1
+                  fi
+                  if [[ -n "$RELEASE_VERSION" && "$RELEASE_VERSION" != "$versionName" ]]; then
+                    echo "::error::Release Please version does not match the tag."
+                    exit 1
+                  fi
+                  echo "name=$versionName" >> "$GITHUB_OUTPUT"
+                  echo "code=$versionCode" >> "$GITHUB_OUTPUT"
+
+            - name: Check published release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  GH_REPO: ${{ github.repository }}
+                  RELEASE_TAG: ${{ inputs.tag }}
+              run: |
+                  isStable=$(gh release view "$RELEASE_TAG" --json isDraft,isPrerelease --jq '(.isDraft == false) and (.isPrerelease == false)')
+                  test "$isStable" = true
+
+            - name: Checkout release tag
+              uses: actions/checkout@v4
+              with:
+                  ref: refs/tags/${{ inputs.tag }}
+                  persist-credentials: false
+
+            - name: Verify release commit
+              env:
+                  RELEASE_SHA: ${{ inputs.sha }}
+              run: |
+                  if [[ -n "$RELEASE_SHA" && "$(git rev-parse HEAD)" != "$RELEASE_SHA" ]]; then
+                    echo "::error::The release tag does not match the Release Please commit."
+                    exit 1
+                  fi
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run tests
+              run: npm test -- --ci --maxWorkers=2
+
+            - name: Run lint
+              run: npm run lint
+
+            - name: Set up Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: '17'
+
+            - name: Set up Android SDK
+              uses: android-actions/setup-android@v3
+
+            - name: Install Android SDK components
+              run: sdkmanager "platforms;android-37" "build-tools;37.0.0" "ndk;27.1.12297006"
+
+            - name: Set up Gradle
+              uses: gradle/actions/setup-gradle@v4
+
+            - name: Restore signing keystore
+              env:
+                  ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+              run: |
+                  test -n "$ANDROID_KEYSTORE_BASE64"
+                  umask 077
+                  printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/ritmo-release.jks"
+
+            - name: Build signed release APK
+              working-directory: android
+              env:
+                  ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/ritmo-release.jks
+                  ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+                  ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+                  ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+                  APP_VERSION_NAME: ${{ steps.version.outputs.name }}
+                  APP_VERSION_CODE: ${{ steps.version.outputs.code }}
+              run: |
+                  ./gradlew :app:assembleRelease --no-daemon --max-workers=2 --stacktrace \
+                    -PappVersionName="$APP_VERSION_NAME" \
+                    -PappVersionCode="$APP_VERSION_CODE"
+
+            - name: Verify APK version and signature
+              env:
+                  APP_VERSION_NAME: ${{ steps.version.outputs.name }}
+                  APP_VERSION_CODE: ${{ steps.version.outputs.code }}
+                  ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+                  ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+              run: |
+                  apk=android/app/build/outputs/apk/release/app-release.apk
+                  test "$(apkanalyzer manifest version-name "$apk")" = "$APP_VERSION_NAME"
+                  test "$(apkanalyzer manifest version-code "$apk")" = "$APP_VERSION_CODE"
+                  test "$(apkanalyzer manifest application-id "$apk")" = com.ritmo_front
+                  keytool -exportcert -keystore "$RUNNER_TEMP/ritmo-release.jks" \
+                    -storepass:env ANDROID_KEYSTORE_PASSWORD -alias "$ANDROID_KEY_ALIAS" \
+                    -file "$RUNNER_TEMP/ritmo-release.der"
+                  expectedDigest=$(sha256sum "$RUNNER_TEMP/ritmo-release.der" | cut -d ' ' -f 1)
+                  signature=$("$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$apk")
+                  [[ "$signature" == *"certificate SHA-256 digest: $expectedDigest"* ]]
+                  mv "$apk" "android/app/build/outputs/apk/release/ritmo-$APP_VERSION_NAME.apk"
+
+            - name: Remove signing files
+              if: always()
+              run: rm -f "$RUNNER_TEMP/ritmo-release.jks" "$RUNNER_TEMP/ritmo-release.der"
+
+            - name: Upload APK artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ritmo-${{ steps.version.outputs.name }}
+                  path: android/app/build/outputs/apk/release/ritmo-${{ steps.version.outputs.name }}.apk
+                  if-no-files-found: error
+                  retention-days: 14
+
+            - name: Attach APK to release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  GH_REPO: ${{ github.repository }}
+                  RELEASE_TAG: ${{ inputs.tag }}
+                  APP_VERSION_NAME: ${{ steps.version.outputs.name }}
+              run: gh release upload "$RELEASE_TAG" "android/app/build/outputs/apk/release/ritmo-$APP_VERSION_NAME.apk" --clobber
