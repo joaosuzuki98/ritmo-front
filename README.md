@@ -55,6 +55,11 @@ iOS (simulator or connected device):
 npm run ios
 ```
 
+## Android releases
+
+For signed APKs, release versioning and manual builds, see
+[Android releases](./docs/androidReleases.md).
+
 ## Android splash screen
 
 The native splash uses `react-native-bootsplash` with the Ritmo logo and the
