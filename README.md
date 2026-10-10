@@ -59,24 +59,3 @@ npm run ios
 
 For signed APKs, release versioning and manual builds, see
 [Android releases](./docs/androidReleases.md).
-
-## Android splash screen
-
-The native splash uses `react-native-bootsplash` with the Ritmo logo and the
-onboarding background (`#121318`, from `src/styles/colors.ts`). It fades out after
-the local session is restored and the first screen receives layout, including
-when session restoration fails and the app falls back to onboarding.
-
-To regenerate the assets after changing the logo or background:
-
-```bash
-npx react-native-bootsplash generate src/assets/images/ritmo-logo.svg \
-  --platforms=android \
-  --background=121318 \
-  --logo-width=180 \
-  --assets-output=src/assets/images/bootsplash
-```
-
-Rebuild with `npm run android` after changing native splash resources. To check
-the launch screen, fully close the app and open it from its launcher icon;
-Fast Refresh does not replay native startup.
