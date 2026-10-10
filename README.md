@@ -68,7 +68,7 @@ To regenerate the assets after changing the logo or background:
 npx react-native-bootsplash generate src/assets/images/ritmo-logo.svg \
   --platforms=android \
   --background=121318 \
-  --logo-width=100 \
+  --logo-width=180 \
   --assets-output=src/assets/images/bootsplash
 ```
 
