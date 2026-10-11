@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
 import {
     NavigationContainer,
     createNavigationContainerRef,
 } from '@react-navigation/native'
-import { useEffect, useState } from 'react'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import BootSplash from 'react-native-bootsplash'
 
 import type { User } from '../database'
 import { logoutLocalUser, restoreLocalSession } from '../database/localAuth'
@@ -35,6 +36,12 @@ export const RootNavigator = () => {
         setCurrentUser(null)
     }
 
+    const handleInitialLayout = async () => {
+        if (Platform.OS === 'android') {
+            await BootSplash.hide({ fade: true })
+        }
+    }
+
     if (isRestoringSession) {
         return (
             <View style={styles.loading}>
@@ -44,20 +51,23 @@ export const RootNavigator = () => {
     }
 
     return (
-        <NavigationContainer ref={navigationRef}>
-            {currentUser ? (
-                <AppDrawerNavigator
-                    currentUser={currentUser}
-                    onLogout={handleLogout}
-                />
-            ) : hasSeenOnboarding ? (
-                <AuthNavigator onAuthenticated={setCurrentUser} />
-            ) : (
-                <OnboardingScreen
-                    onComplete={() => setHasSeenOnboarding(true)}
-                />
-            )}
-        </NavigationContainer>
+        // A new native view guarantees a layout event after session restoration.
+        <View key="ready" className="flex-1" onLayout={handleInitialLayout}>
+            <NavigationContainer ref={navigationRef}>
+                {currentUser ? (
+                    <AppDrawerNavigator
+                        currentUser={currentUser}
+                        onLogout={handleLogout}
+                    />
+                ) : hasSeenOnboarding ? (
+                    <AuthNavigator onAuthenticated={setCurrentUser} />
+                ) : (
+                    <OnboardingScreen
+                        onComplete={() => setHasSeenOnboarding(true)}
+                    />
+                )}
+            </NavigationContainer>
+        </View>
     )
 }
 

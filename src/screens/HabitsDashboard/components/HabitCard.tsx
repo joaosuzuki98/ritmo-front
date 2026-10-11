@@ -413,16 +413,10 @@ export const HabitCard = ({
                 }
                 accessibilityRole="button"
                 onPress={handleCardPress}
-                style={{ flex: 1 }}
+                className="flex-1"
             >
-                <View
-                    style={{
-                        alignItems: 'center',
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                    }}
-                >
-                    <View style={{ flex: 1, position: 'relative' }}>
+                <View className="flex-row items-center justify-between">
+                    <View className="relative flex-1">
                         <Text
                             numberOfLines={1}
                             onTextLayout={event => {
@@ -453,11 +447,9 @@ export const HabitCard = ({
                         {habit.status === 'completed' && titleTextWidth > 0 ? (
                             <View
                                 pointerEvents="none"
+                                className="absolute left-0 h-[2px]"
                                 style={{
                                     backgroundColor: colors.priorityText,
-                                    height: 2,
-                                    left: 0,
-                                    position: 'absolute',
                                     top: 12 * scale,
                                     width: titleTextWidth,
                                 }}
@@ -533,6 +525,7 @@ export const HabitCard = ({
                     </Text>
                 ) : null}
                 <Text
+                    className="max-w-[72%]"
                     style={[
                         {
                             color:
@@ -545,7 +538,6 @@ export const HabitCard = ({
                                 scale,
                             lineHeight: 26 * scale,
                             marginTop: 21 * scale,
-                            maxWidth: '72%',
                         },
                         habit.isFocusOfDay
                             ? styles.focusText
@@ -557,11 +549,9 @@ export const HabitCard = ({
                         : habit.description?.trim() || 'No description given'}
                 </Text>
                 <View
+                    className="absolute flex-row items-center"
                     style={{
-                        alignItems: 'center',
                         bottom: 22 * scale,
-                        flexDirection: 'row',
-                        position: 'absolute',
                         right: 22 * scale,
                     }}
                 >
@@ -572,13 +562,13 @@ export const HabitCard = ({
                     />
                     <Text
                         accessibilityLabel={`Streak ${habit.currentStreak} for ${habit.title}`}
+                        className="font-normal"
                         style={{
                             color: habit.isFocusOfDay
                                 ? colors.priorityText
                                 : colors.white,
                             fontFamily: typography.fontFamily,
                             fontSize: 42 * scale,
-                            fontWeight: '400',
                             marginLeft: 7 * scale,
                         }}
                     >
