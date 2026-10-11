@@ -1,6 +1,7 @@
+import { useCallback, useState } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useNavigation } from '@react-navigation/native'
-import { useState } from 'react'
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import type { DrawerNavigationProp } from '@react-navigation/drawer'
 
 import type { User } from '../database'
@@ -30,7 +31,7 @@ export const AppNavigator = ({ currentUser }: AppNavigatorProps) => {
     const [isDoubleTapHintVisible, setIsDoubleTapHintVisible] = useState(true)
     const openAddHabitModal = () => setIsAddHabitModalVisible(true)
     const closeAddHabitModal = () => setIsAddHabitModalVisible(false)
-    const openAddItem = (routeName: string) => {
+    const openAddItem = useCallback((routeName: string) => {
         if (routeName === 'Schedule') {
             setIsAddScheduleItemModalVisible(true)
             return
@@ -47,11 +48,17 @@ export const AppNavigator = ({ currentUser }: AppNavigatorProps) => {
         }
 
         setIsAddHabitModalVisible(true)
-    }
+    }, [])
+    const renderBottomBar = useCallback(
+        (props: BottomTabBarProps) => (
+            <BottomBar {...props} onAddItem={openAddItem} />
+        ),
+        [openAddItem],
+    )
 
     return (
         <Tab.Navigator
-            tabBar={props => <BottomBar {...props} onAddItem={openAddItem} />}
+            tabBar={renderBottomBar}
             screenOptions={{ headerShown: false }}
         >
             <Tab.Screen name="Habits">

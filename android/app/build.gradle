@@ -72,6 +72,26 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def releaseSigning = [
+    storePath: providers.environmentVariable("ANDROID_KEYSTORE_PATH").orNull,
+    storePassword: providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull,
+    keyAlias: providers.environmentVariable("ANDROID_KEY_ALIAS").orNull,
+    keyPassword: providers.environmentVariable("ANDROID_KEY_PASSWORD").orNull,
+]
+
+def validateReleaseSigning = tasks.register("validateReleaseSigning") {
+    doLast {
+        if (releaseSigning.values().any { !it }) {
+            throw new GradleException("Release builds require ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD.")
+        }
+    }
+}
+
+// Debug builds remain usable without access to the release signing credentials.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(validateReleaseSigning)
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -82,8 +102,8 @@ android {
         applicationId "com.ritmo_front"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode providers.gradleProperty("appVersionCode").getOrElse("1").toInteger()
+        versionName providers.gradleProperty("appVersionName").getOrElse("1.0")
     }
     signingConfigs {
         debug {
@@ -92,15 +112,21 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (releaseSigning.storePath) {
+                storeFile file(releaseSigning.storePath)
+            }
+            storePassword releaseSigning.storePassword
+            keyAlias releaseSigning.keyAlias
+            keyPassword releaseSigning.keyPassword
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
