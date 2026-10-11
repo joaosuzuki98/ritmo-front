@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.0](https://github.com/joaosuzuki98/ritmo-front/compare/v1.0.1...v1.1.0) (2026-10-11)
+
+
+### Features
+
+* add native Android splash screen ([178b644](https://github.com/joaosuzuki98/ritmo-front/commit/178b644cbaa33a3f56d89f00f054b1de4b5e53b0))
+* add Ritmo launcher icons for Android ([ea297e2](https://github.com/joaosuzuki98/ritmo-front/commit/ea297e227e7031e19fc2a3a33c5f937b50b1e02e))
+* refresh Android launcher icons and add themed icon support ([7abc288](https://github.com/joaosuzuki98/ritmo-front/commit/7abc288005e8b298038a35667a8e9c13c0cc5e4f))
+
+
+### Bug Fixes
+
+* increase splash screen logo size ([599cb32](https://github.com/joaosuzuki98/ritmo-front/commit/599cb323c2e32d742b8a7c2ad8805606fa1c6f3c))
+* resolve ESLint warnings ([c59a470](https://github.com/joaosuzuki98/ritmo-front/commit/c59a470df8d50516568cd4d6bb4ac3bb822bc4b7))
+* set app display name to Ritmo App ([4c445a6](https://github.com/joaosuzuki98/ritmo-front/commit/4c445a604e642a564083d3d5f8af8205d86777e2))
+* skip legacy Android SDK tools package ([a0227d6](https://github.com/joaosuzuki98/ritmo-front/commit/a0227d6205c66215b921dafdb65e10e2925b0e5f))
+* Skip legacy Android SDK tools package ([f8f333f](https://github.com/joaosuzuki98/ritmo-front/commit/f8f333fe759e53570fad4d648ce62abeea0aacc3))
+* use Android SDK platform android-37.0 ([36a4740](https://github.com/joaosuzuki98/ritmo-front/commit/36a47404f36ea71cecf5d6c5aeb68550e2ce7660))
+
 ## [1.0.1](https://github.com/joaosuzuki98/ritmo-front/compare/v1.0.0...v1.0.1) (2026-10-09)
 
 
