@@ -3,28 +3,28 @@ import type { ReactTestRenderer } from 'react-test-renderer'
 import { Platform, View } from 'react-native'
 import BootSplash from 'react-native-bootsplash'
 
-import { restoreLocalSession } from '../database/localAuth'
-import type { User } from '../database'
-import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen'
-import { AppDrawerNavigator } from './AppDrawerNavigator'
-import { RootNavigator } from './RootNavigator'
+import { restoreLocalSession } from '../../src/database/localAuth'
+import type { User } from '../../src/database'
+import { OnboardingScreen } from '../../src/screens/Onboarding/OnboardingScreen'
+import { AppDrawerNavigator } from '../../src/navigation/AppDrawerNavigator'
+import { RootNavigator } from '../../src/navigation/RootNavigator'
 
 jest.mock('@react-navigation/native', () => ({
     NavigationContainer: ({ children }: { children: React.ReactNode }) =>
         children,
     createNavigationContainerRef: () => ({}),
 }))
-jest.mock('../database/localAuth', () => ({
+jest.mock('../../src/database/localAuth', () => ({
     restoreLocalSession: jest.fn(),
     logoutLocalUser: jest.fn(),
 }))
-jest.mock('../screens/Onboarding/OnboardingScreen', () => ({
+jest.mock('../../src/screens/Onboarding/OnboardingScreen', () => ({
     OnboardingScreen: () => null,
 }))
-jest.mock('./AppDrawerNavigator', () => ({
+jest.mock('../../src/navigation/AppDrawerNavigator', () => ({
     AppDrawerNavigator: () => null,
 }))
-jest.mock('./AuthNavigator', () => ({
+jest.mock('../../src/navigation/AuthNavigator', () => ({
     AuthNavigator: () => null,
 }))
 
