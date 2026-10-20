@@ -5,6 +5,7 @@ export class User extends Model {
     static table = 'users'
 
     @field('name') name!: string
+    @field('mascot_name') mascotName?: string
     @field('email') email!: string
     @field('password') password?: string
     @field('password_hash') passwordHash?: string

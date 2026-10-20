@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native'
 import type { TextInputProps } from 'react-native'
+import type { ReactNode } from 'react'
 
 import { FormTextInput } from '../FormTextInput'
 import { colors } from '../../styles/colors'
@@ -21,6 +22,7 @@ type AuthTextInputProps = Pick<
     onBlur: () => void
     onChangeText: (value: string) => void
     placeholder: string
+    rightAccessory?: ReactNode
     value: string
 }
 
@@ -35,6 +37,7 @@ export const AuthTextInput = ({
     onChangeText,
     placeholder,
     returnKeyType,
+    rightAccessory,
     secureTextEntry,
     textContentType,
     value,
@@ -53,9 +56,11 @@ export const AuthTextInput = ({
                 onChangeText={onChangeText}
                 placeholder={placeholder}
                 returnKeyType={returnKeyType}
+                rightAccessory={rightAccessory}
                 secureTextEntry={secureTextEntry}
                 textContentType={textContentType}
                 value={value}
+                containerStyle={styles.inputContainer}
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
@@ -64,6 +69,7 @@ export const AuthTextInput = ({
 
 const styles = StyleSheet.create({
     field: { marginBottom: spacing.xl },
+    inputContainer: { backgroundColor: colors.onboardingMuted },
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,

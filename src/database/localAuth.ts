@@ -8,6 +8,7 @@ const passwordHashIterations = 120_000
 
 export type LocalRegistrationData = {
     name: string
+    mascotName: string
     email: string
     password: string
 }
@@ -27,9 +28,16 @@ export const deriveLocalPasswordHash = async (
 
 export const registerLocalUser = async ({
     name,
+    mascotName,
     email,
     password,
 }: LocalRegistrationData): Promise<User> => {
+    const normalizedName = name.trim()
+    const normalizedMascotName = mascotName.trim()
+    if (normalizedName.length < 2 || normalizedMascotName.length === 0) {
+        throw new Error('Informe seu nome e o nome do mascote.')
+    }
+
     const users = await database.get<User>('users').query().fetch()
     const normalizedEmail = normalizeEmail(email)
     if (users.some(user => normalizeEmail(user.email) === normalizedEmail)) {
@@ -48,7 +56,8 @@ export const registerLocalUser = async ({
 
         const now = new Date()
         createdUser = await database.get<User>('users').create(record => {
-            record.name = name.trim()
+            record.name = normalizedName
+            record.mascotName = normalizedMascotName
             record.email = normalizedEmail
             record.password = password
             record.totalPoints = 0

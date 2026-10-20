@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Eye, EyeSlash } from 'phosphor-react-native'
 
 import { AuthButton } from '../../components/AuthButton/AuthButton'
 import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLayout'
@@ -26,6 +27,7 @@ export const LoginScreen = ({
 }: LoginScreenProps) => {
     const [submitError, setSubmitError] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false)
     const {
         control,
         formState: { errors },
@@ -100,7 +102,37 @@ export const LoginScreen = ({
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
                             placeholder="Sua senha"
-                            secureTextEntry
+                            rightAccessory={
+                                <Pressable
+                                    accessibilityLabel={
+                                        isPasswordVisible
+                                            ? 'Ocultar senha'
+                                            : 'Mostrar senha'
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityState={{
+                                        selected: isPasswordVisible,
+                                    }}
+                                    hitSlop={spacing.sm}
+                                    onPress={() =>
+                                        setIsPasswordVisible(!isPasswordVisible)
+                                    }
+                                    style={styles.passwordVisibilityButton}
+                                >
+                                    {isPasswordVisible ? (
+                                        <EyeSlash
+                                            color={colors.onboardingBackground}
+                                            size={18}
+                                        />
+                                    ) : (
+                                        <Eye
+                                            color={colors.onboardingBackground}
+                                            size={18}
+                                        />
+                                    )}
+                                </Pressable>
+                            }
+                            secureTextEntry={!isPasswordVisible}
                             textContentType="password"
                             value={field.value}
                         />
@@ -121,7 +153,7 @@ export const LoginScreen = ({
                 <AuthButton
                     disabled={isSubmitting}
                     onPress={handleSubmit(handleLogin)}
-                    title={isSubmitting ? 'Entrando…' : 'Entrar'}
+                    title={isSubmitting ? 'Entrando…' : 'Login'}
                 />
             </View>
         </AuthScreenLayout>
@@ -132,9 +164,15 @@ const styles = StyleSheet.create({
     forgotButton: {
         alignSelf: 'flex-start',
         marginBottom: 16,
-        marginTop: -16,
+        marginTop: -spacing.xl,
         minHeight: spacing.touchTarget,
         justifyContent: 'center',
+    },
+    passwordVisibilityButton: {
+        alignItems: 'center',
+        height: spacing.touchTarget,
+        justifyContent: 'center',
+        width: spacing.touchTarget,
     },
     forgotText: {
         color: colors.onboardingPurple,

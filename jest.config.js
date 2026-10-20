@@ -1,6 +1,7 @@
 module.exports = {
     preset: '@react-native/jest-preset',
     moduleNameMapper: {
+        '\\.(svg)$': '<rootDir>/__mocks__/svgMock.js',
         '\\.(css)$': '<rootDir>/__mocks__/styleMock.js',
         '^@react-native/new-app-screen$':
             '<rootDir>/__mocks__/newAppScreenMock.js',

@@ -59,4 +59,40 @@ describe('pushChanges', () => {
             { headers: undefined },
         )
     })
+
+    it('includes the mascot name as profile data while filtering credentials', async () => {
+        const post = jest.fn().mockResolvedValue({ data: {} })
+        const pushChanges = createPushChanges({
+            api: { post } as never,
+            path: '/sync/push',
+        })
+
+        await pushChanges({
+            changes: {
+                users: {
+                    created: [
+                        {
+                            id: 'user-1',
+                            name: 'Ana Silva',
+                            mascot_name: 'Lua',
+                            email: 'ana@example.com',
+                            password: 'local-password',
+                            _changed: 'name,mascot_name,email,password',
+                        },
+                    ],
+                    updated: [],
+                    deleted: [],
+                },
+            },
+            lastPulledAt: null,
+        } as never)
+
+        expect(post.mock.calls[0][1].changes.users.created[0]).toEqual({
+            id: 'user-1',
+            name: 'Ana Silva',
+            mascot_name: 'Lua',
+            email: 'ana@example.com',
+            _changed: 'name,mascot_name,email',
+        })
+    })
 })

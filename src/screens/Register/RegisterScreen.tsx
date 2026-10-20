@@ -8,16 +8,19 @@ import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLa
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
 import type { User } from '../../database'
 import { registerLocalUser } from '../../database/localAuth'
+import type { OnboardingIdentity } from '../../types/onboarding'
 import { colors } from '../../styles/colors'
 import { typography } from '../../styles/typography'
 import { registerSchema, type RegisterFormData } from './registerSchema'
 
 type RegisterScreenProps = {
+    identity: OnboardingIdentity
     onBack: () => void
     onRegisterSuccess: (user: User) => void
 }
 
 export const RegisterScreen = ({
+    identity,
     onBack,
     onRegisterSuccess,
 }: RegisterScreenProps) => {
@@ -29,10 +32,8 @@ export const RegisterScreen = ({
         handleSubmit,
     } = useForm<RegisterFormData>({
         defaultValues: {
-            name: '',
             email: '',
             password: '',
-            confirmPassword: '',
         },
         resolver: zodResolver(registerSchema),
     })
@@ -42,7 +43,7 @@ export const RegisterScreen = ({
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            const user = await registerLocalUser(data)
+            const user = await registerLocalUser({ ...data, ...identity })
             onRegisterSuccess(user)
         } catch (error) {
             setSubmitError(
@@ -57,7 +58,7 @@ export const RegisterScreen = ({
 
     return (
         <AuthScreenLayout
-            description="Comece a construir uma rotina que combina com você."
+            description="Comece a construir a rotina que combina com você."
             footer={
                 <Text style={styles.footerText}>
                     Já tem uma conta?{' '}
@@ -70,27 +71,9 @@ export const RegisterScreen = ({
                     </Text>
                 </Text>
             }
-            title="Crie sua conta"
+            title="Crie a sua conta"
         >
             <View>
-                <Controller
-                    control={control}
-                    name="name"
-                    render={({ field }) => (
-                        <AuthTextInput
-                            autoCapitalize="words"
-                            autoComplete="name"
-                            error={errors.name?.message}
-                            label="Nome"
-                            onBlur={field.onBlur}
-                            onChangeText={field.onChange}
-                            placeholder="Seu nome"
-                            returnKeyType="next"
-                            textContentType="name"
-                            value={field.value}
-                        />
-                    )}
-                />
                 <Controller
                     control={control}
                     name="email"
@@ -103,7 +86,7 @@ export const RegisterScreen = ({
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
                             placeholder="voce@email.com"
-                            returnKeyType="next"
+                            returnKeyType="done"
                             textContentType="emailAddress"
                             value={field.value}
                         />
@@ -120,23 +103,6 @@ export const RegisterScreen = ({
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
                             placeholder="Mínimo de 8 caracteres"
-                            secureTextEntry
-                            textContentType="newPassword"
-                            value={field.value}
-                        />
-                    )}
-                />
-                <Controller
-                    control={control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                        <AuthTextInput
-                            autoComplete="new-password"
-                            error={errors.confirmPassword?.message}
-                            label="Confirmar senha"
-                            onBlur={field.onBlur}
-                            onChangeText={field.onChange}
-                            placeholder="Digite a senha novamente"
                             secureTextEntry
                             textContentType="newPassword"
                             value={field.value}

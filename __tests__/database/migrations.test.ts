@@ -7,7 +7,7 @@ describe('local account database migration', () => {
             item => item.toVersion === 9,
         )
 
-        expect(databaseSchema.version).toBe(11)
+        expect(databaseSchema.version).toBe(12)
         expect(migration?.steps).toContainEqual({
             type: 'add_columns',
             table: 'users',
@@ -51,5 +51,28 @@ describe('local account database migration', () => {
                 item => item.toVersion === 11,
             )?.steps,
         ).toEqual([])
+    })
+
+    it('adds an optional mascot name to existing user rows in version 12', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 12,
+        )
+
+        expect(databaseSchema.tables.users.columnArray).toContainEqual({
+            name: 'mascot_name',
+            type: 'string',
+            isOptional: true,
+        })
+        expect(migration?.steps).toContainEqual({
+            type: 'add_columns',
+            table: 'users',
+            columns: [
+                {
+                    name: 'mascot_name',
+                    type: 'string',
+                    isOptional: true,
+                },
+            ],
+        })
     })
 })
