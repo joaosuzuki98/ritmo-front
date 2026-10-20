@@ -117,7 +117,7 @@ export const RegisterScreen = ({
                 <AuthButton
                     disabled={isSubmitting}
                     onPress={handleSubmit(handleRegister)}
-                    title={isSubmitting ? 'Criando conta…' : 'Criar conta'}
+                    title={isSubmitting ? 'Criando conta…' : 'Create account'}
                 />
             </View>
         </AuthScreenLayout>
