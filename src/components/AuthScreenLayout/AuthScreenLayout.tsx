@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import RitmoLogo from '../../assets/images/ritmo-logo.svg'
 import Star from '../../assets/images/star.svg'
+import { useFocusedInputScroll } from '../../hooks/useFocusedInputScroll'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -46,13 +47,15 @@ export const AuthScreenLayout = ({
     title,
 }: AuthScreenLayoutProps) => {
     const { height, width } = useWindowDimensions()
+    const { scrollRef, ensureFocusedInputVisible, handleScroll } =
+        useFocusedInputScroll()
     const logoWidth = Math.min(width * 0.6, 228)
 
     return (
         <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
             >
                 <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -74,8 +77,15 @@ export const AuthScreenLayout = ({
                     ))}
                 </View>
                 <ScrollView
+                    ref={scrollRef}
                     contentContainerStyle={styles.scrollContent}
+                    keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps="handled"
+                    onContentSizeChange={ensureFocusedInputVisible}
+                    onFocus={ensureFocusedInputVisible}
+                    onLayout={ensureFocusedInputVisible}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.content}>

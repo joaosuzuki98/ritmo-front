@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
     Animated,
     Easing,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -20,6 +21,7 @@ import { SpeakerHigh, SpeakerSlash } from 'phosphor-react-native'
 import { FormActionButton } from '../../components/FormActionButton'
 import RitmoLogo from '../../assets/images/ritmo-logo.svg'
 import Star from '../../assets/images/star.svg'
+import { useFocusedInputScroll } from '../../hooks/useFocusedInputScroll'
 import type { OnboardingIdentity } from '../../types/onboarding'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
@@ -119,6 +121,13 @@ export const OnboardingScreen = ({
     const pageTransition = useRef(new Animated.Value(1)).current
     const { height, width } = useWindowDimensions()
     const { top: safeAreaTop } = useSafeAreaInsets()
+    const {
+        scrollRef,
+        ensureFocusedInputVisible,
+        handleScroll,
+        isKeyboardVisible,
+    } = useFocusedInputScroll()
+    const isMascotKeyboardVisible = currentPage === 2 && isKeyboardVisible
     const isEntryPage = currentPage === 1
     const page = isEntryPage ? undefined : onboardingPages[currentPage - 2]
     const pageContentOffset = isEntryPage
@@ -133,17 +142,22 @@ export const OnboardingScreen = ({
         pageContentOffset < 0
             ? { marginTop: pageContentOffset }
             : { paddingTop: pageContentOffset }
-    const pageDescriptionGap =
-        currentPage === 2
-            ? 52
-            : currentPage === 3 || currentPage === 4
-            ? 30
-            : currentPage === 5
-            ? 108
-            : currentPage === 6
-            ? spacing.lg
-            : 59
-    const inputGap = currentPage === 3 ? 68 : 28
+    const pageDescriptionGap = isMascotKeyboardVisible
+        ? spacing.xs
+        : currentPage === 2
+        ? 52
+        : currentPage === 3 || currentPage === 4
+        ? 30
+        : currentPage === 5
+        ? 108
+        : currentPage === 6
+        ? spacing.lg
+        : 59
+    const inputGap = isMascotKeyboardVisible
+        ? spacing.xs
+        : currentPage === 3
+        ? 68
+        : 28
 
     useEffect(() => {
         const animation = Animated.loop(
@@ -198,6 +212,8 @@ export const OnboardingScreen = ({
     }, [])
 
     useEffect(() => {
+        Keyboard.dismiss()
+        scrollRef.current?.scrollTo({ y: 0, animated: false })
         pageTransition.setValue(0)
         const animation = Animated.timing(pageTransition, {
             toValue: 1,
@@ -207,7 +223,7 @@ export const OnboardingScreen = ({
         })
         animation.start()
         return () => animation.stop()
-    }, [currentPage, pageTransition])
+    }, [currentPage, pageTransition, scrollRef])
 
     const handleContinue = () => {
         if (isEntryPage) {
@@ -326,7 +342,7 @@ export const OnboardingScreen = ({
             {renderStarField()}
             <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={styles.keyboardView}
                 >
                     <View style={styles.screen}>
@@ -378,6 +394,7 @@ export const OnboardingScreen = ({
                         </View>
 
                         <ScrollView
+                            ref={scrollRef}
                             bounces={false}
                             contentContainerStyle={[
                                 styles.contentContainer,
@@ -385,7 +402,13 @@ export const OnboardingScreen = ({
                                     ? styles.entryContentContainer
                                     : undefined,
                             ]}
+                            keyboardDismissMode="on-drag"
                             keyboardShouldPersistTaps="handled"
+                            onContentSizeChange={ensureFocusedInputVisible}
+                            onFocus={ensureFocusedInputVisible}
+                            onLayout={ensureFocusedInputVisible}
+                            onScroll={handleScroll}
+                            scrollEventThrottle={16}
                             showsVerticalScrollIndicator={false}
                             style={styles.content}
                         >
