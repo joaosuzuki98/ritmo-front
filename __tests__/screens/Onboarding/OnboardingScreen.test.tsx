@@ -49,7 +49,7 @@ describe('OnboardingScreen', () => {
             )
         })
 
-        expect(textFor('Onboarding welcome')).toBe('Bem-vindo(a)')
+        expect(textFor('Onboarding welcome')).toBe('Welcome')
         expect(
             renderer.root.findByProps({
                 accessibilityLabel: 'Continue onboarding',
@@ -91,15 +91,15 @@ describe('OnboardingScreen', () => {
         )
         await press('Next onboarding page')
         expect(textFor('Onboarding copy page 5')).toContain(
-            'Crie hábitos, organize-os em grupos',
+            'Build habits, organize them into groups',
         )
         await press('Next onboarding page')
         expect(textFor('Onboarding copy page 6')).toContain(
-            'Monte seu dia em uma linha do tempo',
+            'Plan your day on a timeline',
         )
         await press('Next onboarding page')
         expect(textFor('Onboarding copy page 7')).toContain(
-            'E não é só sobre hábitos!',
+            'And it is not just about habits!',
         )
         expect(
             renderer.root.findByProps({
@@ -127,7 +127,7 @@ describe('OnboardingScreen', () => {
         await press('Continue onboarding')
         await press('Next onboarding page')
         expect(textFor('Mascot name error')).toBe(
-            'Informe um nome para o mascote.',
+            'Please enter a name for your mascot.',
         )
 
         await enterText('Mascot name', 'Lua')
@@ -154,7 +154,7 @@ describe('OnboardingScreen', () => {
         await press('Go to onboarding page 6')
 
         expect(textFor('Onboarding copy page 6')).toContain(
-            'Monte seu dia em uma linha do tempo',
+            'Plan your day on a timeline',
         )
         expect(
             renderer.root.findByProps({

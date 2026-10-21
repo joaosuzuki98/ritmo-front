@@ -63,17 +63,17 @@ const onboardingPages: OnboardingPage[] = [
     {
         page: 5,
         description:
-            'Crie hábitos, organize-os em grupos, escolha os mais importantes como foco do dia e defina hábitos condicionais, liberados só depois de outro hábito ser concluído.',
+            'Build habits, organize them into groups, choose the most important ones as your daily focus, and set conditional habits that unlock only after another habit is completed.',
     },
     {
         page: 6,
         description:
-            'Monte seu dia em uma linha do tempo. Adicione hábitos e outros compromissos no mesmo cronograma e veja tudo em um só lugar.',
+            'Plan your day on a timeline. Add habits and other commitments to the same schedule and see everything in one place.',
     },
     {
         page: 7,
         description:
-            'E não é só sobre hábitos! Crie lembretes para datas importantes e tarefas para o que precisa ser feito. Isso e muito mais, tudo no mesmo lugar.',
+            'And it is not just about habits! Create reminders for important dates and tasks for things you need to get done. And much more, all in one place.',
     },
 ]
 
@@ -370,8 +370,8 @@ export const OnboardingScreen = ({
                             <Pressable
                                 accessibilityLabel={
                                     isAudioMuted
-                                        ? 'Ativar áudio da apresentação'
-                                        : 'Silenciar áudio da apresentação'
+                                        ? 'Turn on presentation audio'
+                                        : 'Mute presentation audio'
                                 }
                                 accessibilityRole="button"
                                 accessibilityState={{ selected: isAudioMuted }}
@@ -441,14 +441,14 @@ export const OnboardingScreen = ({
                                             accessibilityLabel="Onboarding welcome"
                                             style={styles.entrySubtitle}
                                         >
-                                            Bem-vindo(a)
+                                            Welcome
                                         </Text>
                                         <Text style={styles.entryDescription}>
-                                            Crie novos hábitos, monte
-                                            cronogramas, defina lembretes e
-                                            organize suas tarefas em um único
-                                            lugar, tudo em um ambiente pensado
-                                            para trazer calma ao seu dia a dia.
+                                            Build new habits, plan your
+                                            schedule, set reminders, and
+                                            organize your tasks—all in one
+                                            place, in an environment designed to
+                                            bring calm to your everyday life.
                                         </Text>
                                     </View>
                                 ) : (
@@ -590,14 +590,14 @@ export const OnboardingScreen = ({
                             {isEntryPage ? (
                                 <View style={styles.signInPrompt}>
                                     <Text style={styles.signInPromptText}>
-                                        Já tem uma conta?{' '}
+                                        Already have an account?{' '}
                                         <Text
                                             accessibilityLabel="Sign in"
                                             accessibilityRole="link"
                                             onPress={onSignIn}
                                             style={styles.signInLink}
                                         >
-                                            Entrar
+                                            Sign in
                                         </Text>
                                     </Text>
                                 </View>

@@ -24,4 +24,28 @@ describe('onboarding identity validation', () => {
                 .success,
         ).toBe(false)
     })
+
+    it('returns validation messages in English', () => {
+        expect(
+            onboardingSchema.safeParse({ name: 'Ana', mascotName: '  ' }),
+        ).toMatchObject({
+            success: false,
+            error: {
+                issues: [{ message: 'Please enter a name for your mascot.' }],
+            },
+        })
+        expect(
+            onboardingSchema.safeParse({ name: 'A', mascotName: 'Lua' }),
+        ).toMatchObject({
+            success: false,
+            error: {
+                issues: [
+                    {
+                        message:
+                            'Please enter your name using at least 2 characters.',
+                    },
+                ],
+            },
+        })
+    })
 })
