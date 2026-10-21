@@ -15,6 +15,7 @@ import { theme } from '../../../styles/theme'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
+import { globalStyles } from '../../../styles/globalStyles'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
@@ -122,7 +123,9 @@ export const AddGoalModal = ({
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.label}>Goal type</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Goal type
+                </Text>
                 <View style={styles.optionRow}>
                     {(
                         [
@@ -161,7 +164,7 @@ export const AddGoalModal = ({
                     })}
                 </View>
 
-                <Text style={styles.label}>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
                     {goalType === 'habit'
                         ? 'Choose a habit'
                         : 'Choose at least two habits'}
@@ -209,12 +212,16 @@ export const AddGoalModal = ({
                     })}
                 </View>
                 {goalType === 'habit' && errors.habitId ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {errors.habitId.message}
                     </Text>
                 ) : null}
                 {goalType === 'group' && errors.includedHabitIds ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {errors.includedHabitIds.message}
                     </Text>
                 ) : null}
@@ -224,7 +231,9 @@ export const AddGoalModal = ({
                     </Text>
                 ) : null}
 
-                <Text style={styles.label}>Time frame</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Time frame
+                </Text>
                 <View style={styles.termOptions}>
                     {goalTermOptions.map(option => {
                         const isSelected = term === option.value
@@ -258,7 +267,9 @@ export const AddGoalModal = ({
                     })}
                 </View>
 
-                <Text style={styles.label}>Goal description</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Goal description
+                </Text>
                 <Controller
                     control={control}
                     name="description"
@@ -275,12 +286,14 @@ export const AddGoalModal = ({
                     )}
                 />
                 {errors.description ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {errors.description.message}
                     </Text>
                 ) : null}
 
-                <Text style={styles.label}>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
                     {goalType === 'habit'
                         ? 'Completed sessions to reach'
                         : 'Consistency target (%)'}
@@ -313,18 +326,26 @@ export const AddGoalModal = ({
                     )}
                 />
                 {goalType === 'habit' && errors.targetValue ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {errors.targetValue.message}
                     </Text>
                 ) : null}
                 {goalType === 'group' && errors.targetPercentage ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {errors.targetPercentage.message}
                     </Text>
                 ) : null}
 
                 {submitError ? (
-                    <Text style={styles.errorText}>{submitError}</Text>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
+                        {submitError}
+                    </Text>
                 ) : null}
                 <FormActionButton
                     accessibilityLabel="Save goal"
@@ -342,11 +363,6 @@ export const AddGoalModal = ({
 const styles = StyleSheet.create({
     formContent: { paddingBottom: spacing.xl },
     label: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '500',
-        marginBottom: spacing.xxs,
         marginTop: spacing.md,
     },
     optionRow: { flexDirection: 'row', gap: spacing.sm },
@@ -397,12 +413,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xxs,
         paddingHorizontal: spacing.md,
     },
-    errorText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginTop: spacing.xs,
-    },
+    errorText: { marginTop: spacing.xs },
     submitButton: { marginTop: spacing.xl },
     helperText: {
         color: colors.textMuted,

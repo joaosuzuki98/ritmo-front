@@ -19,6 +19,7 @@ import {
     type WeekDay,
 } from '../../../constants/weekDays'
 import { colors } from '../../../styles/colors'
+import { globalStyles } from '../../../styles/globalStyles'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
@@ -170,7 +171,9 @@ export const AddHabitModal = ({
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.label}>Name</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Name
+                </Text>
                 <Controller
                     control={control}
                     name="name"
@@ -187,10 +190,16 @@ export const AddHabitModal = ({
                     )}
                 />
                 {errors.name ? (
-                    <Text style={styles.errorText}>{errors.name.message}</Text>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
+                        {errors.name.message}
+                    </Text>
                 ) : null}
 
-                <Text style={styles.label}>Description</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Description
+                </Text>
                 <Controller
                     control={control}
                     name="description"
@@ -209,7 +218,9 @@ export const AddHabitModal = ({
                     )}
                 />
 
-                <Text style={styles.label}>Category</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Category
+                </Text>
                 {categoryOptions.length > 0 && !isEnteringNewCategory ? (
                     <>
                         <Pressable
@@ -298,7 +309,9 @@ export const AddHabitModal = ({
                     </>
                 )}
 
-                <Text style={styles.label}>Frequency</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Frequency
+                </Text>
                 <Controller
                     control={control}
                     name="frequencyType"
@@ -377,13 +390,17 @@ export const AddHabitModal = ({
                     </View>
                 ) : null}
                 {errors.weekDays ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {errors.weekDays.message}
                     </Text>
                 ) : null}
 
                 <Text style={styles.sectionTitle}>Habit requirements</Text>
-                <Text style={styles.label}>Complete after</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Complete after
+                </Text>
                 <View style={styles.requirementOptions}>
                     {[
                         { id: '', title: 'No prerequisite' },
@@ -427,7 +444,9 @@ export const AddHabitModal = ({
                     ) : null}
                 </View>
 
-                <Text style={styles.label}>Only when another habit is</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Only when another habit is
+                </Text>
                 <View style={styles.requirementOptions}>
                     {[
                         { id: '', title: 'No condition' },
@@ -474,7 +493,11 @@ export const AddHabitModal = ({
                 </View>
                 {conditionHabitId ? (
                     <>
-                        <Text style={styles.label}>Must be marked as</Text>
+                        <Text
+                            style={[globalStyles.formFieldLabel, styles.label]}
+                        >
+                            Must be marked as
+                        </Text>
                         <View style={styles.optionRow}>
                             {habitRequirementStatuses.map(status => {
                                 const isSelected = conditionStatus === status
@@ -519,17 +542,23 @@ export const AddHabitModal = ({
                     </>
                 ) : null}
                 {errors.conditionHabitId ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {errors.conditionHabitId.message}
                     </Text>
                 ) : null}
                 {errors.conditionStatus ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {errors.conditionStatus.message}
                     </Text>
                 ) : null}
 
-                <Text style={styles.label}>Priority</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Priority
+                </Text>
                 <Controller
                     control={control}
                     name="priority"
@@ -578,7 +607,11 @@ export const AddHabitModal = ({
 
                 <View style={styles.twoColumnRow}>
                     <View style={styles.column}>
-                        <Text style={styles.label}>Duration</Text>
+                        <Text
+                            style={[globalStyles.formFieldLabel, styles.label]}
+                        >
+                            Duration
+                        </Text>
                         <Controller
                             control={control}
                             name="estimatedDurationMinutes"
@@ -594,13 +627,22 @@ export const AddHabitModal = ({
                             )}
                         />
                         {errors.estimatedDurationMinutes ? (
-                            <Text style={styles.errorText}>
+                            <Text
+                                style={[
+                                    globalStyles.formErrorText,
+                                    styles.errorText,
+                                ]}
+                            >
                                 {errors.estimatedDurationMinutes.message}
                             </Text>
                         ) : null}
                     </View>
                     <View style={styles.column}>
-                        <Text style={styles.label}>Preferred time</Text>
+                        <Text
+                            style={[globalStyles.formFieldLabel, styles.label]}
+                        >
+                            Preferred time
+                        </Text>
                         <Controller
                             control={control}
                             name="preferredTime"
@@ -703,7 +745,12 @@ export const AddHabitModal = ({
                             )}
                         />
                         {errors.preferredTime ? (
-                            <Text style={styles.errorText}>
+                            <Text
+                                style={[
+                                    globalStyles.formErrorText,
+                                    styles.errorText,
+                                ]}
+                            >
                                 {errors.preferredTime.message}
                             </Text>
                         ) : null}
@@ -762,11 +809,6 @@ const styles = StyleSheet.create({
         marginTop: 40,
     },
     label: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '500',
-        marginBottom: spacing.xxs,
         marginTop: 18,
     },
     multilineContainer: {
@@ -775,12 +817,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     multilineText: { minHeight: 80, textAlignVertical: 'top' },
-    errorText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginTop: 5,
-    },
+    errorText: { marginTop: 5 },
     optionRow: { flexDirection: 'row', gap: 8 },
     option: {
         alignItems: 'center',

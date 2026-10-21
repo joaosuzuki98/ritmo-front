@@ -20,6 +20,7 @@ import { localDateKey } from '../../../utils/normalizeLocalDate'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
+import { globalStyles } from '../../../styles/globalStyles'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
@@ -135,7 +136,9 @@ export const LogHabitProgressModal = ({
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.label}>How did it go?</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    How did it go?
+                </Text>
                 <View style={styles.statusOptions}>
                     {statusOptions.map(option => {
                         const isSelected = selectedStatus === option.value
@@ -172,7 +175,11 @@ export const LogHabitProgressModal = ({
 
                 {selectedStatus !== 'completed' ? (
                     <>
-                        <Text style={styles.label}>What got in the way?</Text>
+                        <Text
+                            style={[globalStyles.formFieldLabel, styles.label]}
+                        >
+                            What got in the way?
+                        </Text>
                         <View style={styles.statusOptions}>
                             {incompletionReasonOptions.map(option => {
                                 const isSelected =
@@ -213,14 +220,21 @@ export const LogHabitProgressModal = ({
                             })}
                         </View>
                         {errors.reason ? (
-                            <Text style={styles.errorText}>
+                            <Text
+                                style={[
+                                    globalStyles.formErrorText,
+                                    styles.errorText,
+                                ]}
+                            >
                                 {errors.reason.message}
                             </Text>
                         ) : null}
                     </>
                 ) : null}
 
-                <Text style={styles.label}>Time</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Time
+                </Text>
                 <Controller
                     control={control}
                     name="time"
@@ -237,10 +251,16 @@ export const LogHabitProgressModal = ({
                     )}
                 />
                 {errors.time ? (
-                    <Text style={styles.errorText}>{errors.time.message}</Text>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
+                        {errors.time.message}
+                    </Text>
                 ) : null}
 
-                <Text style={styles.label}>Observation</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Observation
+                </Text>
                 <Controller
                     control={control}
                     name="note"
@@ -260,11 +280,19 @@ export const LogHabitProgressModal = ({
                     )}
                 />
                 {errors.note ? (
-                    <Text style={styles.errorText}>{errors.note.message}</Text>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
+                        {errors.note.message}
+                    </Text>
                 ) : null}
 
                 {submitError ? (
-                    <Text style={styles.errorText}>{submitError}</Text>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
+                        {submitError}
+                    </Text>
                 ) : null}
                 <FormActionButton
                     accessibilityLabel="Save progress"
@@ -299,11 +327,6 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     label: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '500',
-        marginBottom: spacing.xxs,
         marginTop: 20,
     },
     statusOptions: { gap: 8 },
@@ -331,11 +354,6 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     noteText: { minHeight: 90, textAlignVertical: 'top' },
-    errorText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginTop: 6,
-    },
+    errorText: { marginTop: 6 },
     saveButton: { marginBottom: 18, marginTop: 22 },
 })

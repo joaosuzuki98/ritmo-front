@@ -7,9 +7,8 @@ import {
     addTodoTaskSchema,
     type AddTodoTaskFormData,
 } from '../addTodoTaskSchema'
-import { colors } from '../../../styles/colors'
 import { spacing } from '../../../styles/spacing'
-import { typography } from '../../../styles/typography'
+import { globalStyles } from '../../../styles/globalStyles'
 import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
@@ -81,7 +80,9 @@ export const AddTodoTaskModal = ({
                 showsVerticalScrollIndicator={false}
             >
                 <View>
-                    <Text style={styles.label}>What do you need to do?</Text>
+                    <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                        What do you need to do?
+                    </Text>
                     <Controller
                         control={control}
                         name="title"
@@ -101,12 +102,24 @@ export const AddTodoTaskModal = ({
                         )}
                     />
                     {errors.title ? (
-                        <Text style={styles.errorText}>
+                        <Text
+                            style={[
+                                globalStyles.formErrorText,
+                                styles.errorText,
+                            ]}
+                        >
                             {errors.title.message}
                         </Text>
                     ) : null}
                     {submitError ? (
-                        <Text style={styles.errorText}>{submitError}</Text>
+                        <Text
+                            style={[
+                                globalStyles.formErrorText,
+                                styles.errorText,
+                            ]}
+                        >
+                            {submitError}
+                        </Text>
                     ) : null}
                 </View>
                 <FormActionButton
@@ -130,18 +143,8 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
     },
     label: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '500',
-        marginBottom: spacing.xxs,
         marginTop: spacing.lg,
     },
-    errorText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginTop: spacing.xs,
-    },
+    errorText: { marginTop: spacing.xs },
     submitButton: { marginTop: spacing.lg },
 })

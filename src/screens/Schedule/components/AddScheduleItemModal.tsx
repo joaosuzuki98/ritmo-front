@@ -17,6 +17,7 @@ import {
 import type { Event } from '../../../database'
 import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
 import { colors } from '../../../styles/colors'
+import { globalStyles } from '../../../styles/globalStyles'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { FormActionButton } from '../../../components/FormActionButton'
@@ -181,7 +182,9 @@ export const AddScheduleItemModal = ({
                 showsVerticalScrollIndicator={false}
             >
                 <View>
-                    <Text style={styles.label}>Item name</Text>
+                    <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                        Item name
+                    </Text>
                     <Controller
                         control={control}
                         name="title"
@@ -198,13 +201,25 @@ export const AddScheduleItemModal = ({
                         )}
                     />
                     {errors.title ? (
-                        <Text style={styles.errorText}>
+                        <Text
+                            style={[
+                                globalStyles.formErrorText,
+                                styles.errorText,
+                            ]}
+                        >
                             {errors.title.message}
                         </Text>
                     ) : null}
                     {showEventDetails ? (
                         <>
-                            <Text style={styles.label}>Location</Text>
+                            <Text
+                                style={[
+                                    globalStyles.formFieldLabel,
+                                    styles.label,
+                                ]}
+                            >
+                                Location
+                            </Text>
                             <Controller
                                 control={control}
                                 name="location"
@@ -219,7 +234,14 @@ export const AddScheduleItemModal = ({
                                     />
                                 )}
                             />
-                            <Text style={styles.label}>Description</Text>
+                            <Text
+                                style={[
+                                    globalStyles.formFieldLabel,
+                                    styles.label,
+                                ]}
+                            >
+                                Description
+                            </Text>
                             <Controller
                                 control={control}
                                 name="description"
@@ -244,7 +266,14 @@ export const AddScheduleItemModal = ({
                     ) : null}
                     {showReminderType ? (
                         <View>
-                            <Text style={styles.label}>Reminder type</Text>
+                            <Text
+                                style={[
+                                    globalStyles.formFieldLabel,
+                                    styles.label,
+                                ]}
+                            >
+                                Reminder type
+                            </Text>
                             <View style={styles.reminderTypes}>
                                 {reminderTypeOptions.map(([value, label]) => {
                                     const isSelected =
@@ -282,7 +311,14 @@ export const AddScheduleItemModal = ({
                     ) : null}
                     <View style={styles.timeRow}>
                         <View style={styles.timeColumn}>
-                            <Text style={styles.label}>Starts at</Text>
+                            <Text
+                                style={[
+                                    globalStyles.formFieldLabel,
+                                    styles.label,
+                                ]}
+                            >
+                                Starts at
+                            </Text>
                             <ScheduleTimeInput
                                 accessibilityLabel="Schedule item start hour"
                                 control={control}
@@ -291,7 +327,14 @@ export const AddScheduleItemModal = ({
                             />
                         </View>
                         <View style={styles.timeColumn}>
-                            <Text style={styles.label}>Ends at</Text>
+                            <Text
+                                style={[
+                                    globalStyles.formFieldLabel,
+                                    styles.label,
+                                ]}
+                            >
+                                Ends at
+                            </Text>
                             <ScheduleTimeInput
                                 accessibilityLabel="Schedule item end hour"
                                 control={control}
@@ -303,7 +346,14 @@ export const AddScheduleItemModal = ({
                 </View>
                 <View style={styles.actions}>
                     {submitError ? (
-                        <Text style={styles.errorText}>{submitError}</Text>
+                        <Text
+                            style={[
+                                globalStyles.formErrorText,
+                                styles.errorText,
+                            ]}
+                        >
+                            {submitError}
+                        </Text>
                     ) : null}
                     {item && onDeleteItem ? (
                         <FormActionButton
@@ -341,19 +391,9 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
     },
     label: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '500',
-        marginBottom: spacing.xxs,
         marginTop: 20,
     },
-    errorText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginTop: 5,
-    },
+    errorText: { marginTop: 5 },
     timeRow: { flexDirection: 'row', gap: spacing.md },
     timeColumn: { flex: 1 },
     descriptionContainer: {
