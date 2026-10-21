@@ -3,6 +3,7 @@ import LottieView from 'lottie-react-native'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { spacing } from '../../../styles/spacing'
+import { remindersAnimation } from '../remindersAnimation'
 
 type OnboardingAnimationProps = {
     page: number
@@ -40,7 +41,7 @@ const animationSources = {
         maxWidth: 400,
     },
     7: {
-        source: require('../../../assets/animations/moon_reminders_and_todo.json'),
+        source: remindersAnimation,
         compositionWidth: 237,
         compositionHeight: 191,
         maxWidth: 237,

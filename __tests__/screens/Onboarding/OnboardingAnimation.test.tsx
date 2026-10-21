@@ -2,6 +2,7 @@ import { act, create } from 'react-test-renderer'
 import type { ReactTestRenderer } from 'react-test-renderer'
 
 import { OnboardingAnimation } from '../../../src/screens/Onboarding/components/OnboardingAnimation'
+import { remindersAnimation } from '../../../src/screens/Onboarding/remindersAnimation'
 
 jest.mock('lottie-react-native')
 
@@ -11,7 +12,7 @@ const animationSources = {
     4: require('../../../src/assets/animations/moon_rotating.json'),
     5: require('../../../src/assets/animations/moon_habits.json'),
     6: require('../../../src/assets/animations/moon_schedule.json'),
-    7: require('../../../src/assets/animations/moon_reminders_and_todo.json'),
+    7: remindersAnimation,
 } as const
 
 describe('OnboardingAnimation', () => {
