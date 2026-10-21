@@ -19,8 +19,8 @@ import Sound from 'react-native-sound'
 import { SpeakerHigh, SpeakerSlash } from 'phosphor-react-native'
 
 import { FormActionButton } from '../../components/FormActionButton'
+import { StarBackground } from '../../components/StarBackground'
 import RitmoLogo from '../../assets/images/ritmo-logo.svg'
-import Star from '../../assets/images/star.svg'
 import { useFocusedInputScroll } from '../../hooks/useFocusedInputScroll'
 import type { OnboardingIdentity } from '../../types/onboarding'
 import { colors } from '../../styles/colors'
@@ -86,21 +86,6 @@ const onboardingPageTopRatios = {
     7: 0.3013,
 } as const
 
-const onboardingStars = [
-    { left: 7, top: 13, size: 31, driftX: 3, driftY: 4, rotation: 3 },
-    { left: 73, top: 4, size: 30, driftX: -4, driftY: 3, rotation: -2 },
-    { left: 45, top: 12, size: 21, driftX: 2, driftY: -3, rotation: 2 },
-    { left: 61, top: 29, size: 54, driftX: -3, driftY: 5, rotation: 2 },
-    { left: 85, top: 36, size: 28, driftX: 4, driftY: -3, rotation: -3 },
-    { left: 24, top: 43, size: 38, driftX: -4, driftY: 3, rotation: 3 },
-    { left: 46, top: 52, size: 27, driftX: 3, driftY: -4, rotation: -2 },
-    { left: 76, top: 56, size: 23, driftX: -3, driftY: 4, rotation: 2 },
-    { left: 7, top: 73, size: 31, driftX: 3, driftY: -3, rotation: -2 },
-    { left: 82, top: 76, size: 32, driftX: -4, driftY: 4, rotation: 3 },
-    { left: 52, top: 86, size: 30, driftX: 2, driftY: -4, rotation: -2 },
-    { left: 18, top: 92, size: 37, driftX: -3, driftY: 3, rotation: 2 },
-] as const
-
 const displayFontFamily =
     Platform.OS === 'android' ? 'quicksand' : typography.fontFamily
 const bodyFontFamily =
@@ -120,7 +105,6 @@ export const OnboardingScreen = ({
     const [isAudioMuted, setIsAudioMuted] = useState(false)
     const soundtrackRef = useRef<Sound | null>(null)
     const isAudioMutedRef = useRef(false)
-    const starDrift = useRef(new Animated.Value(0)).current
     const pageTransition = useRef(new Animated.Value(1)).current
     const { height, width } = useWindowDimensions()
     const { top: safeAreaTop } = useSafeAreaInsets()
@@ -162,28 +146,6 @@ export const OnboardingScreen = ({
         : currentPage === 3
         ? 68
         : 28
-
-    useEffect(() => {
-        const animation = Animated.loop(
-            Animated.sequence([
-                Animated.timing(starDrift, {
-                    toValue: 1,
-                    duration: 18000,
-                    easing: Easing.inOut(Easing.sin),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(starDrift, {
-                    toValue: 0,
-                    duration: 18000,
-                    easing: Easing.inOut(Easing.sin),
-                    useNativeDriver: true,
-                }),
-            ]),
-        )
-
-        animation.start()
-        return () => animation.stop()
-    }, [starDrift])
 
     useEffect(() => {
         let isActive = true
@@ -286,64 +248,12 @@ export const OnboardingScreen = ({
         soundtrackRef.current?.setVolume(nextIsMuted ? 0 : 1)
     }
 
-    const renderStarField = () => (
-        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-            {onboardingStars.map(star => (
-                <Animated.View
-                    key={`${star.left}-${star.top}`}
-                    style={[
-                        styles.star,
-                        {
-                            height: star.size,
-                            left: `${star.left}%`,
-                            top: `${star.top}%`,
-                            width: star.size,
-                        },
-                        {
-                            transform: [
-                                {
-                                    translateX: starDrift.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [
-                                            -star.driftX,
-                                            star.driftX,
-                                        ],
-                                    }),
-                                },
-                                {
-                                    translateY: starDrift.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [
-                                            star.driftY,
-                                            -star.driftY,
-                                        ],
-                                    }),
-                                },
-                                {
-                                    rotate: starDrift.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [
-                                            `${-star.rotation}deg`,
-                                            `${star.rotation}deg`,
-                                        ],
-                                    }),
-                                },
-                            ],
-                        },
-                    ]}
-                >
-                    <Star height="100%" width="100%" />
-                </Animated.View>
-            ))}
-        </View>
-    )
-
     const logoWidth = Math.min(width * 0.52, 300)
 
     return (
         <View style={styles.root}>
             <StatusBar barStyle="light-content" />
-            {renderStarField()}
+            <StarBackground />
             <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -637,7 +547,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         width: '100%',
     },
-    star: { position: 'absolute' },
     topBar: {
         alignItems: 'center',
         flexDirection: 'row',

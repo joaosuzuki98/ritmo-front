@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import RitmoLogo from '../../assets/images/ritmo-logo.svg'
-import Star from '../../assets/images/star.svg'
+import { StarBackground } from '../StarBackground'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -22,21 +22,6 @@ export type AuthScreenLayoutProps = {
     footer?: ReactNode
     title: string
 }
-
-const authStars = [
-    { left: 7, top: 13, size: 31 },
-    { left: 73, top: 4, size: 30 },
-    { left: 45, top: 12, size: 21 },
-    { left: 61, top: 29, size: 54 },
-    { left: 85, top: 36, size: 28 },
-    { left: 24, top: 43, size: 38 },
-    { left: 46, top: 52, size: 27 },
-    { left: 76, top: 56, size: 23 },
-    { left: 7, top: 73, size: 31 },
-    { left: 82, top: 76, size: 32 },
-    { left: 52, top: 86, size: 30 },
-    { left: 18, top: 92, size: 37 },
-] as const
 
 export const AuthScreenLayout = ({
     children,
@@ -51,24 +36,7 @@ export const AuthScreenLayout = ({
         <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
             <View style={styles.body}>
-                <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-                    {authStars.map(star => (
-                        <View
-                            key={`${star.left}-${star.top}`}
-                            style={[
-                                styles.star,
-                                {
-                                    height: star.size,
-                                    left: `${star.left}%`,
-                                    top: `${star.top}%`,
-                                    width: star.size,
-                                },
-                            ]}
-                        >
-                            <Star height="100%" width="100%" />
-                        </View>
-                    ))}
-                </View>
+                <StarBackground />
                 <ScrollView
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
@@ -116,9 +84,6 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         maxWidth: 440,
         width: '100%',
-    },
-    star: {
-        position: 'absolute',
     },
     heading: {
         alignItems: 'center',
