@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { StyleSheet, Text, View } from 'react-native'
 
-import { AuthButton } from '../../components/AuthButton/AuthButton'
 import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLayout'
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
+import { FormActionButton } from '../../components/FormActionButton'
 import type { User } from '../../database'
 import { registerLocalUser } from '../../database/localAuth'
 import type { OnboardingIdentity } from '../../types/onboarding'
@@ -114,7 +114,7 @@ export const RegisterScreen = ({
                         {submitError}
                     </Text>
                 ) : null}
-                <AuthButton
+                <FormActionButton
                     disabled={isSubmitting}
                     onPress={handleSubmit(handleRegister)}
                     title={isSubmitting ? 'Criando conta…' : 'Create account'}
