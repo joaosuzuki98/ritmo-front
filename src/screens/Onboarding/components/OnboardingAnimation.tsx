@@ -47,6 +47,25 @@ const animationSources = {
     },
 } as const
 
+export const getOnboardingAnimationHeight = (
+    page: number,
+    screenWidth: number,
+) => {
+    const layout =
+        animationSources[
+            (page === 2 ? 3 : page) as keyof typeof animationSources
+        ]
+    if (!layout) return 0
+
+    const width = Math.min(
+        layout.maxWidth,
+        Math.max(screenWidth - spacing.xl * 2, spacing.touchTarget),
+    )
+    return Math.round(
+        (width * layout.compositionHeight) / layout.compositionWidth,
+    )
+}
+
 export const OnboardingAnimation = ({ page }: OnboardingAnimationProps) => {
     const { width: screenWidth } = useWindowDimensions()
     const [playback, setPlayback] = useState({
@@ -68,9 +87,7 @@ export const OnboardingAnimation = ({ page }: OnboardingAnimationProps) => {
         layout.maxWidth,
         Math.max(screenWidth - spacing.xl * 2, spacing.touchTarget),
     )
-    const height = Math.round(
-        (width * layout.compositionHeight) / layout.compositionWidth,
-    )
+    const height = getOnboardingAnimationHeight(page, screenWidth)
     const animationWidth =
         (width * animation.compositionWidth) / layout.compositionWidth
 

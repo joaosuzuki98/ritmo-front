@@ -27,7 +27,10 @@ import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { onboardingSchema } from './onboardingSchema'
-import { OnboardingAnimation } from './components/OnboardingAnimation'
+import {
+    getOnboardingAnimationHeight,
+    OnboardingAnimation,
+} from './components/OnboardingAnimation'
 import { OnboardingProgress } from './components/OnboardingProgress'
 
 type OnboardingScreenProps = {
@@ -78,9 +81,9 @@ const onboardingPageTopRatios = {
     2: 0.3013,
     3: 0.3013,
     4: 0.3013,
-    5: 0.0868,
-    6: 0.1653,
-    7: 0.2082,
+    5: 0.3013,
+    6: 0.3013,
+    7: 0.3013,
 } as const
 
 const onboardingStars = [
@@ -130,6 +133,12 @@ export const OnboardingScreen = ({
     const isMascotKeyboardVisible = currentPage === 2 && isKeyboardVisible
     const isEntryPage = currentPage === 1
     const page = isEntryPage ? undefined : onboardingPages[currentPage - 2]
+    // Align the copy with page 4 while preserving each illustration's aspect ratio.
+    const illustrationOffset =
+        currentPage >= 5
+            ? getOnboardingAnimationHeight(4, width) -
+              getOnboardingAnimationHeight(currentPage, width)
+            : 0
     const pageContentOffset = isEntryPage
         ? 0
         : height *
@@ -137,7 +146,8 @@ export const OnboardingScreen = ({
                   currentPage as keyof typeof onboardingPageTopRatios
               ] -
           safeAreaTop -
-          spacing.touchTarget
+          spacing.touchTarget +
+          illustrationOffset
     const pageContentPosition =
         pageContentOffset < 0
             ? { marginTop: pageContentOffset }
@@ -146,13 +156,7 @@ export const OnboardingScreen = ({
         ? spacing.xs
         : currentPage === 2
         ? 52
-        : currentPage === 3 || currentPage === 4
-        ? 30
-        : currentPage === 5
-        ? 108
-        : currentPage === 6
-        ? spacing.lg
-        : 59
+        : 30
     const inputGap = isMascotKeyboardVisible
         ? spacing.xs
         : currentPage === 3
