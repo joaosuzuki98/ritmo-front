@@ -608,6 +608,9 @@ export const OnboardingScreen = ({
                                 >
                                     <OnboardingProgress
                                         currentStep={currentPage - 1}
+                                        onStepPress={step =>
+                                            setCurrentPage(step + 1)
+                                        }
                                     />
                                 </View>
                             )}

@@ -1,15 +1,17 @@
-import { View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { colors } from '../../../styles/colors'
 import { spacing } from '../../../styles/spacing'
 
 type OnboardingProgressProps = {
     currentStep: number
+    onStepPress: (step: number) => void
     totalSteps?: number
 }
 
 export const OnboardingProgress = ({
     currentStep,
+    onStepPress,
     totalSteps = 6,
 }: OnboardingProgressProps) => (
     <View
@@ -20,9 +22,13 @@ export const OnboardingProgress = ({
         style={{ gap: spacing.xs }}
     >
         {Array.from({ length: totalSteps }, (_, index) => (
-            <View
+            <Pressable
+                accessibilityLabel={`Go to onboarding page ${index + 2}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: index + 1 === currentStep }}
                 key={index}
                 className="rounded-full"
+                onPress={() => onStepPress(index + 1)}
                 style={{
                     backgroundColor:
                         index + 1 === currentStep

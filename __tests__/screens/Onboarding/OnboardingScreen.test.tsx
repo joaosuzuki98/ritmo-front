@@ -140,6 +140,29 @@ describe('OnboardingScreen', () => {
         ).toBe('Lua')
     })
 
+    it('navigates to the page selected from the progress indicators', async () => {
+        await act(async () => {
+            renderer = create(
+                <OnboardingScreen
+                    onComplete={onComplete}
+                    onSignIn={onSignIn}
+                />,
+            )
+        })
+
+        await press('Continue onboarding')
+        await press('Go to onboarding page 6')
+
+        expect(textFor('Onboarding copy page 6')).toContain(
+            'Monte seu dia em uma linha do tempo',
+        )
+        expect(
+            renderer.root.findByProps({
+                accessibilityLabel: 'Go to onboarding page 6',
+            }).props.accessibilityState,
+        ).toEqual({ selected: true })
+    })
+
     it('preserves the existing looping-music lifecycle', async () => {
         const category = jest.spyOn(Sound, 'setCategory')
         const loop = jest.spyOn(Sound.prototype, 'setNumberOfLoops')
