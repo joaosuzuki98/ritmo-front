@@ -39,6 +39,8 @@ export const AuthScreenLayout = ({
                 <StarBackground />
                 <ScrollView
                     contentContainerStyle={styles.scrollContent}
+                    keyboardDismissMode="on-drag"
+                    keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.content}>
