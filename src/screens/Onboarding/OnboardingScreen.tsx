@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     },
     entrySubtitle: {
         color: colors.white,
-        fontFamily: displayFontFamily,
+        fontFamily: bodyFontFamily,
         fontSize: 18,
         marginTop: spacing.xl,
         textAlign: 'center',
