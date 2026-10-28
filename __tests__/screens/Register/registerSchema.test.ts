@@ -1,16 +1,28 @@
 import { registerSchema } from '../../../src/screens/Register/registerSchema'
 
 describe('registerSchema', () => {
-    it('validates email and the existing eight-character password minimum', () => {
+    it('validates email and all password requirements', () => {
         expect(
             registerSchema.safeParse({
                 email: 'ana@example.com',
-                password: 'password123',
+                password: 'password123!',
             }).success,
         ).toBe(true)
         expect(
             registerSchema.safeParse({
                 email: 'not-an-email',
+                password: 'password123!',
+            }).success,
+        ).toBe(false)
+        expect(
+            registerSchema.safeParse({
+                email: 'ana@example.com',
+                password: 'password!',
+            }).success,
+        ).toBe(false)
+        expect(
+            registerSchema.safeParse({
+                email: 'ana@example.com',
                 password: 'password123',
             }).success,
         ).toBe(false)
@@ -26,7 +38,7 @@ describe('registerSchema', () => {
         expect(
             registerSchema.safeParse({
                 email: 'ana@example.com',
-                password: 'password123',
+                password: 'password123!',
             }).success,
         ).toBe(true)
         expect(registerSchema.shape).not.toHaveProperty('confirmPassword')

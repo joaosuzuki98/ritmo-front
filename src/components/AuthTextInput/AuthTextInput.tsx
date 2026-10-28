@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
+import type { StyleProp, ViewStyle } from 'react-native'
 import type { TextInputProps } from 'react-native'
 import type { ReactNode } from 'react'
 
@@ -18,6 +19,7 @@ type AuthTextInputProps = Pick<
     | 'textContentType'
 > & {
     error?: string
+    fieldStyle?: StyleProp<ViewStyle>
     label: string
     onBlur: () => void
     onChangeText: (value: string) => void
@@ -31,6 +33,7 @@ export const AuthTextInput = ({
     autoComplete,
     autoCorrect = false,
     error,
+    fieldStyle,
     keyboardType,
     label,
     onBlur,
@@ -43,7 +46,7 @@ export const AuthTextInput = ({
     value,
 }: AuthTextInputProps) => {
     return (
-        <View style={styles.field}>
+        <View style={[styles.field, fieldStyle]}>
             <Text style={styles.label}>{label}</Text>
             <FormTextInput
                 accessibilityLabel={label}

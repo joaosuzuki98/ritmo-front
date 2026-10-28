@@ -10,8 +10,10 @@ import type { User } from '../../database'
 import { registerLocalUser } from '../../database/localAuth'
 import type { OnboardingIdentity } from '../../types/onboarding'
 import { colors } from '../../styles/colors'
+import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { registerSchema, type RegisterFormData } from './registerSchema'
+import { PasswordRequirementItem } from './components/PasswordRequirementItem'
 
 type RegisterScreenProps = {
     identity: OnboardingIdentity
@@ -30,6 +32,7 @@ export const RegisterScreen = ({
         control,
         formState: { errors },
         handleSubmit,
+        watch,
     } = useForm<RegisterFormData>({
         defaultValues: {
             email: '',
@@ -37,6 +40,15 @@ export const RegisterScreen = ({
         },
         resolver: zodResolver(registerSchema),
     })
+    const password = watch('password')
+    const passwordRequirements = [
+        { label: 'Pelo menos 8 caracteres', isMet: password.length >= 8 },
+        { label: 'Pelo menos um número', isMet: /\d/.test(password) },
+        {
+            label: 'Pelo menos um caractere especial',
+            isMet: /[^a-zA-Z0-9]/.test(password),
+        },
+    ]
 
     const handleRegister = async (data: RegisterFormData) => {
         if (isSubmitting) return
@@ -99,6 +111,7 @@ export const RegisterScreen = ({
                         <AuthTextInput
                             autoComplete="new-password"
                             error={errors.password?.message}
+                            fieldStyle={styles.passwordField}
                             label="Senha"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
@@ -109,6 +122,18 @@ export const RegisterScreen = ({
                         />
                     )}
                 />
+                <View
+                    accessibilityLabel="Requisitos da senha"
+                    style={styles.passwordRequirements}
+                >
+                    {passwordRequirements.map(requirement => (
+                        <PasswordRequirementItem
+                            isMet={requirement.isMet}
+                            key={requirement.label}
+                            label={requirement.label}
+                        />
+                    ))}
+                </View>
                 {submitError ? (
                     <Text accessibilityLiveRegion="polite" style={styles.error}>
                         {submitError}
@@ -133,6 +158,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     footerLink: { color: colors.white, fontWeight: '700' },
+    passwordField: { marginBottom: spacing.md },
+    passwordRequirements: {
+        gap: spacing.md,
+        marginBottom: spacing.xl,
+    },
     error: {
         color: colors.danger,
         fontFamily: typography.fontFamily,

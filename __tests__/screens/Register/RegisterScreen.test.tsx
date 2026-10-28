@@ -57,10 +57,15 @@ describe('RegisterScreen', () => {
             'Senha',
         ])
         expect(inputs).toHaveLength(2)
+        expect(
+            renderer.root.findByProps({
+                accessibilityLabel: 'Requisitos da senha',
+            }),
+        ).toBeTruthy()
 
         await act(async () => {
             emailInput.props.onChangeText('ana@example.com')
-            passwordInput.props.onChangeText('password123')
+            passwordInput.props.onChangeText('password123!')
         })
         await act(async () => {
             await findSubmitButton().props.onPress()
@@ -68,7 +73,7 @@ describe('RegisterScreen', () => {
 
         expect(registerLocalUser).toHaveBeenCalledWith({
             email: 'ana@example.com',
-            password: 'password123',
+            password: 'password123!',
             ...identity,
         })
         expect(onRegisterSuccess).toHaveBeenCalled()
@@ -92,7 +97,7 @@ describe('RegisterScreen', () => {
                 .props.onChangeText('ana@example.com')
             renderer.root
                 .findByProps({ accessibilityLabel: 'Senha' })
-                .props.onChangeText('password123')
+                .props.onChangeText('password123!')
         })
         await act(async () => {
             await findSubmitButton().props.onPress()
@@ -104,7 +109,7 @@ describe('RegisterScreen', () => {
         ).toBe('ana@example.com')
         expect(registerLocalUser).toHaveBeenCalledWith({
             email: 'ana@example.com',
-            password: 'password123',
+            password: 'password123!',
             ...identity,
         })
         expect(
