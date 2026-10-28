@@ -14,6 +14,7 @@ type AuthTextInputProps = Pick<
     | 'autoComplete'
     | 'autoCorrect'
     | 'keyboardType'
+    | 'onFocus'
     | 'returnKeyType'
     | 'secureTextEntry'
     | 'textContentType'
@@ -38,6 +39,7 @@ export const AuthTextInput = ({
     label,
     onBlur,
     onChangeText,
+    onFocus,
     placeholder,
     returnKeyType,
     rightAccessory,
@@ -57,6 +59,7 @@ export const AuthTextInput = ({
                 keyboardType={keyboardType}
                 onBlur={onBlur}
                 onChangeText={onChangeText}
+                onFocus={onFocus}
                 placeholder={placeholder}
                 returnKeyType={returnKeyType}
                 rightAccessory={rightAccessory}

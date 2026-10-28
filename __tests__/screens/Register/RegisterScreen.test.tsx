@@ -3,6 +3,7 @@ import type { ReactTestRenderer } from 'react-test-renderer'
 import { Text, TextInput } from 'react-native'
 
 import { registerLocalUser } from '../../../src/database/localAuth'
+import { AuthScreenLayout } from '../../../src/components/AuthScreenLayout/AuthScreenLayout'
 import { RegisterScreen } from '../../../src/screens/Register/RegisterScreen'
 import type { OnboardingIdentity } from '../../../src/types/onboarding'
 
@@ -77,6 +78,28 @@ describe('RegisterScreen', () => {
             ...identity,
         })
         expect(onRegisterSuccess).toHaveBeenCalled()
+    })
+
+    it('includes the requirements in the keyboard safe area only while the password is focused', async () => {
+        await act(async () => {
+            renderer = create(
+                <RegisterScreen
+                    identity={identity}
+                    onBack={onBack}
+                    onRegisterSuccess={onRegisterSuccess}
+                />,
+            )
+        })
+
+        const layout = renderer.root.findByType(AuthScreenLayout)
+        const password = renderer.root.findByProps({
+            accessibilityLabel: 'Password',
+        })
+        expect(layout.props.keyboardRevealRef).toBeUndefined()
+        await act(async () => password.props.onFocus())
+        expect(layout.props.keyboardRevealRef).toBeDefined()
+        await act(async () => password.props.onBlur())
+        expect(layout.props.keyboardRevealRef).toBeUndefined()
     })
 
     it('keeps the credentials and onboarding identity available after a failed submission', async () => {

@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react'
+import type { ComponentRef, ReactNode, RefObject } from 'react'
 import {
+    KeyboardAvoidingView,
     Platform,
     ScrollView,
     StatusBar,
@@ -8,10 +9,11 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import RitmoLogo from '../../assets/images/ritmo-logo.svg'
 import { StarBackground } from '../StarBackground'
+import { useFocusedInputScroll } from '../../hooks/useFocusedInputScroll'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -20,6 +22,7 @@ export type AuthScreenLayoutProps = {
     children: ReactNode
     description: string
     footer?: ReactNode
+    keyboardRevealRef?: RefObject<ComponentRef<typeof View> | null>
     title: string
 }
 
@@ -27,20 +30,34 @@ export const AuthScreenLayout = ({
     children,
     description,
     footer,
+    keyboardRevealRef,
     title,
 }: AuthScreenLayoutProps) => {
     const { height, width } = useWindowDimensions()
+    const { top } = useSafeAreaInsets()
+    const { scrollRef, ensureFocusedInputVisible, handleScroll } =
+        useFocusedInputScroll(keyboardRevealRef)
     const logoWidth = Math.min(width * 0.6, 228)
 
     return (
         <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
-            <View style={styles.body}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={top}
+                style={styles.body}
+            >
                 <StarBackground />
                 <ScrollView
+                    ref={scrollRef}
                     contentContainerStyle={styles.scrollContent}
                     keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps="handled"
+                    onContentSizeChange={ensureFocusedInputVisible}
+                    onFocus={ensureFocusedInputVisible}
+                    onLayout={ensureFocusedInputVisible}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.content}>
@@ -69,7 +86,7 @@ export const AuthScreenLayout = ({
                         ) : null}
                     </View>
                 </ScrollView>
-            </View>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     )
 }
@@ -80,6 +97,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         paddingHorizontal: spacing.md,
+        paddingBottom: spacing.lg,
     },
     content: {
         alignSelf: 'center',

@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import type { ComponentRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { StyleSheet, Text, View } from 'react-native'
 
@@ -28,6 +29,8 @@ export const RegisterScreen = ({
 }: RegisterScreenProps) => {
     const [submitError, setSubmitError] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isPasswordFocused, setIsPasswordFocused] = useState(false)
+    const passwordRequirementsRef = useRef<ComponentRef<typeof View>>(null)
     const {
         control,
         formState: { errors },
@@ -49,6 +52,11 @@ export const RegisterScreen = ({
             isMet: /[^a-zA-Z0-9]/.test(password),
         },
     ]
+
+    const handlePasswordBlur = (onBlur: () => void) => {
+        onBlur()
+        setIsPasswordFocused(false)
+    }
 
     const handleRegister = async (data: RegisterFormData) => {
         if (isSubmitting) return
@@ -84,6 +92,9 @@ export const RegisterScreen = ({
                 </Text>
             }
             title="Create your account"
+            keyboardRevealRef={
+                isPasswordFocused ? passwordRequirementsRef : undefined
+            }
         >
             <View>
                 <Controller
@@ -113,7 +124,8 @@ export const RegisterScreen = ({
                             error={errors.password?.message}
                             fieldStyle={styles.passwordField}
                             label="Password"
-                            onBlur={field.onBlur}
+                            onBlur={() => handlePasswordBlur(field.onBlur)}
+                            onFocus={() => setIsPasswordFocused(true)}
                             onChangeText={field.onChange}
                             placeholder="At least 8 characters"
                             secureTextEntry
@@ -124,6 +136,8 @@ export const RegisterScreen = ({
                 />
                 <View
                     accessibilityLabel="Password requirements"
+                    ref={passwordRequirementsRef}
+                    collapsable={false}
                     style={styles.passwordRequirements}
                 >
                     {passwordRequirements.map(requirement => (
