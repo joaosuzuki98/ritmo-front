@@ -27,10 +27,10 @@ requires:
       - "opencode"
 
 inputs:
-  spec:
+  issue_number:
     type: string
     required: true
-    prompt: "Describe what you want to build"
+    prompt: "GitHub issue number to specify (for example, 22)"
   integration:
     type: string
     default: "auto"
@@ -41,7 +41,7 @@ steps:
     command: speckit.specify
     integration: "{{ inputs.integration }}"
     input:
-      args: "{{ inputs.spec }}"
+      args: "{{ inputs.issue_number }}"
 
   - id: review-spec
     type: gate
@@ -52,8 +52,6 @@ steps:
   - id: plan
     command: speckit.plan
     integration: "{{ inputs.integration }}"
-    input:
-      args: "{{ inputs.spec }}"
 
   - id: review-plan
     type: gate
@@ -64,11 +62,7 @@ steps:
   - id: tasks
     command: speckit.tasks
     integration: "{{ inputs.integration }}"
-    input:
-      args: "{{ inputs.spec }}"
 
   - id: implement
     command: speckit.implement
     integration: "{{ inputs.integration }}"
-    input:
-      args: "{{ inputs.spec }}"

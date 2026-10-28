@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native'
 
-import { AuthButton } from '../../components/AuthButton/AuthButton'
 import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLayout'
+import { FormActionButton } from '../../components/FormActionButton'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -20,7 +20,7 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => (
                 A recuperação por e-mail não está disponível para contas locais.
                 Volte para entrar com a senha usada no cadastro.
             </Text>
-            <AuthButton onPress={onBack} title="Voltar para entrar" />
+            <FormActionButton onPress={onBack} title="Voltar para entrar" />
         </View>
     </AuthScreenLayout>
 )

@@ -6,6 +6,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
+import { globalStyles } from '../../../styles/globalStyles'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import {
@@ -95,12 +96,14 @@ export const AddTodoCategoryModal = ({
                         )}
                     />
                     {errors.name ? (
-                        <Text style={styles.errorText}>
+                        <Text style={globalStyles.formErrorText}>
                             {errors.name.message}
                         </Text>
                     ) : null}
                     {submitError ? (
-                        <Text style={styles.errorText}>{submitError}</Text>
+                        <Text style={globalStyles.formErrorText}>
+                            {submitError}
+                        </Text>
                     ) : null}
                     <View style={styles.actions}>
                         <Pressable
@@ -150,11 +153,6 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 20,
         fontWeight: '600',
-    },
-    errorText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
     },
     actions: {
         alignItems: 'stretch',

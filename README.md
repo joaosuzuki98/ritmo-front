@@ -25,7 +25,7 @@ See more about code conventions [here](./docs/code_conventions.md)
 
 ## ⚙️ Running the project
 
-> **Prerequisites**: complete the [React Native environment setup](https://reactnative.dev/docs/set-up-your-environment) (Node >= 22.11, JDK + Android Studio for Android, Xcode + CocoaPods for iOS).
+> **Prerequisites**: complete the [React Native environment setup](https://reactnative.dev/docs/set-up-your-environment) (Node >= 22.11, JDK + Android Studio for Android, Xcode + CocoaPods for iOS). Prompts in [`docs/prompts/`](./docs/prompts/) that interact with GitHub require the [GitHub CLI](https://cli.github.com/) (`gh`) to be installed and authenticated. Run `gh auth login` to authenticate.
 
 1. Install the project dependencies:
 ```bash

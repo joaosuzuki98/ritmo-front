@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native'
+import type { StyleProp, ViewStyle } from 'react-native'
 import type { TextInputProps } from 'react-native'
+import type { ReactNode } from 'react'
 
 import { FormTextInput } from '../FormTextInput'
 import { colors } from '../../styles/colors'
@@ -12,15 +14,18 @@ type AuthTextInputProps = Pick<
     | 'autoComplete'
     | 'autoCorrect'
     | 'keyboardType'
+    | 'onFocus'
     | 'returnKeyType'
     | 'secureTextEntry'
     | 'textContentType'
 > & {
     error?: string
+    fieldStyle?: StyleProp<ViewStyle>
     label: string
     onBlur: () => void
     onChangeText: (value: string) => void
     placeholder: string
+    rightAccessory?: ReactNode
     value: string
 }
 
@@ -29,18 +34,21 @@ export const AuthTextInput = ({
     autoComplete,
     autoCorrect = false,
     error,
+    fieldStyle,
     keyboardType,
     label,
     onBlur,
     onChangeText,
+    onFocus,
     placeholder,
     returnKeyType,
+    rightAccessory,
     secureTextEntry,
     textContentType,
     value,
 }: AuthTextInputProps) => {
     return (
-        <View style={styles.field}>
+        <View style={[styles.field, fieldStyle]}>
             <Text style={styles.label}>{label}</Text>
             <FormTextInput
                 accessibilityLabel={label}
@@ -51,11 +59,14 @@ export const AuthTextInput = ({
                 keyboardType={keyboardType}
                 onBlur={onBlur}
                 onChangeText={onChangeText}
+                onFocus={onFocus}
                 placeholder={placeholder}
                 returnKeyType={returnKeyType}
+                rightAccessory={rightAccessory}
                 secureTextEntry={secureTextEntry}
                 textContentType={textContentType}
                 value={value}
+                containerStyle={styles.inputContainer}
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
@@ -64,6 +75,7 @@ export const AuthTextInput = ({
 
 const styles = StyleSheet.create({
     field: { marginBottom: spacing.xl },
+    inputContainer: { backgroundColor: colors.onboardingMuted },
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,

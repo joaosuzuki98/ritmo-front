@@ -17,6 +17,7 @@ jest.mock('../../src/database/index', () => ({
 type UserRecord = {
     id: string
     name: string
+    mascotName?: string
     email: string
     password?: string
     passwordHash?: string
@@ -90,12 +91,14 @@ describe('local authentication', () => {
     it('creates an active local account without adding sample records', async () => {
         const user = await registerLocalUser({
             name: '  Ana Silva  ',
+            mascotName: ' Lua ',
             email: ' ANA@Example.com ',
             password: 'password123',
         })
         expect(user).toMatchObject({
             id: 'created-user',
             name: 'Ana Silva',
+            mascotName: 'Lua',
             email: 'ana@example.com',
             password: 'password123',
             isLoggedIn: true,
@@ -115,12 +118,35 @@ describe('local authentication', () => {
         await expect(
             registerLocalUser({
                 name: 'Outra pessoa',
+                mascotName: 'Estrela',
                 email: 'ANA@EXAMPLE.COM',
                 password: 'password456',
             }),
-        ).rejects.toThrow('Já existe uma conta com este e-mail.')
+        ).rejects.toThrow('An account with this email already exists.')
 
         expect(collection.create).not.toHaveBeenCalled()
+    })
+
+    it('rejects blank profile names without creating a partial account', async () => {
+        await expect(
+            registerLocalUser({
+                name: '   ',
+                mascotName: 'Lua',
+                email: 'ana@example.com',
+                password: 'password123',
+            }),
+        ).rejects.toThrow('Please enter your name and a name for your mascot.')
+        await expect(
+            registerLocalUser({
+                name: 'Ana Silva',
+                mascotName: '   ',
+                email: 'ana@example.com',
+                password: 'password123',
+            }),
+        ).rejects.toThrow('Please enter your name and a name for your mascot.')
+
+        expect(collection.create).not.toHaveBeenCalled()
+        expect(users).toHaveLength(0)
     })
 
     it('authenticates by email and password and persists the active session', async () => {
@@ -164,7 +190,7 @@ describe('local authentication', () => {
 
         await expect(
             authenticateLocalUser('ana@example.com', 'incorrect'),
-        ).rejects.toThrow('E-mail ou senha incorretos.')
+        ).rejects.toThrow('Incorrect email or password.')
     })
 
     it('authenticates a new unhashed local password directly', async () => {

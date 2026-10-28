@@ -1,5 +1,6 @@
 export const typography = {
     fontFamily: 'Quicksand',
+    semiboldFontFamily: 'quicksand-semibold',
     onboardingFontFamily: 'Quattrocento Sans',
     screenTitle: { fontSize: 42, fontWeight: '500' as const },
     screenSubtitle: { fontSize: 16 },
@@ -14,7 +15,7 @@ export const typography = {
         fontWeight: '200' as const,
     },
     onboardingBody: {
-        fontSize: 14,
+        fontSize: 16,
         lineHeight: 40,
         fontWeight: '400' as const,
     },

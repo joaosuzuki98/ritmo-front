@@ -1,128 +1,157 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
     Animated,
     Easing,
-    Image,
+    Keyboard,
+    KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     View,
     useWindowDimensions,
 } from 'react-native'
-import type { ImageSourcePropType } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Sound from 'react-native-sound'
 import { SpeakerHigh, SpeakerSlash } from 'phosphor-react-native'
 
+import { FormActionButton } from '../../components/FormActionButton'
+import { StarBackground } from '../../components/StarBackground'
 import RitmoLogo from '../../assets/images/ritmo-logo.svg'
-import Star from '../../assets/images/star.svg'
+import { useFocusedInputScroll } from '../../hooks/useFocusedInputScroll'
+import type { OnboardingIdentity } from '../../types/onboarding'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
+import { onboardingSchema } from './onboardingSchema'
+import {
+    getOnboardingAnimationHeight,
+    OnboardingAnimation,
+} from './components/OnboardingAnimation'
+import { OnboardingProgress } from './components/OnboardingProgress'
 
 type OnboardingScreenProps = {
-    onComplete: () => void
+    onComplete: (identity: OnboardingIdentity) => void
+    onSignIn: () => void
 }
 
 type OnboardingPage = {
-    title?: string
+    page: 2 | 3 | 4 | 5 | 6 | 7
     description: string
-    image?: ImageSourcePropType
-    imageLabel?: string
+    input?: 'mascotName' | 'name'
 }
-
-const onboardingStars = [
-    { left: 7, top: 13, size: 31, driftX: 3, driftY: 4, rotation: 3 },
-    { left: 73, top: 4, size: 30, driftX: -4, driftY: 3, rotation: -2 },
-    { left: 45, top: 12, size: 21, driftX: 2, driftY: -3, rotation: 2 },
-    { left: 61, top: 29, size: 54, driftX: -3, driftY: 5, rotation: 2 },
-    { left: 85, top: 36, size: 28, driftX: 4, driftY: -3, rotation: -3 },
-    { left: 24, top: 43, size: 38, driftX: -4, driftY: 3, rotation: 3 },
-    { left: 46, top: 52, size: 27, driftX: 3, driftY: -4, rotation: -2 },
-    { left: 76, top: 56, size: 23, driftX: -3, driftY: 4, rotation: 2 },
-    { left: 7, top: 73, size: 31, driftX: 3, driftY: -3, rotation: -2 },
-    { left: 82, top: 76, size: 32, driftX: -4, driftY: 4, rotation: 3 },
-    { left: 52, top: 86, size: 30, driftX: 2, driftY: -4, rotation: -2 },
-    { left: 18, top: 92, size: 37, driftX: -3, driftY: 3, rotation: 2 },
-] as const
 
 const onboardingPages: OnboardingPage[] = [
     {
-        title: 'Bem-vindo(a)',
+        page: 2,
         description:
-            'O Ritmo App é o seu espaço aconchegante para construir hábitos e organizar a rotina. Com um visual relaxante e cozy, o app transforma produtividade em algo leve e prazeroso, sem a pressão ou a frieza dos apps tradicionais.',
+            "Hello, I'll be your assistant on this journey. What would you like to call me?",
+        input: 'mascotName',
     },
     {
-        title: 'Bem-vindo(a)',
-        description:
-            'Crie novos hábitos, monte cronogramas, defina lembretes e organize suas tarefas em um único lugar, tudo em um ambiente pensado para trazer calma ao seu dia a dia. Porque construir uma rotinha melhor não precisa ser estressante, pode ser, literalmente, confortável.',
+        page: 3,
+        description: 'And what about you? What should I call you?',
+        input: 'name',
     },
     {
-        title: 'Pequenos hábitos, grandes mudanças',
-        description:
-            'Acompanhe seus hábitos no dia a dia, registre cada conquista e veja sua consistência crescer com o tempo.',
-        image: require('../../assets/images/onboarding-schedule.png'),
-        imageLabel: 'Cartões coloridos com exemplos de tarefas e hábitos',
+        page: 4,
+        description: 'Great! Now let me show you how Ritmo works.',
     },
     {
-        title: 'Sua rotina em um só lugar',
+        page: 5,
         description:
-            'Planeje o dia, visualize seus compromissos e conecte atividades aos hábitos que quer cultivar.',
-        image: require('../../assets/images/onboarding-habits.png'),
-        imageLabel: 'Exemplo de uma agenda com horários e atividades',
+            'Build habits, organize them into groups, choose the most important ones as your daily focus, and set conditional habits that unlock only after another habit is completed.',
     },
     {
+        page: 6,
         description:
-            'Para melhorar sua vida, você não precisa ser o mais rápido, apenas manter o seu ritmo.',
+            'Plan your day on a timeline. Add habits and other commitments to the same schedule and see everything in one place.',
     },
-] as const
+    {
+        page: 7,
+        description:
+            'And it is not just about habits! Create reminders for important dates and tasks for things you need to get done. And much more, all in one place.',
+    },
+]
 
-const onboardingFontFamily =
+const onboardingPageTopRatios = {
+    2: 0.3013,
+    3: 0.3013,
+    4: 0.3013,
+    5: 0.3013,
+    6: 0.3013,
+    7: 0.3013,
+} as const
+
+const displayFontFamily =
+    Platform.OS === 'android' ? 'quicksand' : typography.fontFamily
+const bodyFontFamily =
     Platform.OS === 'android'
         ? 'quattrocento-sans'
         : typography.onboardingFontFamily
 
-export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
-    const [currentPage, setCurrentPage] = useState(0)
+export const OnboardingScreen = ({
+    onComplete,
+    onSignIn,
+}: OnboardingScreenProps) => {
+    const [currentPage, setCurrentPage] = useState(1)
+    const [focusedInputPage, setFocusedInputPage] = useState<number | null>(
+        null,
+    )
+    const [mascotName, setMascotName] = useState('')
+    const [name, setName] = useState('')
+    const [mascotNameError, setMascotNameError] = useState('')
+    const [nameError, setNameError] = useState('')
     const [isAudioMuted, setIsAudioMuted] = useState(false)
-    const drift = useRef(new Animated.Value(0)).current
     const soundtrackRef = useRef<Sound | null>(null)
     const isAudioMutedRef = useRef(false)
+    const pageTransition = useRef(new Animated.Value(1)).current
     const { height, width } = useWindowDimensions()
-    const page = onboardingPages[currentPage]
-    const isLastPage = currentPage === onboardingPages.length - 1
-    const logoWidth = Math.min(width * 0.52, 300)
-    const artworkWidth = Math.min(
-        width * (currentPage === 3 ? 0.82 : 0.76),
-        height * 0.37,
-        380,
-    )
-
-    useEffect(() => {
-        const animation = Animated.loop(
-            Animated.sequence([
-                Animated.timing(drift, {
-                    toValue: 1,
-                    duration: 18000,
-                    easing: Easing.inOut(Easing.sin),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(drift, {
-                    toValue: 0,
-                    duration: 18000,
-                    easing: Easing.inOut(Easing.sin),
-                    useNativeDriver: true,
-                }),
-            ]),
-        )
-
-        animation.start()
-
-        return () => animation.stop()
-    }, [drift])
+    const { top: safeAreaTop } = useSafeAreaInsets()
+    const {
+        scrollRef,
+        resetScroll,
+        ensureFocusedInputVisible,
+        handleScroll,
+        isKeyboardVisible,
+    } = useFocusedInputScroll()
+    const hasFocusedInput = focusedInputPage === currentPage
+    const isMascotKeyboardVisible =
+        currentPage === 2 && hasFocusedInput && isKeyboardVisible
+    const isEntryPage = currentPage === 1
+    const page = isEntryPage ? undefined : onboardingPages[currentPage - 2]
+    // Align the copy with page 4 while preserving each illustration's aspect ratio.
+    const illustrationOffset =
+        currentPage >= 5
+            ? getOnboardingAnimationHeight(4, width) -
+              getOnboardingAnimationHeight(currentPage, width)
+            : 0
+    const pageContentOffset = isEntryPage
+        ? 0
+        : height *
+              onboardingPageTopRatios[
+                  currentPage as keyof typeof onboardingPageTopRatios
+              ] -
+          safeAreaTop -
+          spacing.touchTarget +
+          illustrationOffset
+    const pageContentPosition =
+        pageContentOffset < 0
+            ? { marginTop: pageContentOffset }
+            : { paddingTop: pageContentOffset }
+    const pageDescriptionGap = isMascotKeyboardVisible
+        ? spacing.xs
+        : currentPage === 2
+        ? 52
+        : 30
+    const inputGap = isMascotKeyboardVisible
+        ? spacing.xs
+        : currentPage === 3
+        ? 68
+        : 28
 
     useEffect(() => {
         let isActive = true
@@ -154,13 +183,75 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
         }
     }, [])
 
+    useLayoutEffect(() => {
+        resetScroll()
+        pageTransition.setValue(0)
+        const animation = Animated.timing(pageTransition, {
+            toValue: 1,
+            duration: 260,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+        })
+        animation.start()
+        return () => animation.stop()
+    }, [currentPage, pageTransition, resetScroll])
+
+    const handlePageChange = (nextPage: number) => {
+        if (nextPage === currentPage) return
+        // Release keyboard avoidance with the page change, not after keyboardDidHide.
+        setFocusedInputPage(null)
+        Keyboard.dismiss()
+        setCurrentPage(nextPage)
+    }
+
     const handleContinue = () => {
-        if (isLastPage) {
-            onComplete()
+        if (isEntryPage) {
+            handlePageChange(2)
             return
         }
 
-        setCurrentPage(index => index + 1)
+        if (currentPage === 2) {
+            const result =
+                onboardingSchema.shape.mascotName.safeParse(mascotName)
+            if (!result.success) {
+                setMascotNameError(result.error.issues[0]?.message ?? '')
+                return
+            }
+            setMascotName(result.data)
+            setMascotNameError('')
+            handlePageChange(3)
+            return
+        }
+
+        if (currentPage === 3) {
+            const result = onboardingSchema.shape.name.safeParse(name)
+            if (!result.success) {
+                setNameError(result.error.issues[0]?.message ?? '')
+                return
+            }
+            setName(result.data)
+            setNameError('')
+            handlePageChange(4)
+            return
+        }
+
+        if (currentPage === 7) {
+            const result = onboardingSchema.safeParse({ name, mascotName })
+            if (!result.success) {
+                handlePageChange(
+                    result.error.issues[0]?.path[0] === 'mascotName' ? 2 : 3,
+                )
+                return
+            }
+            onComplete(result.data)
+            return
+        }
+
+        handlePageChange(currentPage + 1)
+    }
+
+    const handleBack = () => {
+        if (currentPage > 1) handlePageChange(currentPage - 1)
     }
 
     const handleToggleAudio = () => {
@@ -170,229 +261,302 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
         soundtrackRef.current?.setVolume(nextIsMuted ? 0 : 1)
     }
 
-    const renderStarField = () => (
-        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-            {onboardingStars.map(star => {
-                const animatedStyle = {
-                    transform: [
-                        {
-                            translateX: drift.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [-star.driftX, star.driftX],
-                            }),
-                        },
-                        {
-                            translateY: drift.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [star.driftY, -star.driftY],
-                            }),
-                        },
-                        {
-                            rotate: drift.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [
-                                    `${-star.rotation}deg`,
-                                    `${star.rotation}deg`,
-                                ],
-                            }),
-                        },
-                    ],
-                }
-
-                return (
-                    <Animated.View
-                        key={`${star.left}-${star.top}`}
-                        style={[
-                            styles.star,
-                            {
-                                height: star.size,
-                                left: `${star.left}%`,
-                                top: `${star.top}%`,
-                                width: star.size,
-                            },
-                            animatedStyle,
-                        ]}
-                    >
-                        <Star height="100%" width="100%" />
-                    </Animated.View>
-                )
-            })}
-        </View>
-    )
-
-    const renderLogo = () => (
-        <RitmoLogo height={(logoWidth * 52) / 228} width={logoWidth} />
-    )
-
-    const renderPageContent = () => {
-        if (currentPage === 0) {
-            return (
-                <View
-                    style={[
-                        styles.welcomeContent,
-                        { transform: [{ translateY: height * 0.09 }] },
-                    ]}
-                >
-                    {renderLogo()}
-                    <Text style={styles.welcomeTitle}>{page.title}</Text>
-                    <Text style={styles.welcomeDescription}>
-                        {page.description}
-                    </Text>
-                </View>
-            )
-        }
-
-        if (currentPage === 1) {
-            return (
-                <View style={styles.introContent}>
-                    <View
-                        style={[styles.introLogo, { marginTop: height * 0.22 }]}
-                    >
-                        {renderLogo()}
-                        <Text style={styles.welcomeTitle}>{page.title}</Text>
-                    </View>
-                    <View style={styles.introCopy}>
-                        <Text style={styles.introDescription}>
-                            {page.description}
-                        </Text>
-                    </View>
-                </View>
-            )
-        }
-
-        if (currentPage === 2 || currentPage === 3) {
-            return (
-                <View style={styles.featureContent}>
-                    {renderLogo()}
-                    <Image
-                        accessibilityLabel={page.imageLabel}
-                        resizeMode="contain"
-                        source={page.image}
-                        style={[
-                            styles.featureImage,
-                            {
-                                height: (artworkWidth * 427) / 440,
-                                width: artworkWidth,
-                            },
-                        ]}
-                    />
-                    <Text style={styles.featureTitle}>{page.title}</Text>
-                    <Text style={styles.featureDescription}>
-                        {page.description}
-                    </Text>
-                </View>
-            )
-        }
-
-        return (
-            <View
-                style={[
-                    styles.finalContent,
-                    { transform: [{ translateY: height * 0.08 }] },
-                ]}
-            >
-                {renderLogo()}
-                <Text style={styles.finalDescription}>{page.description}</Text>
-            </View>
-        )
-    }
+    const logoWidth = Math.min(width * 0.52, 300)
 
     return (
         <View style={styles.root}>
             <StatusBar barStyle="light-content" />
-            {renderStarField()}
+            <StarBackground />
             <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-                <View style={styles.screen}>
-                    <View style={styles.topBar}>
-                        <Pressable
-                            accessibilityLabel={
-                                isAudioMuted
-                                    ? 'Ativar áudio da apresentação'
-                                    : 'Silenciar áudio da apresentação'
-                            }
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: isAudioMuted }}
-                            hitSlop={spacing.sm}
-                            onPress={handleToggleAudio}
+                <KeyboardAvoidingView
+                    behavior={
+                        hasFocusedInput
+                            ? Platform.OS === 'ios'
+                                ? 'padding'
+                                : 'height'
+                            : undefined
+                    }
+                    enabled={hasFocusedInput}
+                    style={styles.keyboardView}
+                >
+                    <View style={styles.screen}>
+                        <View style={styles.topBar}>
+                            {isEntryPage ? (
+                                <View style={styles.topBarSpacer} />
+                            ) : (
+                                <Pressable
+                                    accessibilityLabel="Back to previous onboarding page"
+                                    accessibilityRole="button"
+                                    hitSlop={spacing.sm}
+                                    onPress={handleBack}
+                                    style={({ pressed }) => [
+                                        styles.backButton,
+                                        pressed && styles.pressed,
+                                    ]}
+                                >
+                                    <Text style={styles.backText}>Back</Text>
+                                </Pressable>
+                            )}
+                            <Pressable
+                                accessibilityLabel={
+                                    isAudioMuted
+                                        ? 'Turn on presentation audio'
+                                        : 'Mute presentation audio'
+                                }
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: isAudioMuted }}
+                                hitSlop={spacing.sm}
+                                onPress={handleToggleAudio}
+                                style={({ pressed }) =>
+                                    pressed && styles.pressed
+                                }
+                            >
+                                {isAudioMuted ? (
+                                    <SpeakerSlash
+                                        color={colors.onboardingMuted}
+                                        size={20}
+                                        weight="regular"
+                                    />
+                                ) : (
+                                    <SpeakerHigh
+                                        color={colors.onboardingMuted}
+                                        size={20}
+                                        weight="regular"
+                                    />
+                                )}
+                            </Pressable>
+                        </View>
+
+                        <ScrollView
+                            ref={scrollRef}
+                            bounces={false}
+                            contentContainerStyle={[
+                                styles.contentContainer,
+                                isEntryPage
+                                    ? styles.entryContentContainer
+                                    : undefined,
+                            ]}
+                            keyboardDismissMode="on-drag"
+                            keyboardShouldPersistTaps="handled"
+                            onContentSizeChange={ensureFocusedInputVisible}
+                            onFocus={ensureFocusedInputVisible}
+                            onLayout={ensureFocusedInputVisible}
+                            onScroll={handleScroll}
+                            scrollEventThrottle={16}
+                            showsVerticalScrollIndicator={false}
+                            style={styles.content}
                         >
-                            {isAudioMuted ? (
-                                <SpeakerSlash
-                                    color={colors.onboardingMuted}
-                                    size={20}
-                                    weight="regular"
+                            <Animated.View
+                                testID="onboarding-page-transition"
+                                style={{
+                                    opacity: pageTransition,
+                                    transform: [
+                                        {
+                                            translateX:
+                                                pageTransition.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [12, 0],
+                                                }),
+                                        },
+                                    ],
+                                }}
+                            >
+                                {isEntryPage ? (
+                                    <View style={styles.entryContent}>
+                                        <RitmoLogo
+                                            height={(logoWidth * 52) / 228}
+                                            width={logoWidth}
+                                        />
+                                        <Text
+                                            accessibilityLabel="Onboarding welcome"
+                                            style={styles.entrySubtitle}
+                                        >
+                                            Welcome
+                                        </Text>
+                                        <Text style={styles.entryDescription}>
+                                            Build new habits, plan your
+                                            schedule, set reminders, and
+                                            organize your tasks—all in one
+                                            place, in an environment designed to
+                                            bring calm to your everyday life.
+                                        </Text>
+                                    </View>
+                                ) : (
+                                    <View
+                                        accessibilityLabel={`Onboarding page ${currentPage} of 7`}
+                                        style={[
+                                            styles.pageContent,
+                                            pageContentPosition,
+                                        ]}
+                                    >
+                                        <OnboardingAnimation
+                                            page={currentPage}
+                                        />
+                                        <Text
+                                            accessibilityLabel={`Onboarding copy page ${currentPage}`}
+                                            accessibilityRole="header"
+                                            style={[
+                                                styles.pageDescription,
+                                                {
+                                                    marginTop:
+                                                        pageDescriptionGap,
+                                                },
+                                            ]}
+                                        >
+                                            {page?.description}
+                                        </Text>
+                                        {page?.input ? (
+                                            <View
+                                                style={[
+                                                    styles.inputGroup,
+                                                    { marginTop: inputGap },
+                                                ]}
+                                            >
+                                                <TextInput
+                                                    key={page.input}
+                                                    accessibilityLabel={
+                                                        page.input ===
+                                                        'mascotName'
+                                                            ? 'Mascot name'
+                                                            : 'Your name'
+                                                    }
+                                                    autoCapitalize="words"
+                                                    autoCorrect={false}
+                                                    onFocus={() =>
+                                                        setFocusedInputPage(
+                                                            currentPage,
+                                                        )
+                                                    }
+                                                    onChangeText={value => {
+                                                        if (
+                                                            page.input ===
+                                                            'mascotName'
+                                                        ) {
+                                                            setMascotName(value)
+                                                            setMascotNameError(
+                                                                '',
+                                                            )
+                                                        } else {
+                                                            setName(value)
+                                                            setNameError('')
+                                                        }
+                                                    }}
+                                                    placeholder={
+                                                        page.input ===
+                                                        'mascotName'
+                                                            ? 'My name'
+                                                            : 'Your name'
+                                                    }
+                                                    placeholderTextColor={
+                                                        colors.textMuted
+                                                    }
+                                                    returnKeyType="done"
+                                                    style={styles.input}
+                                                    underlineColorAndroid="transparent"
+                                                    value={
+                                                        page.input ===
+                                                        'mascotName'
+                                                            ? mascotName
+                                                            : name
+                                                    }
+                                                />
+                                                {page.input === 'mascotName' &&
+                                                mascotNameError ? (
+                                                    <Text
+                                                        accessibilityLabel="Mascot name error"
+                                                        accessibilityLiveRegion="polite"
+                                                        style={
+                                                            styles.inputError
+                                                        }
+                                                    >
+                                                        {mascotNameError}
+                                                    </Text>
+                                                ) : null}
+                                                {page.input === 'name' &&
+                                                nameError ? (
+                                                    <Text
+                                                        accessibilityLabel="Your name error"
+                                                        accessibilityLiveRegion="polite"
+                                                        style={
+                                                            styles.inputError
+                                                        }
+                                                    >
+                                                        {nameError}
+                                                    </Text>
+                                                ) : null}
+                                            </View>
+                                        ) : null}
+                                    </View>
+                                )}
+                            </Animated.View>
+                        </ScrollView>
+
+                        <View style={styles.footer}>
+                            {isEntryPage ? (
+                                <FormActionButton
+                                    accessibilityLabel="Continue onboarding"
+                                    containerStyle={styles.continueButton}
+                                    onPress={handleContinue}
+                                    surfaceStyle={styles.continueButtonSurface}
+                                    textStyle={styles.continueText}
+                                    title="Get started"
                                 />
                             ) : (
-                                <SpeakerHigh
-                                    color={colors.onboardingMuted}
-                                    size={20}
-                                    weight="regular"
-                                />
-                            )}
-                        </Pressable>
-                        {isLastPage ? (
-                            <View style={styles.topBarSpacer} />
-                        ) : (
-                            <Pressable
-                                accessibilityLabel="Pular apresentação"
-                                accessibilityRole="button"
-                                hitSlop={spacing.sm}
-                                onPress={onComplete}
-                            >
-                                <Text style={styles.skipText}>Pular</Text>
-                            </Pressable>
-                        )}
-                    </View>
-
-                    <ScrollView
-                        bounces={false}
-                        contentContainerStyle={styles.contentContainer}
-                        showsVerticalScrollIndicator={false}
-                        style={styles.content}
-                    >
-                        {renderPageContent()}
-                    </ScrollView>
-
-                    <View style={styles.footer}>
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={handleContinue}
-                            style={({ pressed }) => [
-                                styles.continueButton,
-                                pressed && styles.pressed,
-                            ]}
-                        >
-                            <Text style={styles.continueText}>
-                                {isLastPage ? 'Iniciar' : 'Próximo'}
-                            </Text>
-                        </Pressable>
-
-                        <View
-                            style={[
-                                styles.footerSpacer,
-                                { height: height * 0.09 },
-                            ]}
-                        />
-
-                        <View
-                            accessibilityLabel={`Tela ${currentPage + 1} de ${
-                                onboardingPages.length
-                            }`}
-                            accessibilityRole="progressbar"
-                            style={styles.pagination}
-                        >
-                            {onboardingPages.map((_, index) => (
-                                <View
-                                    key={index}
-                                    style={[
-                                        styles.paginationItem,
-                                        index === currentPage &&
-                                            styles.paginationItemActive,
+                                <Pressable
+                                    accessibilityLabel={
+                                        currentPage === 7
+                                            ? 'Create account'
+                                            : 'Next onboarding page'
+                                    }
+                                    accessibilityRole="button"
+                                    onPress={handleContinue}
+                                    style={({ pressed }) => [
+                                        styles.nextButton,
+                                        pressed && styles.pressed,
                                     ]}
-                                />
-                            ))}
+                                >
+                                    <Text style={styles.nextText}>
+                                        {currentPage === 7
+                                            ? 'Create account'
+                                            : 'Next'}
+                                    </Text>
+                                </Pressable>
+                            )}
+
+                            {isEntryPage ? (
+                                <View style={styles.signInPrompt}>
+                                    <Text style={styles.signInPromptText}>
+                                        Already have an account?{' '}
+                                        <Text
+                                            accessibilityLabel="Sign in"
+                                            accessibilityRole="link"
+                                            onPress={onSignIn}
+                                            style={styles.signInLink}
+                                        >
+                                            Sign in
+                                        </Text>
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View
+                                    style={{
+                                        marginTop: Math.max(
+                                            spacing.xl,
+                                            height * 0.075,
+                                        ),
+                                    }}
+                                >
+                                    <OnboardingProgress
+                                        currentStep={currentPage - 1}
+                                        onStepPress={step =>
+                                            handlePageChange(step + 1)
+                                        }
+                                    />
+                                </View>
+                            )}
                         </View>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </SafeAreaView>
         </View>
     )
@@ -401,14 +565,14 @@ export const OnboardingScreen = ({ onComplete }: OnboardingScreenProps) => {
 const styles = StyleSheet.create({
     root: { backgroundColor: colors.onboardingBackground, flex: 1 },
     safeArea: { flex: 1 },
+    keyboardView: { flex: 1 },
     screen: {
         alignSelf: 'center',
         flex: 1,
-        maxWidth: 500,
+        maxWidth: 440,
         paddingHorizontal: spacing.md,
         width: '100%',
     },
-    star: { position: 'absolute' },
     topBar: {
         alignItems: 'center',
         flexDirection: 'row',
@@ -416,136 +580,130 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: spacing.xs,
     },
-    topBarSpacer: { height: spacing.touchTarget },
-    skipText: {
+    topBarSpacer: { height: spacing.touchTarget, width: spacing.touchTarget },
+    backButton: { minHeight: spacing.touchTarget, justifyContent: 'center' },
+    backText: {
         color: colors.onboardingMuted,
-        fontFamily: onboardingFontFamily,
-        fontSize: typography.onboardingAction.fontSize,
-        fontWeight: typography.onboardingAction.fontWeight,
+        fontFamily:
+            Platform.OS === 'android'
+                ? typography.semiboldFontFamily
+                : displayFontFamily,
+        fontSize: typography.caption.fontSize,
+        fontWeight: '600',
     },
-    content: {
-        flex: 1,
-        width: '100%',
-    },
-    contentContainer: {
-        alignItems: 'center',
-        flexGrow: 1,
-        justifyContent: 'center',
-        width: '100%',
-    },
-    welcomeContent: {
+    content: { flex: 1, width: '100%' },
+    contentContainer: { flexGrow: 1, width: '100%' },
+    entryContentContainer: { justifyContent: 'center' },
+    entryContent: {
         alignItems: 'center',
         justifyContent: 'center',
+        paddingHorizontal: spacing.xs,
+        paddingTop: 30,
         width: '100%',
     },
-    welcomeTitle: {
+    entrySubtitle: {
         color: colors.white,
-        fontFamily: onboardingFontFamily,
-        fontSize: typography.onboardingTitle.fontSize,
-        lineHeight: typography.onboardingTitle.lineHeight,
-        marginTop: spacing.md,
+        fontFamily: bodyFontFamily,
+        fontSize: 18,
+        marginTop: spacing.xl,
         textAlign: 'center',
     },
-    welcomeDescription: {
+    entryDescription: {
         color: colors.onboardingPurple,
-        fontFamily: onboardingFontFamily,
+        fontFamily: bodyFontFamily,
         fontSize: typography.onboardingBody.fontSize,
         lineHeight: typography.onboardingBody.lineHeight,
-        marginTop: spacing.xl + spacing.sm,
+        marginTop: 54,
         textAlign: 'center',
-        width: '94%',
-    },
-    introContent: {
-        alignItems: 'center',
-        flex: 1,
         width: '100%',
     },
-    introLogo: { alignItems: 'center' },
-    introCopy: {
+    pageContent: {
         alignItems: 'center',
-        flex: 1,
-        justifyContent: 'flex-end',
         paddingBottom: spacing.lg,
         width: '100%',
     },
-    introDescription: {
+    pageDescription: {
         color: colors.onboardingPurple,
-        fontFamily: onboardingFontFamily,
-        fontSize: typography.onboardingBody.fontSize,
-        lineHeight: typography.onboardingBody.lineHeight,
-        textAlign: 'center',
-        width: '100%',
-    },
-    featureContent: {
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        paddingTop: spacing.xs,
-        width: '100%',
-    },
-    featureImage: { marginTop: spacing.xl },
-    featureTitle: {
-        color: colors.white,
-        fontFamily: onboardingFontFamily,
-        fontSize: typography.onboardingTitle.fontSize,
-        lineHeight: typography.onboardingTitle.lineHeight,
-        marginTop: spacing.xl,
-        textAlign: 'center',
-        width: '100%',
-    },
-    featureDescription: {
-        color: colors.onboardingPurple,
-        fontFamily: onboardingFontFamily,
-        fontSize: typography.onboardingBody.fontSize,
-        lineHeight: typography.onboardingBody.lineHeight,
-        marginTop: spacing.xs,
-        textAlign: 'center',
-        width: '100%',
-    },
-    finalContent: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-    },
-    finalDescription: {
-        color: colors.onboardingPurple,
-        fontFamily: onboardingFontFamily,
+        fontFamily: bodyFontFamily,
         fontSize: typography.onboardingBody.fontSize,
         lineHeight: typography.onboardingBody.lineHeight,
         marginTop: spacing.lg,
         textAlign: 'center',
         width: '100%',
     },
+    inputGroup: { alignSelf: 'center', maxWidth: 400, width: '100%' },
+    input: {
+        backgroundColor: 'transparent',
+        borderBottomColor: colors.onboardingMuted,
+        borderBottomWidth: 2,
+        color: colors.white,
+        fontFamily: displayFontFamily,
+        fontSize: 16,
+        minHeight: 48,
+        paddingHorizontal: 0,
+    },
+    inputError: {
+        color: colors.danger,
+        fontFamily: bodyFontFamily,
+        fontSize: 12,
+        marginTop: spacing.xs,
+    },
     footer: {
         alignItems: 'center',
-        paddingBottom: spacing.xl + spacing.md,
+        paddingBottom: spacing.lg,
+        paddingTop: spacing.sm,
+        width: '100%',
     },
     continueButton: {
         alignItems: 'center',
+        alignSelf: 'stretch',
+        justifyContent: 'center',
+        width: '100%',
+    },
+    continueButtonSurface: {
+        backgroundColor: colors.onboardingAction,
+        borderRadius: 4,
+        width: '100%',
+    },
+    continueText: {
+        color: colors.mainLight,
+        fontFamily:
+            Platform.OS === 'android'
+                ? typography.semiboldFontFamily
+                : displayFontFamily,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    nextButton: {
+        alignItems: 'center',
         justifyContent: 'center',
         minHeight: spacing.touchTarget,
+        paddingHorizontal: spacing.lg,
     },
-    footerSpacer: { flexShrink: 0 },
-    continueText: {
+    nextText: {
         color: colors.onboardingMuted,
-        fontFamily: onboardingFontFamily,
-        fontSize: typography.onboardingAction.fontSize,
-        fontWeight: typography.onboardingAction.fontWeight,
-        textDecorationLine: 'underline',
+        fontFamily:
+            Platform.OS === 'android'
+                ? typography.semiboldFontFamily
+                : displayFontFamily,
+        fontSize: 17,
+        fontWeight: '600',
+    },
+    signInPrompt: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: spacing.xl,
+    },
+    signInPromptText: {
+        color: colors.onboardingMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+        lineHeight: 20,
+        textAlign: 'center',
+    },
+    signInLink: {
+        color: colors.white,
+        fontWeight: '700',
     },
     pressed: { opacity: 0.7 },
-    pagination: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        gap: spacing.xs,
-    },
-    paginationItem: {
-        backgroundColor: colors.onboardingMuted,
-        borderRadius: spacing.sm,
-        height: spacing.sm,
-        width: spacing.xl,
-    },
-    paginationItemActive: {
-        backgroundColor: colors.accent,
-        width: spacing.xl + spacing.lg,
-    },
 })
