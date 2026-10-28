@@ -47,19 +47,19 @@ describe('RegisterScreen', () => {
 
         const inputs = renderer.root.findAllByType(TextInput)
         const emailInput = renderer.root.findByProps({
-            accessibilityLabel: 'E-mail',
+            accessibilityLabel: 'Email',
         })
         const passwordInput = renderer.root.findByProps({
-            accessibilityLabel: 'Senha',
+            accessibilityLabel: 'Password',
         })
         expect(inputs.map(input => input.props.accessibilityLabel)).toEqual([
-            'E-mail',
-            'Senha',
+            'Email',
+            'Password',
         ])
         expect(inputs).toHaveLength(2)
         expect(
             renderer.root.findByProps({
-                accessibilityLabel: 'Requisitos da senha',
+                accessibilityLabel: 'Password requirements',
             }),
         ).toBeTruthy()
 
@@ -93,10 +93,10 @@ describe('RegisterScreen', () => {
         })
         await act(async () => {
             renderer.root
-                .findByProps({ accessibilityLabel: 'E-mail' })
+                .findByProps({ accessibilityLabel: 'Email' })
                 .props.onChangeText('ana@example.com')
             renderer.root
-                .findByProps({ accessibilityLabel: 'Senha' })
+                .findByProps({ accessibilityLabel: 'Password' })
                 .props.onChangeText('password123!')
         })
         await act(async () => {
@@ -104,7 +104,7 @@ describe('RegisterScreen', () => {
         })
 
         expect(
-            renderer.root.findByProps({ accessibilityLabel: 'E-mail' }).props
+            renderer.root.findByProps({ accessibilityLabel: 'Email' }).props
                 .value,
         ).toBe('ana@example.com')
         expect(registerLocalUser).toHaveBeenCalledWith({

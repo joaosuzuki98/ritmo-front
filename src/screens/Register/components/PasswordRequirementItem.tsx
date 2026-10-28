@@ -51,9 +51,7 @@ export const PasswordRequirementItem = ({
 
     return (
         <Animated.View
-            accessibilityLabel={`${label}: ${
-                isMet ? 'atendido' : 'não atendido'
-            }`}
+            accessibilityLabel={`${label}: ${isMet ? 'met' : 'not met'}`}
             accessibilityRole="text"
             style={styles.row}
         >

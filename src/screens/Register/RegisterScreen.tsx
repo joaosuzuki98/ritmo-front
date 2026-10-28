@@ -42,10 +42,10 @@ export const RegisterScreen = ({
     })
     const password = watch('password')
     const passwordRequirements = [
-        { label: 'Pelo menos 8 caracteres', isMet: password.length >= 8 },
-        { label: 'Pelo menos um número', isMet: /\d/.test(password) },
+        { label: 'At least 8 characters', isMet: password.length >= 8 },
+        { label: 'At least one number', isMet: /\d/.test(password) },
         {
-            label: 'Pelo menos um caractere especial',
+            label: 'At least one special character',
             isMet: /[^a-zA-Z0-9]/.test(password),
         },
     ]
@@ -61,7 +61,7 @@ export const RegisterScreen = ({
             setSubmitError(
                 error instanceof Error
                     ? error.message
-                    : 'Não foi possível criar sua conta. Tente novamente.',
+                    : 'Unable to create your account. Please try again.',
             )
         } finally {
             setIsSubmitting(false)
@@ -70,20 +70,20 @@ export const RegisterScreen = ({
 
     return (
         <AuthScreenLayout
-            description="Comece a construir a rotina que combina com você."
+            description="Start building a routine that works for you."
             footer={
                 <Text style={styles.footerText}>
-                    Já tem uma conta?{' '}
+                    Already have an account?{' '}
                     <Text
                         accessibilityRole="link"
                         onPress={onBack}
                         style={styles.footerLink}
                     >
-                        Entrar
+                        Sign in
                     </Text>
                 </Text>
             }
-            title="Crie a sua conta"
+            title="Create your account"
         >
             <View>
                 <Controller
@@ -94,10 +94,10 @@ export const RegisterScreen = ({
                             autoComplete="email"
                             error={errors.email?.message}
                             keyboardType="email-address"
-                            label="E-mail"
+                            label="Email"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="voce@email.com"
+                            placeholder="you@example.com"
                             returnKeyType="done"
                             textContentType="emailAddress"
                             value={field.value}
@@ -112,10 +112,10 @@ export const RegisterScreen = ({
                             autoComplete="new-password"
                             error={errors.password?.message}
                             fieldStyle={styles.passwordField}
-                            label="Senha"
+                            label="Password"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Mínimo de 8 caracteres"
+                            placeholder="At least 8 characters"
                             secureTextEntry
                             textContentType="newPassword"
                             value={field.value}
@@ -123,7 +123,7 @@ export const RegisterScreen = ({
                     )}
                 />
                 <View
-                    accessibilityLabel="Requisitos da senha"
+                    accessibilityLabel="Password requirements"
                     style={styles.passwordRequirements}
                 >
                     {passwordRequirements.map(requirement => (
@@ -142,7 +142,9 @@ export const RegisterScreen = ({
                 <FormActionButton
                     disabled={isSubmitting}
                     onPress={handleSubmit(handleRegister)}
-                    title={isSubmitting ? 'Criando conta…' : 'Create account'}
+                    title={
+                        isSubmitting ? 'Creating account…' : 'Create account'
+                    }
                 />
             </View>
         </AuthScreenLayout>

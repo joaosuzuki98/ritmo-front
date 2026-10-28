@@ -48,7 +48,7 @@ export const LoginScreen = ({
             setSubmitError(
                 error instanceof Error
                     ? error.message
-                    : 'Não foi possível entrar. Tente novamente.',
+                    : 'Unable to sign in. Please try again.',
             )
         } finally {
             setIsSubmitting(false)
@@ -57,20 +57,20 @@ export const LoginScreen = ({
 
     return (
         <AuthScreenLayout
-            description="Entre para continuar cuidando do seu ritmo."
+            description="Sign in to keep building a routine that works for you."
             footer={
                 <Text style={styles.footerText}>
-                    Ainda não tem uma conta?{' '}
+                    Don’t have an account?{' '}
                     <Text
                         accessibilityRole="link"
                         onPress={onRegisterPress}
                         style={styles.footerLink}
                     >
-                        Criar conta
+                        Sign up
                     </Text>
                 </Text>
             }
-            title="Bem-vindo de volta"
+            title="Welcome back"
         >
             <View>
                 <Controller
@@ -81,10 +81,10 @@ export const LoginScreen = ({
                             autoComplete="email"
                             error={errors.email?.message}
                             keyboardType="email-address"
-                            label="E-mail"
+                            label="Email"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="voce@email.com"
+                            placeholder="you@example.com"
                             returnKeyType="next"
                             textContentType="emailAddress"
                             value={field.value}
@@ -98,16 +98,16 @@ export const LoginScreen = ({
                         <AuthTextInput
                             autoComplete="current-password"
                             error={errors.password?.message}
-                            label="Senha"
+                            label="Password"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Sua senha"
+                            placeholder="Your password"
                             rightAccessory={
                                 <Pressable
                                     accessibilityLabel={
                                         isPasswordVisible
-                                            ? 'Ocultar senha'
-                                            : 'Mostrar senha'
+                                            ? 'Hide password'
+                                            : 'Show password'
                                     }
                                     accessibilityRole="button"
                                     accessibilityState={{
@@ -143,7 +143,7 @@ export const LoginScreen = ({
                     onPress={onForgotPasswordPress}
                     style={styles.forgotButton}
                 >
-                    <Text style={styles.forgotText}>Esqueceu a senha?</Text>
+                    <Text style={styles.forgotText}>Forgot password?</Text>
                 </Pressable>
                 {submitError ? (
                     <Text accessibilityLiveRegion="polite" style={styles.error}>
@@ -153,7 +153,7 @@ export const LoginScreen = ({
                 <FormActionButton
                     disabled={isSubmitting}
                     onPress={handleSubmit(handleLogin)}
-                    title={isSubmitting ? 'Entrando…' : 'Login'}
+                    title={isSubmitting ? 'Signing in…' : 'Sign in'}
                 />
             </View>
         </AuthScreenLayout>

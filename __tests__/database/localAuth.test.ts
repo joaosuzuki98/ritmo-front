@@ -122,7 +122,7 @@ describe('local authentication', () => {
                 email: 'ANA@EXAMPLE.COM',
                 password: 'password456',
             }),
-        ).rejects.toThrow('Já existe uma conta com este e-mail.')
+        ).rejects.toThrow('An account with this email already exists.')
 
         expect(collection.create).not.toHaveBeenCalled()
     })
@@ -135,7 +135,7 @@ describe('local authentication', () => {
                 email: 'ana@example.com',
                 password: 'password123',
             }),
-        ).rejects.toThrow('Informe seu nome e o nome do mascote.')
+        ).rejects.toThrow('Please enter your name and a name for your mascot.')
         await expect(
             registerLocalUser({
                 name: 'Ana Silva',
@@ -143,7 +143,7 @@ describe('local authentication', () => {
                 email: 'ana@example.com',
                 password: 'password123',
             }),
-        ).rejects.toThrow('Informe seu nome e o nome do mascote.')
+        ).rejects.toThrow('Please enter your name and a name for your mascot.')
 
         expect(collection.create).not.toHaveBeenCalled()
         expect(users).toHaveLength(0)
@@ -190,7 +190,7 @@ describe('local authentication', () => {
 
         await expect(
             authenticateLocalUser('ana@example.com', 'incorrect'),
-        ).rejects.toThrow('E-mail ou senha incorretos.')
+        ).rejects.toThrow('Incorrect email or password.')
     })
 
     it('authenticates a new unhashed local password directly', async () => {
