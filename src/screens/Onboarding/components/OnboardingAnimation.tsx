@@ -1,9 +1,10 @@
-import { useState } from 'react'
 import LottieView from 'lottie-react-native'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { spacing } from '../../../styles/spacing'
 import { remindersAnimation } from '../remindersAnimation'
+import { welcomingAnimation } from '../welcomingAnimation'
+import { WelcomingAnimation } from './WelcomingAnimation'
 
 type OnboardingAnimationProps = {
     page: number
@@ -11,7 +12,7 @@ type OnboardingAnimationProps = {
 
 const animationSources = {
     2: {
-        source: require('../../../assets/animations/moon_welcoming.json'),
+        source: welcomingAnimation,
         compositionWidth: 440,
         compositionHeight: 120,
         maxWidth: 400,
@@ -69,16 +70,7 @@ export const getOnboardingAnimationHeight = (
 
 export const OnboardingAnimation = ({ page }: OnboardingAnimationProps) => {
     const { width: screenWidth } = useWindowDimensions()
-    const [playback, setPlayback] = useState({
-        page,
-        isWelcoming: page === 2,
-    })
-    const isWelcoming =
-        page === 2 && (playback.page !== page || playback.isWelcoming)
-    const animation =
-        page === 2 && !isWelcoming
-            ? animationSources[3]
-            : animationSources[page as keyof typeof animationSources]
+    const animation = animationSources[page as keyof typeof animationSources]
 
     if (!animation) return null
 
@@ -97,20 +89,19 @@ export const OnboardingAnimation = ({ page }: OnboardingAnimationProps) => {
             accessibilityLabel={`Illustration for onboarding page ${page}`}
             style={[styles.container, { height, width }]}
         >
-            <LottieView
-                autoPlay
-                key={`page-${page}-${isWelcoming ? 'welcoming' : 'idle'}`}
-                loop={!isWelcoming}
-                onAnimationFinish={isCancelled => {
-                    if (page === 2 && isWelcoming && !isCancelled) {
-                        setPlayback({ page, isWelcoming: false })
-                    }
-                }}
-                resizeMode="contain"
-                source={animation.source}
-                style={{ height, width: animationWidth }}
-                testID="onboarding-lottie-animation"
-            />
+            {page === 2 ? (
+                <WelcomingAnimation height={height} width={animationWidth} />
+            ) : (
+                <LottieView
+                    autoPlay
+                    key={`page-${page}`}
+                    loop
+                    resizeMode="contain"
+                    source={animation.source}
+                    style={{ height, width: animationWidth }}
+                    testID="onboarding-lottie-animation"
+                />
+            )}
         </View>
     )
 }
