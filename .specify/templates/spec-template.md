@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "$ARGUMENTS"
+**Input**: GitHub issue #[ISSUE NUMBER] — [ISSUE TITLE]
 
 ## User Scenarios & Testing *(mandatory)*
 

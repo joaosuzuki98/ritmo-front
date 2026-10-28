@@ -16,12 +16,13 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 11,
+    version: 12,
     tables: [
         tableSchema({
             name: 'users',
             columns: [
                 { name: 'name', type: 'string' },
+                { name: 'mascot_name', type: 'string', isOptional: true },
                 { name: 'email', type: 'string', isIndexed: true },
                 { name: 'password', type: 'string', isOptional: true },
                 { name: 'password_hash', type: 'string', isOptional: true },

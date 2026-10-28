@@ -10,9 +10,11 @@ import type { User } from '../database'
 import { logoutLocalUser, restoreLocalSession } from '../database/localAuth'
 import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen'
 import { colors } from '../styles/colors'
+import type { OnboardingIdentity } from '../types/onboarding'
 import type { RootParamList } from './types'
 
 import { AuthNavigator } from './AuthNavigator'
+import type { AuthInitialRoute } from './AuthNavigator'
 import { AppDrawerNavigator } from './AppDrawerNavigator'
 
 export const navigationRef = createNavigationContainerRef<RootParamList>()
@@ -20,7 +22,10 @@ export const navigationRef = createNavigationContainerRef<RootParamList>()
 export const RootNavigator = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null)
     const [isRestoringSession, setIsRestoringSession] = useState(true)
-    const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false)
+    const [authInitialRoute, setAuthInitialRoute] =
+        useState<AuthInitialRoute | null>(null)
+    const [registrationIdentity, setRegistrationIdentity] =
+        useState<OnboardingIdentity>()
 
     useEffect(() => {
         restoreLocalSession()
@@ -34,6 +39,18 @@ export const RootNavigator = () => {
             await logoutLocalUser(currentUser.id).catch(() => null)
         }
         setCurrentUser(null)
+        setRegistrationIdentity(undefined)
+        setAuthInitialRoute('Login')
+    }
+
+    const handleAuthenticated = (user: User) => {
+        setRegistrationIdentity(undefined)
+        setCurrentUser(user)
+    }
+
+    const handleStartRegistration = () => {
+        setRegistrationIdentity(undefined)
+        setAuthInitialRoute(null)
     }
 
     const handleInitialLayout = async () => {
@@ -59,11 +76,23 @@ export const RootNavigator = () => {
                         currentUser={currentUser}
                         onLogout={handleLogout}
                     />
-                ) : hasSeenOnboarding ? (
-                    <AuthNavigator onAuthenticated={setCurrentUser} />
+                ) : authInitialRoute ? (
+                    <AuthNavigator
+                        initialRoute={authInitialRoute}
+                        onAuthenticated={handleAuthenticated}
+                        onStartRegistration={handleStartRegistration}
+                        registrationIdentity={registrationIdentity}
+                    />
                 ) : (
                     <OnboardingScreen
-                        onComplete={() => setHasSeenOnboarding(true)}
+                        onComplete={identity => {
+                            setRegistrationIdentity(identity)
+                            setAuthInitialRoute('Register')
+                        }}
+                        onSignIn={() => {
+                            setRegistrationIdentity(undefined)
+                            setAuthInitialRoute('Login')
+                        }}
                     />
                 )}
             </NavigationContainer>

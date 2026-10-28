@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CaretDown, X } from 'phosphor-react-native'
+import { CaretDown } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
-    Animated,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -24,6 +19,7 @@ import {
     type WeekDay,
 } from '../../../constants/weekDays'
 import { colors } from '../../../styles/colors'
+import { globalStyles } from '../../../styles/globalStyles'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
@@ -36,7 +32,8 @@ import {
     habitRequirementStatusLabels,
 } from '../../../constants/habitRequirementStatuses'
 import type { HabitCardViewData, HabitOption } from '../habitDashboard.types'
-import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
+import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
+import { theme } from '../../../styles/theme'
 
 type AddHabitModalProps = {
     isVisible: boolean
@@ -84,8 +81,7 @@ export const AddHabitModal = ({
     onCreateHabit,
     onUpdateHabit,
 }: AddHabitModalProps) => {
-    const { height, width } = useWindowDimensions()
-    const { bottom } = useSafeAreaInsets()
+    const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const daySize = Math.min(
         42 * scale,
@@ -95,8 +91,6 @@ export const AddHabitModal = ({
     const [submitError, setSubmitError] = useState('')
     const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false)
     const [isEnteringNewCategory, setIsEnteringNewCategory] = useState(false)
-    const { backdropOpacity, isModalMounted, sheetTranslateY } =
-        useBottomSheetAnimation(isVisible, height)
     const {
         control,
         formState: { errors },
@@ -162,800 +156,651 @@ export const AddHabitModal = ({
     const handleFormSubmit = () => handleSubmit(handleCreate)()
 
     return (
-        <Modal
-            animationType="none"
-            onRequestClose={handleClose}
-            statusBarTranslucent
-            transparent
-            visible={isModalMounted}
+        <BottomSheetLayout
+            closeAccessibilityLabel="Close add habit modal"
+            headerStyle={{ marginBottom: theme.bottomSheet.headerGap }}
+            isCloseDisabled={isSubmitting}
+            isVisible={isVisible}
+            onClose={handleClose}
+            title={habit ? 'Edit habit' : 'Add habit'}
         >
-            <View style={styles.overlay}>
-                <Animated.View
-                    style={[styles.backdrop, { opacity: backdropOpacity }]}
-                >
-                    <Pressable
-                        accessibilityLabel="Close add habit modal"
-                        onPress={handleClose}
-                        style={StyleSheet.absoluteFill}
-                    />
-                </Animated.View>
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    style={styles.sheetWrapper}
-                >
-                    <Animated.View
-                        style={[
-                            styles.sheet,
-                            {
-                                borderTopLeftRadius: 28 * scale,
-                                borderTopRightRadius: 28 * scale,
-                                maxHeight: height * 0.9,
-                                paddingHorizontal: spacing.lg * scale,
-                                paddingBottom: bottom,
-                                transform: [{ translateY: sheetTranslateY }],
-                            },
-                        ]}
+            <ScrollView
+                contentContainerStyle={{
+                    paddingBottom: 20 * scale,
+                }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Name
+                </Text>
+                <Controller
+                    control={control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormTextInput
+                            accessibilityLabel="Habit name"
+                            autoCapitalize="sentences"
+                            onChangeText={field.onChange}
+                            onBlur={field.onBlur}
+                            placeholder="e.g. Study"
+                            hasError={Boolean(errors.name)}
+                            value={field.value}
+                        />
+                    )}
+                />
+                {errors.name ? (
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        <View style={styles.header}>
-                            <Text
-                                style={[styles.title, { fontSize: 34 * scale }]}
-                            >
-                                {habit ? 'Edit habit' : 'Add habit'}
-                            </Text>
-                            <Pressable
-                                accessibilityLabel="Close add habit modal"
-                                accessibilityRole="button"
-                                disabled={isSubmitting}
-                                onPress={handleClose}
-                                style={styles.closeButton}
-                            >
-                                <X color={colors.text} size={30 * scale} />
-                            </Pressable>
-                        </View>
+                        {errors.name.message}
+                    </Text>
+                ) : null}
 
-                        <ScrollView
-                            contentContainerStyle={{
-                                paddingBottom: 20 * scale,
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Description
+                </Text>
+                <Controller
+                    control={control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormTextInput
+                            accessibilityLabel="Habit description"
+                            multiline
+                            onChangeText={field.onChange}
+                            onBlur={field.onBlur}
+                            placeholder="What does this habit mean to you?"
+                            containerStyle={styles.multilineContainer}
+                            style={styles.multilineText}
+                            textAlignVertical="top"
+                            value={field.value}
+                        />
+                    )}
+                />
+
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Category
+                </Text>
+                {categoryOptions.length > 0 && !isEnteringNewCategory ? (
+                    <>
+                        <Pressable
+                            accessibilityLabel="Choose habit category"
+                            accessibilityRole="button"
+                            accessibilityState={{
+                                expanded: isCategoryMenuOpen,
                             }}
-                            keyboardShouldPersistTaps="handled"
-                            showsVerticalScrollIndicator={false}
+                            onPress={() => setIsCategoryMenuOpen(open => !open)}
+                            style={styles.categoryPicker}
                         >
-                            <Text style={styles.label}>Name</Text>
-                            <Controller
-                                control={control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormTextInput
-                                        accessibilityLabel="Habit name"
-                                        autoCapitalize="sentences"
-                                        onChangeText={field.onChange}
-                                        onBlur={field.onBlur}
-                                        placeholder="e.g. Study"
-                                        hasError={Boolean(errors.name)}
-                                        value={field.value}
-                                    />
-                                )}
-                            />
-                            {errors.name ? (
-                                <Text style={styles.errorText}>
-                                    {errors.name.message}
-                                </Text>
-                            ) : null}
-
-                            <Text style={styles.label}>Description</Text>
-                            <Controller
-                                control={control}
-                                name="description"
-                                render={({ field }) => (
-                                    <FormTextInput
-                                        accessibilityLabel="Habit description"
-                                        multiline
-                                        onChangeText={field.onChange}
-                                        onBlur={field.onBlur}
-                                        placeholder="What does this habit mean to you?"
-                                        containerStyle={
-                                            styles.multilineContainer
-                                        }
-                                        style={styles.multilineText}
-                                        textAlignVertical="top"
-                                        value={field.value}
-                                    />
-                                )}
-                            />
-
-                            <Text style={styles.label}>Category</Text>
-                            {categoryOptions.length > 0 &&
-                            !isEnteringNewCategory ? (
-                                <>
+                            <Text
+                                style={[
+                                    styles.optionText,
+                                    categoryName &&
+                                        styles.categoryPickerSelectedText,
+                                ]}
+                            >
+                                {categoryName || 'Choose a category'}
+                            </Text>
+                            <CaretDown color={colors.textMuted} size={18} />
+                        </Pressable>
+                        {isCategoryMenuOpen ? (
+                            <View style={styles.categoryMenu}>
+                                {categoryOptions.map(option => (
                                     <Pressable
-                                        accessibilityLabel="Choose habit category"
-                                        accessibilityRole="button"
+                                        accessibilityRole="radio"
                                         accessibilityState={{
-                                            expanded: isCategoryMenuOpen,
+                                            selected: categoryName === option,
                                         }}
-                                        onPress={() =>
-                                            setIsCategoryMenuOpen(open => !open)
-                                        }
-                                        style={styles.categoryPicker}
+                                        key={option}
+                                        onPress={() => {
+                                            setValue('categoryName', option)
+                                            setIsCategoryMenuOpen(false)
+                                        }}
+                                        style={styles.categoryMenuOption}
+                                    >
+                                        <Text style={styles.optionText}>
+                                            {option}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                                <Pressable
+                                    accessibilityRole="button"
+                                    onPress={() => {
+                                        setValue('categoryName', '')
+                                        setIsEnteringNewCategory(true)
+                                        setIsCategoryMenuOpen(false)
+                                    }}
+                                    style={styles.categoryMenuOption}
+                                >
+                                    <Text style={styles.newCategoryText}>
+                                        Add a new category
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        ) : null}
+                    </>
+                ) : (
+                    <>
+                        <Controller
+                            control={control}
+                            name="categoryName"
+                            render={({ field }) => (
+                                <FormTextInput
+                                    accessibilityLabel="Habit category"
+                                    autoCapitalize="words"
+                                    onChangeText={field.onChange}
+                                    onBlur={field.onBlur}
+                                    placeholder="e.g. Personal growth"
+                                    value={field.value}
+                                />
+                            )}
+                        />
+                        {categoryOptions.length > 0 ? (
+                            <Pressable
+                                accessibilityRole="button"
+                                onPress={() => setIsEnteringNewCategory(false)}
+                                style={styles.backToCategories}
+                            >
+                                <Text style={styles.newCategoryText}>
+                                    Choose an existing category
+                                </Text>
+                            </Pressable>
+                        ) : null}
+                    </>
+                )}
+
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Frequency
+                </Text>
+                <Controller
+                    control={control}
+                    name="frequencyType"
+                    render={({ field }) => (
+                        <View style={styles.optionRow}>
+                            {(
+                                [
+                                    ['daily', 'Every day'],
+                                    ['weekly', 'Selected days'],
+                                ] as const
+                            ).map(([value, label]) => {
+                                const isSelected = field.value === value
+                                return (
+                                    <Pressable
+                                        accessibilityRole="radio"
+                                        accessibilityState={{
+                                            selected: isSelected,
+                                        }}
+                                        key={value}
+                                        onPress={() => field.onChange(value)}
+                                        style={[
+                                            styles.option,
+                                            isSelected && styles.optionSelected,
+                                        ]}
                                     >
                                         <Text
                                             style={[
                                                 styles.optionText,
-                                                categoryName &&
-                                                    styles.categoryPickerSelectedText,
+                                                isSelected &&
+                                                    styles.optionTextSelected,
                                             ]}
                                         >
-                                            {categoryName ||
-                                                'Choose a category'}
+                                            {label}
                                         </Text>
-                                        <CaretDown
-                                            color={colors.textMuted}
-                                            size={18}
-                                        />
                                     </Pressable>
-                                    {isCategoryMenuOpen ? (
-                                        <View style={styles.categoryMenu}>
-                                            {categoryOptions.map(option => (
-                                                <Pressable
-                                                    accessibilityRole="radio"
-                                                    accessibilityState={{
-                                                        selected:
-                                                            categoryName ===
-                                                            option,
-                                                    }}
-                                                    key={option}
-                                                    onPress={() => {
-                                                        setValue(
-                                                            'categoryName',
-                                                            option,
-                                                        )
-                                                        setIsCategoryMenuOpen(
-                                                            false,
-                                                        )
-                                                    }}
-                                                    style={
-                                                        styles.categoryMenuOption
-                                                    }
-                                                >
-                                                    <Text
-                                                        style={
-                                                            styles.optionText
-                                                        }
-                                                    >
-                                                        {option}
-                                                    </Text>
-                                                </Pressable>
-                                            ))}
-                                            <Pressable
-                                                accessibilityRole="button"
-                                                onPress={() => {
-                                                    setValue('categoryName', '')
-                                                    setIsEnteringNewCategory(
-                                                        true,
-                                                    )
-                                                    setIsCategoryMenuOpen(false)
-                                                }}
-                                                style={
-                                                    styles.categoryMenuOption
-                                                }
-                                            >
-                                                <Text
-                                                    style={
-                                                        styles.newCategoryText
-                                                    }
-                                                >
-                                                    Add a new category
-                                                </Text>
-                                            </Pressable>
-                                        </View>
-                                    ) : null}
-                                </>
-                            ) : (
-                                <>
-                                    <Controller
-                                        control={control}
-                                        name="categoryName"
-                                        render={({ field }) => (
-                                            <FormTextInput
-                                                accessibilityLabel="Habit category"
-                                                autoCapitalize="words"
-                                                onChangeText={field.onChange}
-                                                onBlur={field.onBlur}
-                                                placeholder="e.g. Personal growth"
-                                                value={field.value}
-                                            />
-                                        )}
-                                    />
-                                    {categoryOptions.length > 0 ? (
-                                        <Pressable
-                                            accessibilityRole="button"
-                                            onPress={() =>
-                                                setIsEnteringNewCategory(false)
-                                            }
-                                            style={styles.backToCategories}
-                                        >
-                                            <Text
-                                                style={styles.newCategoryText}
-                                            >
-                                                Choose an existing category
-                                            </Text>
-                                        </Pressable>
-                                    ) : null}
-                                </>
-                            )}
-
-                            <Text style={styles.label}>Frequency</Text>
-                            <Controller
-                                control={control}
-                                name="frequencyType"
-                                render={({ field }) => (
-                                    <View style={styles.optionRow}>
-                                        {(
-                                            [
-                                                ['daily', 'Every day'],
-                                                ['weekly', 'Selected days'],
-                                            ] as const
-                                        ).map(([value, label]) => {
-                                            const isSelected =
-                                                field.value === value
-                                            return (
-                                                <Pressable
-                                                    accessibilityRole="radio"
-                                                    accessibilityState={{
-                                                        selected: isSelected,
-                                                    }}
-                                                    key={value}
-                                                    onPress={() =>
-                                                        field.onChange(value)
-                                                    }
-                                                    style={[
-                                                        styles.option,
-                                                        isSelected &&
-                                                            styles.optionSelected,
-                                                    ]}
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            styles.optionText,
-                                                            isSelected &&
-                                                                styles.optionTextSelected,
-                                                        ]}
-                                                    >
-                                                        {label}
-                                                    </Text>
-                                                </Pressable>
-                                            )
-                                        })}
-                                    </View>
-                                )}
-                            />
-                            {frequencyType === 'weekly' ? (
-                                <View style={styles.daysRow}>
-                                    {weekDays.map(day => {
-                                        const isSelected =
-                                            selectedWeekDays.includes(day)
-                                        return (
-                                            <Pressable
-                                                accessibilityLabel={
-                                                    weekDayLabels[day]
-                                                }
-                                                accessibilityRole="checkbox"
-                                                accessibilityState={{
-                                                    checked: isSelected,
-                                                }}
-                                                key={day}
-                                                onPress={() =>
-                                                    toggleWeekDay(day)
-                                                }
-                                                style={[
-                                                    styles.dayButton,
-                                                    {
-                                                        borderRadius:
-                                                            daySize / 2,
-                                                        height: daySize,
-                                                        width: daySize,
-                                                    },
-                                                    isSelected &&
-                                                        styles.dayButtonSelected,
-                                                ]}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.dayText,
-                                                        isSelected &&
-                                                            styles.dayTextSelected,
-                                                    ]}
-                                                >
-                                                    {weekDayLabels[day].slice(
-                                                        0,
-                                                        2,
-                                                    )}
-                                                </Text>
-                                            </Pressable>
-                                        )
-                                    })}
-                                </View>
-                            ) : null}
-                            {errors.weekDays ? (
-                                <Text style={styles.errorText}>
-                                    {errors.weekDays.message}
-                                </Text>
-                            ) : null}
-
-                            <Text style={styles.sectionTitle}>
-                                Habit requirements
-                            </Text>
-                            <Text style={styles.label}>Complete after</Text>
-                            <View style={styles.requirementOptions}>
-                                {[
-                                    { id: '', title: 'No prerequisite' },
-                                    ...habitOptions.filter(
-                                        option =>
-                                            option.id !== conditionHabitId,
-                                    ),
-                                ].map(option => {
-                                    const isSelected =
-                                        dependencyHabitId === option.id
-                                    return (
-                                        <Pressable
-                                            accessibilityRole="radio"
-                                            accessibilityState={{
-                                                selected: isSelected,
-                                            }}
-                                            key={option.id || 'no-prerequisite'}
-                                            onPress={() =>
-                                                setValue(
-                                                    'dependencyHabitId',
-                                                    option.id,
-                                                    { shouldValidate: true },
-                                                )
-                                            }
-                                            style={[
-                                                styles.requirementOption,
-                                                isSelected &&
-                                                    styles.optionSelected,
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.optionText,
-                                                    isSelected &&
-                                                        styles.optionTextSelected,
-                                                ]}
-                                            >
-                                                {option.title}
-                                            </Text>
-                                        </Pressable>
-                                    )
-                                })}
-                                {habitOptions.length === 0 ? (
-                                    <Text style={styles.helperText}>
-                                        Create another habit first to add a
-                                        prerequisite.
+                                )
+                            })}
+                        </View>
+                    )}
+                />
+                {frequencyType === 'weekly' ? (
+                    <View style={styles.daysRow}>
+                        {weekDays.map(day => {
+                            const isSelected = selectedWeekDays.includes(day)
+                            return (
+                                <Pressable
+                                    accessibilityLabel={weekDayLabels[day]}
+                                    accessibilityRole="checkbox"
+                                    accessibilityState={{
+                                        checked: isSelected,
+                                    }}
+                                    key={day}
+                                    onPress={() => toggleWeekDay(day)}
+                                    style={[
+                                        styles.dayButton,
+                                        {
+                                            borderRadius: daySize / 2,
+                                            height: daySize,
+                                            width: daySize,
+                                        },
+                                        isSelected && styles.dayButtonSelected,
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.dayText,
+                                            isSelected &&
+                                                styles.dayTextSelected,
+                                        ]}
+                                    >
+                                        {weekDayLabels[day].slice(0, 2)}
                                     </Text>
-                                ) : null}
-                            </View>
+                                </Pressable>
+                            )
+                        })}
+                    </View>
+                ) : null}
+                {errors.weekDays ? (
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
+                        {errors.weekDays.message}
+                    </Text>
+                ) : null}
 
-                            <Text style={styles.label}>
-                                Only when another habit is
-                            </Text>
-                            <View style={styles.requirementOptions}>
-                                {[
-                                    { id: '', title: 'No condition' },
-                                    ...habitOptions.filter(
-                                        option =>
-                                            option.id !== dependencyHabitId,
-                                    ),
-                                ].map(option => {
-                                    const isSelected =
-                                        conditionHabitId === option.id
-                                    return (
-                                        <Pressable
-                                            accessibilityRole="radio"
-                                            accessibilityState={{
-                                                selected: isSelected,
-                                            }}
-                                            key={option.id || 'no-condition'}
-                                            onPress={() => {
-                                                setValue(
-                                                    'conditionHabitId',
-                                                    option.id,
-                                                    { shouldValidate: true },
-                                                )
-                                                setValue(
-                                                    'conditionStatus',
-                                                    option.id
-                                                        ? conditionStatus ||
-                                                              'completed'
-                                                        : '',
-                                                    { shouldValidate: true },
-                                                )
-                                            }}
-                                            style={[
-                                                styles.requirementOption,
-                                                isSelected &&
-                                                    styles.optionSelected,
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.optionText,
-                                                    isSelected &&
-                                                        styles.optionTextSelected,
-                                                ]}
-                                            >
-                                                {option.title}
-                                            </Text>
-                                        </Pressable>
-                                    )
-                                })}
-                            </View>
-                            {conditionHabitId ? (
-                                <>
-                                    <Text style={styles.label}>
-                                        Must be marked as
-                                    </Text>
-                                    <View style={styles.optionRow}>
-                                        {habitRequirementStatuses.map(
-                                            status => {
-                                                const isSelected =
-                                                    conditionStatus === status
-                                                return (
-                                                    <Pressable
-                                                        accessibilityRole="radio"
-                                                        accessibilityState={{
-                                                            selected:
-                                                                isSelected,
-                                                        }}
-                                                        key={status}
-                                                        onPress={() =>
-                                                            setValue(
-                                                                'conditionStatus',
-                                                                status,
-                                                                {
-                                                                    shouldValidate:
-                                                                        true,
-                                                                },
-                                                            )
-                                                        }
-                                                        style={[
-                                                            styles.option,
-                                                            isSelected &&
-                                                                styles.optionSelected,
-                                                        ]}
-                                                    >
-                                                        <Text
-                                                            style={[
-                                                                styles.optionText,
-                                                                isSelected &&
-                                                                    styles.optionTextSelected,
-                                                            ]}
-                                                        >
-                                                            {
-                                                                habitRequirementStatusLabels[
-                                                                    status
-                                                                ]
-                                                            }
-                                                        </Text>
-                                                    </Pressable>
-                                                )
-                                            },
-                                        )}
-                                    </View>
-                                </>
-                            ) : null}
-                            {errors.conditionHabitId ? (
-                                <Text style={styles.errorText}>
-                                    {errors.conditionHabitId.message}
-                                </Text>
-                            ) : null}
-                            {errors.conditionStatus ? (
-                                <Text style={styles.errorText}>
-                                    {errors.conditionStatus.message}
-                                </Text>
-                            ) : null}
-
-                            <Text style={styles.label}>Priority</Text>
-                            <Controller
-                                control={control}
-                                name="priority"
-                                render={({ field }) => (
-                                    <View style={styles.optionRow}>
-                                        {(
-                                            ['low', 'medium', 'high'] as const
-                                        ).map(priority => {
-                                            const isSelected =
-                                                selectedPriority === priority
-                                            return (
-                                                <Pressable
-                                                    accessibilityRole="radio"
-                                                    accessibilityState={{
-                                                        selected: isSelected,
-                                                    }}
-                                                    key={priority}
-                                                    onPress={() =>
-                                                        field.onChange(priority)
-                                                    }
-                                                    style={[
-                                                        styles.priorityOption,
-                                                        {
-                                                            backgroundColor:
-                                                                priorityPresentations[
-                                                                    priority
-                                                                ].color,
-                                                        },
-                                                        !isSelected &&
-                                                            styles.priorityOptionUnselected,
-                                                    ]}
-                                                >
-                                                    <Text
-                                                        style={
-                                                            styles.priorityText
-                                                        }
-                                                    >
-                                                        {
-                                                            priorityPresentations[
-                                                                priority
-                                                            ].label
-                                                        }
-                                                    </Text>
-                                                </Pressable>
-                                            )
-                                        })}
-                                    </View>
-                                )}
-                            />
-
-                            <View style={styles.twoColumnRow}>
-                                <View style={styles.column}>
-                                    <Text style={styles.label}>Duration</Text>
-                                    <Controller
-                                        control={control}
-                                        name="estimatedDurationMinutes"
-                                        render={({ field }) => (
-                                            <FormTextInput
-                                                accessibilityLabel="Estimated duration in minutes"
-                                                keyboardType="number-pad"
-                                                onChangeText={field.onChange}
-                                                onBlur={field.onBlur}
-                                                placeholder="Minutes"
-                                                value={field.value}
-                                            />
-                                        )}
-                                    />
-                                    {errors.estimatedDurationMinutes ? (
-                                        <Text style={styles.errorText}>
-                                            {
-                                                errors.estimatedDurationMinutes
-                                                    .message
-                                            }
-                                        </Text>
-                                    ) : null}
-                                </View>
-                                <View style={styles.column}>
-                                    <Text style={styles.label}>
-                                        Preferred time
-                                    </Text>
-                                    <Controller
-                                        control={control}
-                                        name="preferredTime"
-                                        render={({ field }) => (
-                                            <View>
-                                                <View
-                                                    style={styles.timeInputRow}
-                                                >
-                                                    <FormTextInput
-                                                        accessibilityLabel="Preferred habit hour"
-                                                        keyboardType="number-pad"
-                                                        maxLength={2}
-                                                        onChangeText={value => {
-                                                            const digits =
-                                                                value.replace(
-                                                                    /\D/g,
-                                                                    '',
-                                                                )
-                                                            if (
-                                                                digits &&
-                                                                Number(digits) >
-                                                                    12
-                                                            )
-                                                                return
-                                                            field.onChange(
-                                                                digits,
-                                                            )
-                                                        }}
-                                                        onBlur={() => {
-                                                            field.onBlur()
-                                                            if (field.value)
-                                                                setValue(
-                                                                    'preferredTime',
-                                                                    field.value.padStart(
-                                                                        2,
-                                                                        '0',
-                                                                    ),
-                                                                    {
-                                                                        shouldValidate:
-                                                                            true,
-                                                                    },
-                                                                )
-                                                        }}
-                                                        placeholder="00"
-                                                        containerStyle={
-                                                            styles.hourInputContainer
-                                                        }
-                                                        style={styles.hourInput}
-                                                        value={field.value}
-                                                    />
-                                                    <Text
-                                                        style={
-                                                            styles.minuteText
-                                                        }
-                                                    >
-                                                        :00
-                                                    </Text>
-                                                    <Controller
-                                                        control={control}
-                                                        name="preferredTimePeriod"
-                                                        render={({
-                                                            field: periodField,
-                                                        }) => (
-                                                            <View
-                                                                style={
-                                                                    styles.periodOptions
-                                                                }
-                                                            >
-                                                                {(
-                                                                    [
-                                                                        'AM',
-                                                                        'PM',
-                                                                    ] as const
-                                                                ).map(
-                                                                    period => {
-                                                                        const isSelected =
-                                                                            periodField.value ===
-                                                                            period
-                                                                        return (
-                                                                            <Pressable
-                                                                                accessibilityLabel={`Select ${period}`}
-                                                                                accessibilityRole="radio"
-                                                                                accessibilityState={{
-                                                                                    selected:
-                                                                                        isSelected,
-                                                                                }}
-                                                                                key={
-                                                                                    period
-                                                                                }
-                                                                                onPress={() =>
-                                                                                    periodField.onChange(
-                                                                                        period,
-                                                                                    )
-                                                                                }
-                                                                                style={[
-                                                                                    styles.periodOption,
-                                                                                    isSelected &&
-                                                                                        styles.optionSelected,
-                                                                                ]}
-                                                                            >
-                                                                                <Text
-                                                                                    style={[
-                                                                                        styles.periodOptionText,
-                                                                                        isSelected &&
-                                                                                            styles.optionTextSelected,
-                                                                                    ]}
-                                                                                >
-                                                                                    {
-                                                                                        period
-                                                                                    }
-                                                                                </Text>
-                                                                            </Pressable>
-                                                                        )
-                                                                    },
-                                                                )}
-                                                            </View>
-                                                        )}
-                                                    />
-                                                </View>
-                                            </View>
-                                        )}
-                                    />
-                                    {errors.preferredTime ? (
-                                        <Text style={styles.errorText}>
-                                            {errors.preferredTime.message}
-                                        </Text>
-                                    ) : null}
-                                </View>
-                            </View>
-
-                            <View style={styles.focusRow}>
-                                <View style={styles.focusCopy}>
-                                    <Text style={styles.focusTitle}>
-                                        Focus of the day
-                                    </Text>
-                                    <Text style={styles.focusDescription}>
-                                        Highlight this habit at the top of your
-                                        day.
-                                    </Text>
-                                </View>
-                                <Controller
-                                    control={control}
-                                    name="isFocusOfDay"
-                                    render={({ field }) => (
-                                        <Switch
-                                            accessibilityLabel="Focus of the day"
-                                            onValueChange={field.onChange}
-                                            thumbColor={colors.text}
-                                            trackColor={{
-                                                false: colors.border,
-                                                true: colors.accentStrong,
-                                            }}
-                                            value={isFocusOfDay}
-                                        />
-                                    )}
-                                />
-                            </View>
-
-                            {submitError ? (
-                                <Text style={styles.submitError}>
-                                    {submitError}
-                                </Text>
-                            ) : null}
-                            <FormActionButton
-                                accessibilityLabel={
-                                    habit
-                                        ? 'Save habit changes'
-                                        : 'Create habit'
+                <Text style={styles.sectionTitle}>Habit requirements</Text>
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Complete after
+                </Text>
+                <View style={styles.requirementOptions}>
+                    {[
+                        { id: '', title: 'No prerequisite' },
+                        ...habitOptions.filter(
+                            option => option.id !== conditionHabitId,
+                        ),
+                    ].map(option => {
+                        const isSelected = dependencyHabitId === option.id
+                        return (
+                            <Pressable
+                                accessibilityRole="radio"
+                                accessibilityState={{
+                                    selected: isSelected,
+                                }}
+                                key={option.id || 'no-prerequisite'}
+                                onPress={() =>
+                                    setValue('dependencyHabitId', option.id, {
+                                        shouldValidate: true,
+                                    })
                                 }
-                                disabled={isSubmitting}
-                                isLoading={isSubmitting}
-                                onPress={handleFormSubmit}
-                                title={habit ? 'Save changes' : 'Add habit'}
-                                containerStyle={styles.submitButton}
+                                style={[
+                                    styles.requirementOption,
+                                    isSelected && styles.optionSelected,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.optionText,
+                                        isSelected && styles.optionTextSelected,
+                                    ]}
+                                >
+                                    {option.title}
+                                </Text>
+                            </Pressable>
+                        )
+                    })}
+                    {habitOptions.length === 0 ? (
+                        <Text style={styles.helperText}>
+                            Create another habit first to add a prerequisite.
+                        </Text>
+                    ) : null}
+                </View>
+
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Only when another habit is
+                </Text>
+                <View style={styles.requirementOptions}>
+                    {[
+                        { id: '', title: 'No condition' },
+                        ...habitOptions.filter(
+                            option => option.id !== dependencyHabitId,
+                        ),
+                    ].map(option => {
+                        const isSelected = conditionHabitId === option.id
+                        return (
+                            <Pressable
+                                accessibilityRole="radio"
+                                accessibilityState={{
+                                    selected: isSelected,
+                                }}
+                                key={option.id || 'no-condition'}
+                                onPress={() => {
+                                    setValue('conditionHabitId', option.id, {
+                                        shouldValidate: true,
+                                    })
+                                    setValue(
+                                        'conditionStatus',
+                                        option.id
+                                            ? conditionStatus || 'completed'
+                                            : '',
+                                        { shouldValidate: true },
+                                    )
+                                }}
+                                style={[
+                                    styles.requirementOption,
+                                    isSelected && styles.optionSelected,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.optionText,
+                                        isSelected && styles.optionTextSelected,
+                                    ]}
+                                >
+                                    {option.title}
+                                </Text>
+                            </Pressable>
+                        )
+                    })}
+                </View>
+                {conditionHabitId ? (
+                    <>
+                        <Text
+                            style={[globalStyles.formFieldLabel, styles.label]}
+                        >
+                            Must be marked as
+                        </Text>
+                        <View style={styles.optionRow}>
+                            {habitRequirementStatuses.map(status => {
+                                const isSelected = conditionStatus === status
+                                return (
+                                    <Pressable
+                                        accessibilityRole="radio"
+                                        accessibilityState={{
+                                            selected: isSelected,
+                                        }}
+                                        key={status}
+                                        onPress={() =>
+                                            setValue(
+                                                'conditionStatus',
+                                                status,
+                                                {
+                                                    shouldValidate: true,
+                                                },
+                                            )
+                                        }
+                                        style={[
+                                            styles.option,
+                                            isSelected && styles.optionSelected,
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.optionText,
+                                                isSelected &&
+                                                    styles.optionTextSelected,
+                                            ]}
+                                        >
+                                            {
+                                                habitRequirementStatusLabels[
+                                                    status
+                                                ]
+                                            }
+                                        </Text>
+                                    </Pressable>
+                                )
+                            })}
+                        </View>
+                    </>
+                ) : null}
+                {errors.conditionHabitId ? (
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
+                        {errors.conditionHabitId.message}
+                    </Text>
+                ) : null}
+                {errors.conditionStatus ? (
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
+                        {errors.conditionStatus.message}
+                    </Text>
+                ) : null}
+
+                <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                    Priority
+                </Text>
+                <Controller
+                    control={control}
+                    name="priority"
+                    render={({ field }) => (
+                        <View style={styles.optionRow}>
+                            {(['low', 'medium', 'high'] as const).map(
+                                priority => {
+                                    const isSelected =
+                                        selectedPriority === priority
+                                    return (
+                                        <Pressable
+                                            accessibilityRole="radio"
+                                            accessibilityState={{
+                                                selected: isSelected,
+                                            }}
+                                            key={priority}
+                                            onPress={() =>
+                                                field.onChange(priority)
+                                            }
+                                            style={[
+                                                styles.priorityOption,
+                                                {
+                                                    backgroundColor:
+                                                        priorityPresentations[
+                                                            priority
+                                                        ].color,
+                                                },
+                                                !isSelected &&
+                                                    styles.priorityOptionUnselected,
+                                            ]}
+                                        >
+                                            <Text style={styles.priorityText}>
+                                                {
+                                                    priorityPresentations[
+                                                        priority
+                                                    ].label
+                                                }
+                                            </Text>
+                                        </Pressable>
+                                    )
+                                },
+                            )}
+                        </View>
+                    )}
+                />
+
+                <View style={styles.twoColumnRow}>
+                    <View style={styles.column}>
+                        <Text
+                            style={[globalStyles.formFieldLabel, styles.label]}
+                        >
+                            Duration
+                        </Text>
+                        <Controller
+                            control={control}
+                            name="estimatedDurationMinutes"
+                            render={({ field }) => (
+                                <FormTextInput
+                                    accessibilityLabel="Estimated duration in minutes"
+                                    keyboardType="number-pad"
+                                    onChangeText={field.onChange}
+                                    onBlur={field.onBlur}
+                                    placeholder="Minutes"
+                                    value={field.value}
+                                />
+                            )}
+                        />
+                        {errors.estimatedDurationMinutes ? (
+                            <Text
+                                style={[
+                                    globalStyles.formErrorText,
+                                    styles.errorText,
+                                ]}
+                            >
+                                {errors.estimatedDurationMinutes.message}
+                            </Text>
+                        ) : null}
+                    </View>
+                    <View style={styles.column}>
+                        <Text
+                            style={[globalStyles.formFieldLabel, styles.label]}
+                        >
+                            Preferred time
+                        </Text>
+                        <Controller
+                            control={control}
+                            name="preferredTime"
+                            render={({ field }) => (
+                                <View>
+                                    <View style={styles.timeInputRow}>
+                                        <FormTextInput
+                                            accessibilityLabel="Preferred habit hour"
+                                            keyboardType="number-pad"
+                                            maxLength={2}
+                                            onChangeText={value => {
+                                                const digits = value.replace(
+                                                    /\D/g,
+                                                    '',
+                                                )
+                                                if (
+                                                    digits &&
+                                                    Number(digits) > 12
+                                                )
+                                                    return
+                                                field.onChange(digits)
+                                            }}
+                                            onBlur={() => {
+                                                field.onBlur()
+                                                if (field.value)
+                                                    setValue(
+                                                        'preferredTime',
+                                                        field.value.padStart(
+                                                            2,
+                                                            '0',
+                                                        ),
+                                                        {
+                                                            shouldValidate:
+                                                                true,
+                                                        },
+                                                    )
+                                            }}
+                                            placeholder="00"
+                                            containerStyle={
+                                                styles.hourInputContainer
+                                            }
+                                            style={styles.hourInput}
+                                            value={field.value}
+                                        />
+                                        <Text style={styles.minuteText}>
+                                            :00
+                                        </Text>
+                                        <Controller
+                                            control={control}
+                                            name="preferredTimePeriod"
+                                            render={({
+                                                field: periodField,
+                                            }) => (
+                                                <View
+                                                    style={styles.periodOptions}
+                                                >
+                                                    {(
+                                                        ['AM', 'PM'] as const
+                                                    ).map(period => {
+                                                        const isSelected =
+                                                            periodField.value ===
+                                                            period
+                                                        return (
+                                                            <Pressable
+                                                                accessibilityLabel={`Select ${period}`}
+                                                                accessibilityRole="radio"
+                                                                accessibilityState={{
+                                                                    selected:
+                                                                        isSelected,
+                                                                }}
+                                                                key={period}
+                                                                onPress={() =>
+                                                                    periodField.onChange(
+                                                                        period,
+                                                                    )
+                                                                }
+                                                                style={[
+                                                                    styles.periodOption,
+                                                                    isSelected &&
+                                                                        styles.optionSelected,
+                                                                ]}
+                                                            >
+                                                                <Text
+                                                                    style={[
+                                                                        styles.periodOptionText,
+                                                                        isSelected &&
+                                                                            styles.optionTextSelected,
+                                                                    ]}
+                                                                >
+                                                                    {period}
+                                                                </Text>
+                                                            </Pressable>
+                                                        )
+                                                    })}
+                                                </View>
+                                            )}
+                                        />
+                                    </View>
+                                </View>
+                            )}
+                        />
+                        {errors.preferredTime ? (
+                            <Text
+                                style={[
+                                    globalStyles.formErrorText,
+                                    styles.errorText,
+                                ]}
+                            >
+                                {errors.preferredTime.message}
+                            </Text>
+                        ) : null}
+                    </View>
+                </View>
+
+                <View style={styles.focusRow}>
+                    <View style={styles.focusCopy}>
+                        <Text style={styles.focusTitle}>Focus of the day</Text>
+                        <Text style={styles.focusDescription}>
+                            Highlight this habit at the top of your day.
+                        </Text>
+                    </View>
+                    <Controller
+                        control={control}
+                        name="isFocusOfDay"
+                        render={({ field }) => (
+                            <Switch
+                                accessibilityLabel="Focus of the day"
+                                onValueChange={field.onChange}
+                                thumbColor={colors.text}
+                                trackColor={{
+                                    false: colors.border,
+                                    true: colors.accentStrong,
+                                }}
+                                value={isFocusOfDay}
                             />
-                        </ScrollView>
-                    </Animated.View>
-                </KeyboardAvoidingView>
-            </View>
-        </Modal>
+                        )}
+                    />
+                </View>
+
+                {submitError ? (
+                    <Text style={styles.submitError}>{submitError}</Text>
+                ) : null}
+                <FormActionButton
+                    accessibilityLabel={
+                        habit ? 'Save habit changes' : 'Create habit'
+                    }
+                    disabled={isSubmitting}
+                    isLoading={isSubmitting}
+                    onPress={handleFormSubmit}
+                    title={habit ? 'Save changes' : 'Add habit'}
+                    containerStyle={styles.submitButton}
+                />
+            </ScrollView>
+        </BottomSheetLayout>
     )
 }
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    backdrop: {
-        backgroundColor: 'rgba(0, 0, 0, 0.46)',
-        bottom: 0,
-        left: 0,
-        position: 'absolute',
-        right: 0,
-        top: 0,
-    },
-    sheetWrapper: { flex: 1, justifyContent: 'flex-end' },
-    sheet: {
-        backgroundColor: colors.background,
-        borderTopColor: colors.border,
-        borderTopWidth: 1,
-        paddingTop: 20,
-    },
-    header: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 18,
-    },
-    title: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontWeight: '300',
-    },
-    closeButton: {
-        alignItems: 'center',
-        height: spacing.touchTarget,
-        justifyContent: 'center',
-        width: spacing.touchTarget,
-    },
     sectionTitle: {
         color: colors.text,
         fontFamily: typography.fontFamily,
@@ -964,11 +809,6 @@ const styles = StyleSheet.create({
         marginTop: 40,
     },
     label: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '500',
-        marginBottom: spacing.xxs,
         marginTop: 18,
     },
     multilineContainer: {
@@ -977,12 +817,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     multilineText: { minHeight: 80, textAlignVertical: 'top' },
-    errorText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginTop: 5,
-    },
+    errorText: { marginTop: 5 },
     optionRow: { flexDirection: 'row', gap: 8 },
     option: {
         alignItems: 'center',

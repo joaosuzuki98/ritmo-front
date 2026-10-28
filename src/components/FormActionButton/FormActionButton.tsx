@@ -5,7 +5,7 @@ import {
     Text,
     View,
 } from 'react-native'
-import type { StyleProp, ViewStyle } from 'react-native'
+import type { StyleProp, TextStyle, ViewStyle } from 'react-native'
 
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
@@ -18,6 +18,7 @@ export type FormActionButtonProps = {
     disabled?: boolean
     isLoading?: boolean
     onPress: () => void
+    textStyle?: StyleProp<TextStyle>
     title: string
     variant?: 'primary' | 'destructive'
 }
@@ -29,6 +30,7 @@ export const FormActionButton = ({
     disabled = false,
     isLoading = false,
     onPress,
+    textStyle,
     title,
     variant = 'primary',
 }: FormActionButtonProps) => {
@@ -38,6 +40,8 @@ export const FormActionButton = ({
         <Pressable
             accessibilityLabel={accessibilityLabel}
             accessibilityRole="button"
+            // NativeWind flattens the style callback to {}, dropping the button layout.
+            cssInterop={false}
             disabled={isDisabled}
             onPress={onPress}
             style={({ pressed }) => [
@@ -57,7 +61,7 @@ export const FormActionButton = ({
                 {isLoading ? (
                     <ActivityIndicator color={colors.white} size="small" />
                 ) : (
-                    <Text style={styles.buttonText}>{title.toUpperCase()}</Text>
+                    <Text style={[styles.buttonText, textStyle]}>{title}</Text>
                 )}
             </View>
         </Pressable>
@@ -75,7 +79,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colors.accent,
         borderRadius: 4,
-        height: 32,
+        height: 38,
         justifyContent: 'center',
         width: '100%',
     },

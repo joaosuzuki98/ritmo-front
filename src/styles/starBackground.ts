@@ -1,0 +1,21 @@
+export const starBackground = {
+    driftDuration: 12000,
+    durationStep: 700,
+    delayStep: 450,
+    pauseDuration: 250,
+    pauseStep: 150,
+    stars: [
+        { left: 7, top: 13, size: 31, driftX: 3, driftY: 4, rotation: 2 },
+        { left: 73, top: 4, size: 30, driftX: -4, driftY: 3, rotation: -2 },
+        { left: 45, top: 12, size: 21, driftX: 2, driftY: -3, rotation: 1 },
+        { left: 61, top: 29, size: 54, driftX: -3, driftY: 5, rotation: 2 },
+        { left: 85, top: 36, size: 28, driftX: 4, driftY: -3, rotation: -2 },
+        { left: 24, top: 43, size: 38, driftX: -4, driftY: 3, rotation: 2 },
+        { left: 46, top: 52, size: 27, driftX: 3, driftY: -4, rotation: -2 },
+        { left: 76, top: 56, size: 23, driftX: -3, driftY: 4, rotation: 1 },
+        { left: 7, top: 73, size: 31, driftX: 3, driftY: -3, rotation: -2 },
+        { left: 82, top: 76, size: 32, driftX: -4, driftY: 4, rotation: 2 },
+        { left: 52, top: 86, size: 30, driftX: 2, driftY: -4, rotation: -2 },
+        { left: 18, top: 92, size: 37, driftX: -3, driftY: 3, rotation: 1 },
+    ],
+} as const

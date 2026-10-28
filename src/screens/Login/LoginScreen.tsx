@@ -2,10 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Eye, EyeSlash } from 'phosphor-react-native'
 
-import { AuthButton } from '../../components/AuthButton/AuthButton'
 import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLayout'
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
+import { FormActionButton } from '../../components/FormActionButton'
 import type { User } from '../../database'
 import { authenticateLocalUser } from '../../database/localAuth'
 import { colors } from '../../styles/colors'
@@ -26,6 +27,7 @@ export const LoginScreen = ({
 }: LoginScreenProps) => {
     const [submitError, setSubmitError] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false)
     const {
         control,
         formState: { errors },
@@ -46,7 +48,7 @@ export const LoginScreen = ({
             setSubmitError(
                 error instanceof Error
                     ? error.message
-                    : 'Não foi possível entrar. Tente novamente.',
+                    : 'Unable to sign in. Please try again.',
             )
         } finally {
             setIsSubmitting(false)
@@ -55,20 +57,20 @@ export const LoginScreen = ({
 
     return (
         <AuthScreenLayout
-            description="Entre para continuar cuidando do seu ritmo."
+            description="Sign in to keep building a routine that works for you."
             footer={
                 <Text style={styles.footerText}>
-                    Ainda não tem uma conta?{' '}
+                    Don’t have an account?{' '}
                     <Text
                         accessibilityRole="link"
                         onPress={onRegisterPress}
                         style={styles.footerLink}
                     >
-                        Criar conta
+                        Sign up
                     </Text>
                 </Text>
             }
-            title="Bem-vindo de volta"
+            title="Welcome back"
         >
             <View>
                 <Controller
@@ -79,10 +81,10 @@ export const LoginScreen = ({
                             autoComplete="email"
                             error={errors.email?.message}
                             keyboardType="email-address"
-                            label="E-mail"
+                            label="Email"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="voce@email.com"
+                            placeholder="you@example.com"
                             returnKeyType="next"
                             textContentType="emailAddress"
                             value={field.value}
@@ -96,11 +98,41 @@ export const LoginScreen = ({
                         <AuthTextInput
                             autoComplete="current-password"
                             error={errors.password?.message}
-                            label="Senha"
+                            label="Password"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Sua senha"
-                            secureTextEntry
+                            placeholder="Your password"
+                            rightAccessory={
+                                <Pressable
+                                    accessibilityLabel={
+                                        isPasswordVisible
+                                            ? 'Hide password'
+                                            : 'Show password'
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityState={{
+                                        selected: isPasswordVisible,
+                                    }}
+                                    hitSlop={spacing.sm}
+                                    onPress={() =>
+                                        setIsPasswordVisible(!isPasswordVisible)
+                                    }
+                                    style={styles.passwordVisibilityButton}
+                                >
+                                    {isPasswordVisible ? (
+                                        <EyeSlash
+                                            color={colors.onboardingBackground}
+                                            size={18}
+                                        />
+                                    ) : (
+                                        <Eye
+                                            color={colors.onboardingBackground}
+                                            size={18}
+                                        />
+                                    )}
+                                </Pressable>
+                            }
+                            secureTextEntry={!isPasswordVisible}
                             textContentType="password"
                             value={field.value}
                         />
@@ -111,17 +143,17 @@ export const LoginScreen = ({
                     onPress={onForgotPasswordPress}
                     style={styles.forgotButton}
                 >
-                    <Text style={styles.forgotText}>Esqueceu a senha?</Text>
+                    <Text style={styles.forgotText}>Forgot password?</Text>
                 </Pressable>
                 {submitError ? (
                     <Text accessibilityLiveRegion="polite" style={styles.error}>
                         {submitError}
                     </Text>
                 ) : null}
-                <AuthButton
+                <FormActionButton
                     disabled={isSubmitting}
                     onPress={handleSubmit(handleLogin)}
-                    title={isSubmitting ? 'Entrando…' : 'Entrar'}
+                    title={isSubmitting ? 'Signing in…' : 'Sign in'}
                 />
             </View>
         </AuthScreenLayout>
@@ -132,9 +164,15 @@ const styles = StyleSheet.create({
     forgotButton: {
         alignSelf: 'flex-start',
         marginBottom: 16,
-        marginTop: -16,
+        marginTop: -spacing.xl,
         minHeight: spacing.touchTarget,
         justifyContent: 'center',
+    },
+    passwordVisibilityButton: {
+        alignItems: 'center',
+        height: spacing.touchTarget,
+        justifyContent: 'center',
+        width: spacing.touchTarget,
     },
     forgotText: {
         color: colors.onboardingPurple,

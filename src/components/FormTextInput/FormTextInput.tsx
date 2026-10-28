@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import type React from 'react'
+import type { ReactNode } from 'react'
 import {
     StyleSheet,
     TextInput,
@@ -16,6 +17,7 @@ import { typography } from '../../styles/typography'
 export type FormTextInputProps = TextInputProps & {
     containerStyle?: StyleProp<ViewStyle>
     hasError?: boolean
+    rightAccessory?: ReactNode
 }
 
 export const FormTextInput = forwardRef<
@@ -26,6 +28,7 @@ export const FormTextInput = forwardRef<
         {
             containerStyle,
             hasError = false,
+            rightAccessory,
             style,
             ...inputProps
         }: FormTextInputProps,
@@ -48,6 +51,7 @@ export const FormTextInput = forwardRef<
                 style={[styles.input, style]}
                 underlineColorAndroid="transparent"
             />
+            {rightAccessory}
         </View>
     ),
 )
