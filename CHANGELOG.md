@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.2.0](https://github.com/joaosuzuki98/ritmo-front/compare/v1.1.0...v1.2.0) (2026-10-28)
+
+
+### Features
+
+* add bottom sheet layout component ([8797962](https://github.com/joaosuzuki98/ritmo-front/commit/879796214ca707689f08d962e1f89971b38a9154))
+* add password strength feedback ([e08b78b](https://github.com/joaosuzuki98/ritmo-front/commit/e08b78b049de1c4e18330b60ad901b8c2236d56b))
+* animate background stars independently ([d7b9661](https://github.com/joaosuzuki98/ritmo-front/commit/d7b96610edd9afc73b71c9aec9e92571bd6a4c13))
+* generate specs from GitHub issues ([dc21f4b](https://github.com/joaosuzuki98/ritmo-front/commit/dc21f4b0923528f24b51bd91b04892fcc3a99fe5))
+* navigate onboarding from progress indicators ([0442cb7](https://github.com/joaosuzuki98/ritmo-front/commit/0442cb794fffa015e616c6feab2fe390ebeb1d12))
+* Refresh onboarding and app interactions ([0c68ecf](https://github.com/joaosuzuki98/ritmo-front/commit/0c68ecfe77d232b1ad534aa45c71f8c6d5a7a5ff))
+* refresh onboarding flow and visuals ([8f77332](https://github.com/joaosuzuki98/ritmo-front/commit/8f7733230ab79fe99edffddf5a8e9ce1accbc218))
+
+
+### Bug Fixes
+
+* add rapid blinks to onboarding mascot ([c6c9296](https://github.com/joaosuzuki98/ritmo-front/commit/c6c92963f25050878b2019a6ace57bf0a9c58b47))
+* align onboarding descriptions ([136dd86](https://github.com/joaosuzuki98/ritmo-front/commit/136dd868b76429b24887ed9447ff2e879d1185bc))
+* keep auth inputs clear of the keyboard ([bb6f416](https://github.com/joaosuzuki98/ritmo-front/commit/bb6f416e435766f29666c3c0cb92176e406349f2))
+* keep inputs and mascot visible with keyboard ([718cf2e](https://github.com/joaosuzuki98/ritmo-front/commit/718cf2e1cb41fafc8b107b768443dc114ab41426))
+* make onboarding mascot transition seamless ([648b2b9](https://github.com/joaosuzuki98/ritmo-front/commit/648b2b972b706ddf2408f768dc09bebdc61c066f))
+* preserve auth keyboard interactions ([9b17143](https://github.com/joaosuzuki98/ritmo-front/commit/9b1714321012ea9063748661489548e22f9bbbb3))
+* prevent onboarding delays when dismissing the keyboard ([3883ac0](https://github.com/joaosuzuki98/ritmo-front/commit/3883ac088108ef7b78a0035e37a48d3418f9446a))
+* stop shifting auth forms for keyboard ([0903ad2](https://github.com/joaosuzuki98/ritmo-front/commit/0903ad2e8ad6c136f4f827a23a750b85097d3d42))
+* translate auth screens to English ([873b2eb](https://github.com/joaosuzuki98/ritmo-front/commit/873b2ebd92d9b321500fc092b132e0e8fa1200e1))
+* use English registration action label ([c88dd19](https://github.com/joaosuzuki98/ritmo-front/commit/c88dd190f7f77aae3f06e4701541921fa292c2ec))
+* use English throughout onboarding ([bda8b8b](https://github.com/joaosuzuki98/ritmo-front/commit/bda8b8be3802b4ab557a263ec28dcad264cf7d92))
+
 ## [1.1.0](https://github.com/joaosuzuki98/ritmo-front/compare/v1.0.1...v1.1.0) (2026-10-11)
 
 
