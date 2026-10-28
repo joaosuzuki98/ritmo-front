@@ -8,6 +8,7 @@ const passwordHashIterations = 120_000
 
 export type LocalRegistrationData = {
     name: string
+    mascotName: string
     email: string
     password: string
 }
@@ -27,13 +28,20 @@ export const deriveLocalPasswordHash = async (
 
 export const registerLocalUser = async ({
     name,
+    mascotName,
     email,
     password,
 }: LocalRegistrationData): Promise<User> => {
+    const normalizedName = name.trim()
+    const normalizedMascotName = mascotName.trim()
+    if (normalizedName.length < 2 || normalizedMascotName.length === 0) {
+        throw new Error('Please enter your name and a name for your mascot.')
+    }
+
     const users = await database.get<User>('users').query().fetch()
     const normalizedEmail = normalizeEmail(email)
     if (users.some(user => normalizeEmail(user.email) === normalizedEmail)) {
-        throw new Error('Já existe uma conta com este e-mail.')
+        throw new Error('An account with this email already exists.')
     }
     let createdUser: User | undefined
     await database.write(async () => {
@@ -48,7 +56,8 @@ export const registerLocalUser = async ({
 
         const now = new Date()
         createdUser = await database.get<User>('users').create(record => {
-            record.name = name.trim()
+            record.name = normalizedName
+            record.mascotName = normalizedMascotName
             record.email = normalizedEmail
             record.password = password
             record.totalPoints = 0
@@ -59,7 +68,7 @@ export const registerLocalUser = async ({
         })
     })
 
-    if (!createdUser) throw new Error('Não foi possível criar sua conta.')
+    if (!createdUser) throw new Error('Unable to create your account.')
     return createdUser
 }
 
@@ -73,7 +82,7 @@ export const authenticateLocalUser = async (
         record => normalizeEmail(record.email) === normalizedEmail,
     )
     if (!user) {
-        throw new Error('E-mail ou senha incorretos.')
+        throw new Error('Incorrect email or password.')
     }
 
     let isPasswordValid = user.password === password
@@ -83,7 +92,7 @@ export const authenticateLocalUser = async (
             user.passwordHash
     }
     if (!isPasswordValid) {
-        throw new Error('E-mail ou senha incorretos.')
+        throw new Error('Incorrect email or password.')
     }
 
     await database.write(async () => {

@@ -1,5 +1,17 @@
 # Android releases
 
+## Local development
+
+Run `npm run android` to install and open **Ritmo App (Dev)**. Debug builds use
+`com.ritmo_front.debug`, while release builds use `com.ritmo_front`. The npm script
+passes `--appIdSuffix debug` so the React Native CLI launches the debug app.
+
+Both apps can coexist on the same device without version-code or signing conflicts.
+Each has its own local database and session; a new debug installation starts empty
+and does not modify the release app's data.
+
+When invoking the CLI directly for a release build, omit `--appIdSuffix debug`.
+
 ## Automatic release builds
 
 Merging a Release Please release PR into `main` creates a GitHub release and calls

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { AddScheduleItemFormData } from '../addScheduleItemSchema'
 import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
+import { globalStyles } from '../../../styles/globalStyles'
 import { typography } from '../../../styles/typography'
 
 type ScheduleTimeInputProps = {
@@ -90,7 +91,9 @@ export const ScheduleTimeInput = ({
             name={hourName}
             render={({ fieldState }) =>
                 fieldState.error ? (
-                    <Text style={styles.errorText}>
+                    <Text
+                        style={[globalStyles.formErrorText, styles.errorText]}
+                    >
                         {fieldState.error.message}
                     </Text>
                 ) : (
@@ -138,10 +141,5 @@ const styles = StyleSheet.create({
         fontSize: 11,
     },
     periodTextSelected: { color: colors.text },
-    errorText: {
-        color: colors.danger,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginTop: 5,
-    },
+    errorText: { marginTop: 5 },
 })

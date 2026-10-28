@@ -1,11 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { Animated, Easing } from 'react-native'
 
-export const useBottomSheetAnimation = (isVisible: boolean, height: number) => {
+import { theme } from '../styles/theme'
+
+export const useBottomSheetAnimation = (
+    isVisible: boolean,
+    height: number,
+    onDismiss?: () => void,
+) => {
     const [isModalMounted, setIsModalMounted] = useState(false)
     const backdropOpacity = useRef(new Animated.Value(0)).current
     const sheetProgress = useRef(new Animated.Value(1)).current
     const wasVisible = useRef(false)
+    const onDismissRef = useRef(onDismiss)
+
+    useEffect(() => {
+        onDismissRef.current = onDismiss
+    }, [onDismiss])
 
     useEffect(() => {
         if (isVisible) {
@@ -14,29 +25,33 @@ export const useBottomSheetAnimation = (isVisible: boolean, height: number) => {
             backdropOpacity.setValue(0)
             sheetProgress.setValue(1)
 
-            const animationFrame = requestAnimationFrame(() => {
-                Animated.parallel([
-                    Animated.timing(backdropOpacity, {
-                        toValue: 1,
-                        duration: 180,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(sheetProgress, {
-                        toValue: 0,
-                        duration: 260,
-                        easing: Easing.out(Easing.cubic),
-                        useNativeDriver: true,
-                    }),
-                ]).start()
-            })
+            const animation = Animated.parallel([
+                Animated.timing(backdropOpacity, {
+                    toValue: 1,
+                    duration: theme.bottomSheet.backdropOpenDuration,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(sheetProgress, {
+                    toValue: 0,
+                    duration: theme.bottomSheet.openDuration,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+            ])
+            const animationFrame = requestAnimationFrame(() =>
+                animation.start(),
+            )
 
-            return () => cancelAnimationFrame(animationFrame)
+            return () => {
+                cancelAnimationFrame(animationFrame)
+                animation.stop()
+            }
         }
 
         if (!wasVisible.current) return
 
         wasVisible.current = false
-        Animated.parallel([
+        const animation = Animated.parallel([
             Animated.timing(backdropOpacity, {
                 toValue: 0,
                 duration: 180,
@@ -48,9 +63,15 @@ export const useBottomSheetAnimation = (isVisible: boolean, height: number) => {
                 easing: Easing.in(Easing.cubic),
                 useNativeDriver: true,
             }),
-        ]).start(({ finished }) => {
-            if (finished) setIsModalMounted(false)
+        ])
+        animation.start(({ finished }) => {
+            if (finished) {
+                setIsModalMounted(false)
+                onDismissRef.current?.()
+            }
         })
+
+        return () => animation.stop()
     }, [backdropOpacity, isVisible, sheetProgress])
 
     const sheetTranslateY = sheetProgress.interpolate({

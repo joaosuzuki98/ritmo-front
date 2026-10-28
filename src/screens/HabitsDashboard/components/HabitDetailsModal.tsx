@@ -5,11 +5,8 @@ import {
     PencilSimple,
     Trash,
     Warning,
-    X,
 } from 'phosphor-react-native'
 import {
-    Animated,
-    Modal,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -17,7 +14,6 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { getHabitStatusPresentation } from '../../../constants/habitStatuses'
 import { habitRequirementStatusLabels } from '../../../constants/habitRequirementStatuses'
@@ -28,7 +24,8 @@ import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import type { HabitCardViewData } from '../habitDashboard.types'
-import { useBottomSheetAnimation } from '../../../hooks/useBottomSheetAnimation'
+import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
+import { theme } from '../../../styles/theme'
 
 type HabitDetailsModalProps = {
     habit: HabitCardViewData | null
@@ -80,21 +77,21 @@ export const HabitDetailsModal = ({
     onLogProgress,
 }: HabitDetailsModalProps) => {
     const { height, width } = useWindowDimensions()
-    const { bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
     const daySize = Math.min(
         42 * scale,
         (width - spacing.lg * scale * 2 - 6 * 7) / 7,
     )
     const [retainedHabit, setRetainedHabit] = useState(incomingHabit)
-    const { backdropOpacity, isModalMounted, sheetTranslateY } =
-        useBottomSheetAnimation(isVisible, height)
     const habit = incomingHabit ?? retainedHabit
 
     useEffect(() => {
         if (incomingHabit) setRetainedHabit(incomingHabit)
-        else if (!isVisible && !isModalMounted) setRetainedHabit(null)
-    }, [incomingHabit, isModalMounted, isVisible])
+    }, [incomingHabit])
+
+    const handleDismiss = () => {
+        if (!incomingHabit) setRetainedHabit(null)
+    }
 
     if (!habit) return null
 
@@ -115,409 +112,329 @@ export const HabitDetailsModal = ({
     ]
 
     return (
-        <Modal
-            animationType="none"
-            onRequestClose={onClose}
-            statusBarTranslucent
-            transparent
-            visible={isModalMounted}
+        <BottomSheetLayout
+            backdropColor={theme.colors.bottomSheetBackdropStrong}
+            closeAccessibilityLabel="Close habit details"
+            headerStyle={{ marginBottom: theme.spacing.md }}
+            heightMode="fixed"
+            isVisible={isVisible}
+            onClose={onClose}
+            onDismiss={handleDismiss}
+            sheetStyle={[
+                styles.sheet,
+                {
+                    height: Math.min(
+                        height * theme.bottomSheet.heightRatio,
+                        theme.bottomSheet.detailsMaxHeight * scale,
+                    ),
+                },
+            ]}
+            shouldAvoidKeyboard={false}
+            title="Habit details"
+            titleStyle={{
+                fontSize: theme.bottomSheet.detailsTitle.fontSize * scale,
+            }}
         >
-            <View style={styles.overlay}>
-                <Animated.View
-                    style={[styles.backdrop, { opacity: backdropOpacity }]}
-                >
-                    <Pressable
-                        accessibilityLabel="Close habit details"
-                        onPress={onClose}
-                        style={StyleSheet.absoluteFill}
-                    />
-                </Animated.View>
-                <Animated.View
+            <ScrollView
+                contentContainerStyle={{ paddingBottom: 24 * scale }}
+                showsVerticalScrollIndicator={false}
+            >
+                <View
                     style={[
-                        styles.sheet,
-                        {
-                            height: Math.min(height * 0.9, 760 * scale),
-                            paddingHorizontal: spacing.lg * scale,
-                            paddingBottom: bottom,
-                            transform: [{ translateY: sheetTranslateY }],
-                        },
+                        styles.titleBlock,
+                        { borderLeftColor: habit.priorityColor },
                     ]}
                 >
-                    <View style={styles.header}>
-                        <Text
-                            style={[
-                                styles.headerTitle,
-                                { fontSize: 30 * scale },
-                            ]}
-                        >
-                            Habit details
-                        </Text>
-                        <Pressable
-                            accessibilityLabel="Close habit details"
-                            accessibilityRole="button"
-                            onPress={onClose}
-                            style={styles.closeButton}
-                        >
-                            <X color={colors.text} size={30 * scale} />
-                        </Pressable>
+                    <View style={styles.titleHeader}>
+                        {habit.status === 'completed' ? (
+                            <View style={styles.statusIcon}>
+                                <CheckCircle
+                                    color={colors.success}
+                                    size={24 * scale}
+                                    weight="fill"
+                                />
+                            </View>
+                        ) : habit.status === 'partial' ? (
+                            <View style={styles.statusIcon}>
+                                <Warning
+                                    color={colors.warning}
+                                    size={24 * scale}
+                                    weight="fill"
+                                />
+                            </View>
+                        ) : null}
+                        <View style={styles.titleCopy}>
+                            <Text
+                                style={[styles.title, { fontSize: 34 * scale }]}
+                            >
+                                {habit.title}
+                            </Text>
+                            {habit.categoryLabel ? (
+                                <Text style={styles.category}>
+                                    {habit.categoryLabel}
+                                </Text>
+                            ) : null}
+                        </View>
+                        <View style={styles.titleActions}>
+                            <Pressable
+                                accessibilityLabel={`Edit ${habit.title}`}
+                                accessibilityRole="button"
+                                onPress={onEdit}
+                                style={styles.titleActionButton}
+                            >
+                                <PencilSimple
+                                    color={colors.text}
+                                    size={24 * scale}
+                                />
+                            </Pressable>
+                            <Pressable
+                                accessibilityLabel={`Delete ${habit.title}`}
+                                accessibilityRole="button"
+                                onPress={onDelete}
+                                style={styles.titleActionButton}
+                            >
+                                <Trash
+                                    color={colors.danger}
+                                    size={24 * scale}
+                                />
+                            </Pressable>
+                        </View>
                     </View>
+                </View>
 
-                    <ScrollView
-                        contentContainerStyle={{ paddingBottom: 24 * scale }}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <View
-                            style={[
-                                styles.titleBlock,
-                                { borderLeftColor: habit.priorityColor },
-                            ]}
-                        >
-                            <View style={styles.titleHeader}>
-                                {habit.status === 'completed' ? (
-                                    <View style={styles.statusIcon}>
-                                        <CheckCircle
-                                            color={colors.success}
-                                            size={24 * scale}
-                                            weight="fill"
-                                        />
-                                    </View>
-                                ) : habit.status === 'partial' ? (
-                                    <View style={styles.statusIcon}>
-                                        <Warning
-                                            color={colors.warning}
-                                            size={24 * scale}
-                                            weight="fill"
-                                        />
-                                    </View>
-                                ) : null}
-                                <View style={styles.titleCopy}>
+                {habit.isFocusOfDay || hasDistractionLock ? (
+                    <View style={styles.badgesRow}>
+                        {habit.isFocusOfDay ? (
+                            <View style={styles.focusBadge}>
+                                <Text style={styles.focusBadgeText}>
+                                    Focus of the day
+                                </Text>
+                            </View>
+                        ) : null}
+                        {hasDistractionLock ? (
+                            <View style={styles.lockBadge}>
+                                <Text style={styles.lockBadgeText}>
+                                    Distraction lock used
+                                </Text>
+                            </View>
+                        ) : null}
+                    </View>
+                ) : null}
+
+                <FormActionButton
+                    accessibilityLabel={`Record today's progress for ${habit.title}`}
+                    disabled={habit.isBlocked}
+                    onPress={onLogProgress}
+                    title={
+                        habit.isBlocked
+                            ? 'Complete requirements first'
+                            : 'Record today’s progress'
+                    }
+                    containerStyle={styles.logProgressButton}
+                />
+
+                {habit.description ? (
+                    <Text style={styles.description}>{habit.description}</Text>
+                ) : null}
+
+                {habit.dependencyHabitTitle || habit.conditionHabitTitle ? (
+                    <>
+                        <Text style={styles.sectionTitle}>Requirements</Text>
+                        <View style={styles.requirementsBox}>
+                            {habit.dependencyHabitTitle ? (
+                                <Text style={styles.requirementText}>
+                                    Complete “{habit.dependencyHabitTitle}”
+                                    first today.
+                                </Text>
+                            ) : null}
+                            {habit.conditionHabitTitle ? (
+                                <Text style={styles.requirementText}>
+                                    “{habit.conditionHabitTitle}” must be marked
+                                    as{' '}
+                                    {habit.conditionStatus
+                                        ? habitRequirementStatusLabels[
+                                              habit.conditionStatus as keyof typeof habitRequirementStatusLabels
+                                          ]
+                                        : 'the required status'}
+                                    .
+                                </Text>
+                            ) : null}
+                        </View>
+                    </>
+                ) : null}
+
+                <Text style={styles.sectionTitle}>Schedule</Text>
+                <View style={styles.scheduleDaysSection}>
+                    <Text style={styles.detailLabel}>Days</Text>
+                    <View style={styles.scheduleDaysRow}>
+                        {weekDays.map(day => {
+                            const isSelected = habit.weekDays.includes(day)
+                            return (
+                                <View
+                                    key={day}
+                                    style={[
+                                        styles.scheduleDayCircle,
+                                        {
+                                            borderRadius: daySize / 2,
+                                            height: daySize,
+                                            width: daySize,
+                                        },
+                                        isSelected &&
+                                            styles.scheduleDayCircleSelected,
+                                    ]}
+                                >
                                     <Text
                                         style={[
-                                            styles.title,
-                                            { fontSize: 34 * scale },
+                                            styles.scheduleDayText,
+                                            isSelected &&
+                                                styles.scheduleDayTextSelected,
                                         ]}
                                     >
-                                        {habit.title}
+                                        {weekDayLabels[day].slice(0, 2)}
                                     </Text>
-                                    {habit.categoryLabel ? (
-                                        <Text style={styles.category}>
-                                            {habit.categoryLabel}
-                                        </Text>
-                                    ) : null}
                                 </View>
-                                <View style={styles.titleActions}>
-                                    <Pressable
-                                        accessibilityLabel={`Edit ${habit.title}`}
-                                        accessibilityRole="button"
-                                        onPress={onEdit}
-                                        style={styles.titleActionButton}
-                                    >
-                                        <PencilSimple
-                                            color={colors.text}
-                                            size={24 * scale}
-                                        />
-                                    </Pressable>
-                                    <Pressable
-                                        accessibilityLabel={`Delete ${habit.title}`}
-                                        accessibilityRole="button"
-                                        onPress={onDelete}
-                                        style={styles.titleActionButton}
-                                    >
-                                        <Trash
-                                            color={colors.danger}
-                                            size={24 * scale}
-                                        />
-                                    </Pressable>
-                                </View>
-                            </View>
-                        </View>
-
-                        {habit.isFocusOfDay || hasDistractionLock ? (
-                            <View style={styles.badgesRow}>
-                                {habit.isFocusOfDay ? (
-                                    <View style={styles.focusBadge}>
-                                        <Text style={styles.focusBadgeText}>
-                                            Focus of the day
-                                        </Text>
-                                    </View>
-                                ) : null}
-                                {hasDistractionLock ? (
-                                    <View style={styles.lockBadge}>
-                                        <Text style={styles.lockBadgeText}>
-                                            Distraction lock used
-                                        </Text>
-                                    </View>
-                                ) : null}
-                            </View>
-                        ) : null}
-
-                        <FormActionButton
-                            accessibilityLabel={`Record today's progress for ${habit.title}`}
-                            disabled={habit.isBlocked}
-                            onPress={onLogProgress}
-                            title={
-                                habit.isBlocked
-                                    ? 'Complete requirements first'
-                                    : 'Record today’s progress'
-                            }
-                            containerStyle={styles.logProgressButton}
-                        />
-
-                        {habit.description ? (
-                            <Text style={styles.description}>
-                                {habit.description}
+                            )
+                        })}
+                    </View>
+                </View>
+                <View style={styles.detailGrid}>
+                    {[
+                        {
+                            label: 'Estimated duration',
+                            value: formatDuration(
+                                habit.estimatedDurationMinutes,
+                            ),
+                        },
+                        {
+                            label: 'Preferred time',
+                            value: formatTime(habit.preferredTime),
+                        },
+                    ].map(detail => (
+                        <View key={detail.label} style={styles.detailItem}>
+                            <Text style={styles.detailLabel}>
+                                {detail.label}
                             </Text>
-                        ) : null}
-
-                        {habit.dependencyHabitTitle ||
-                        habit.conditionHabitTitle ? (
-                            <>
-                                <Text style={styles.sectionTitle}>
-                                    Requirements
-                                </Text>
-                                <View style={styles.requirementsBox}>
-                                    {habit.dependencyHabitTitle ? (
-                                        <Text style={styles.requirementText}>
-                                            Complete “
-                                            {habit.dependencyHabitTitle}” first
-                                            today.
-                                        </Text>
-                                    ) : null}
-                                    {habit.conditionHabitTitle ? (
-                                        <Text style={styles.requirementText}>
-                                            “{habit.conditionHabitTitle}” must
-                                            be marked as{' '}
-                                            {habit.conditionStatus
-                                                ? habitRequirementStatusLabels[
-                                                      habit.conditionStatus as keyof typeof habitRequirementStatusLabels
-                                                  ]
-                                                : 'the required status'}
-                                            .
-                                        </Text>
-                                    ) : null}
-                                </View>
-                            </>
-                        ) : null}
-
-                        <Text style={styles.sectionTitle}>Schedule</Text>
-                        <View style={styles.scheduleDaysSection}>
-                            <Text style={styles.detailLabel}>Days</Text>
-                            <View style={styles.scheduleDaysRow}>
-                                {weekDays.map(day => {
-                                    const isSelected =
-                                        habit.weekDays.includes(day)
-                                    return (
-                                        <View
-                                            key={day}
-                                            style={[
-                                                styles.scheduleDayCircle,
-                                                {
-                                                    borderRadius: daySize / 2,
-                                                    height: daySize,
-                                                    width: daySize,
-                                                },
-                                                isSelected &&
-                                                    styles.scheduleDayCircleSelected,
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.scheduleDayText,
-                                                    isSelected &&
-                                                        styles.scheduleDayTextSelected,
-                                                ]}
-                                            >
-                                                {weekDayLabels[day].slice(0, 2)}
-                                            </Text>
-                                        </View>
-                                    )
-                                })}
-                            </View>
+                            <Text style={styles.detailValue}>
+                                {detail.value}
+                            </Text>
                         </View>
-                        <View style={styles.detailGrid}>
-                            {[
-                                {
-                                    label: 'Estimated duration',
-                                    value: formatDuration(
-                                        habit.estimatedDurationMinutes,
-                                    ),
-                                },
-                                {
-                                    label: 'Preferred time',
-                                    value: formatTime(habit.preferredTime),
-                                },
-                            ].map(detail => (
-                                <View
-                                    key={detail.label}
-                                    style={styles.detailItem}
+                    ))}
+                </View>
+
+                {habit.seasonalStart || habit.seasonalEnd ? (
+                    <View style={styles.seasonRow}>
+                        <Text style={styles.detailLabel}>Season</Text>
+                        <Text style={styles.detailValue}>
+                            {formatDate(habit.seasonalStart)}
+                            {'  -  '}
+                            {formatDate(habit.seasonalEnd)}
+                        </Text>
+                    </View>
+                ) : null}
+
+                <Text style={styles.sectionTitle}>Progress</Text>
+                <View style={styles.statsRow}>
+                    {stats.map(stat => (
+                        <View key={stat.label} style={styles.statItem}>
+                            <Text style={styles.statValue}>{stat.value}</Text>
+                            <Text style={styles.statLabel}>{stat.label}</Text>
+                        </View>
+                    ))}
+                </View>
+
+                <View style={styles.streakRow}>
+                    <Flame
+                        color={colors.success}
+                        size={24 * scale}
+                        weight="fill"
+                    />
+                    <Text style={styles.streakText}>
+                        Longest streak: {habit.longestStreak ?? 0} days
+                    </Text>
+                </View>
+
+                <Text style={styles.sectionTitle}>Recent activity</Text>
+                {history.length ? (
+                    <View style={styles.historyGrid}>
+                        {history.slice(0, 14).map((record, index) => (
+                            <View
+                                key={`${record.date.toISOString()}-${index}`}
+                                style={[
+                                    styles.historyItem,
+                                    {
+                                        borderColor: getStatusColor(
+                                            record.status,
+                                        ),
+                                    },
+                                ]}
+                            >
+                                <Text style={styles.historyDate}>
+                                    {formatDate(record.date)}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.historyStatus,
+                                        {
+                                            color: getStatusColor(
+                                                record.status,
+                                            ),
+                                        },
+                                    ]}
                                 >
-                                    <Text style={styles.detailLabel}>
-                                        {detail.label}
-                                    </Text>
-                                    <Text style={styles.detailValue}>
-                                        {detail.value}
-                                    </Text>
-                                </View>
-                            ))}
-                        </View>
-
-                        {habit.seasonalStart || habit.seasonalEnd ? (
-                            <View style={styles.seasonRow}>
-                                <Text style={styles.detailLabel}>Season</Text>
-                                <Text style={styles.detailValue}>
-                                    {formatDate(habit.seasonalStart)}
-                                    {'  -  '}
-                                    {formatDate(habit.seasonalEnd)}
+                                    {
+                                        getHabitStatusPresentation(
+                                            record.status,
+                                        ).label
+                                    }
                                 </Text>
-                            </View>
-                        ) : null}
-
-                        <Text style={styles.sectionTitle}>Progress</Text>
-                        <View style={styles.statsRow}>
-                            {stats.map(stat => (
-                                <View key={stat.label} style={styles.statItem}>
-                                    <Text style={styles.statValue}>
-                                        {stat.value}
+                                {record.completionTime ? (
+                                    <Text style={styles.historyDetail}>
+                                        {formatTime(record.completionTime)}
                                     </Text>
-                                    <Text style={styles.statLabel}>
-                                        {stat.label}
+                                ) : null}
+                                {record.incompletionReason ? (
+                                    <Text style={styles.historyDetail}>
+                                        Reason: {record.incompletionReason}
                                     </Text>
-                                </View>
-                            ))}
-                        </View>
-
-                        <View style={styles.streakRow}>
-                            <Flame
-                                color={colors.success}
-                                size={24 * scale}
-                                weight="fill"
-                            />
-                            <Text style={styles.streakText}>
-                                Longest streak: {habit.longestStreak ?? 0} days
-                            </Text>
-                        </View>
-
-                        <Text style={styles.sectionTitle}>Recent activity</Text>
-                        {history.length ? (
-                            <View style={styles.historyGrid}>
-                                {history.slice(0, 14).map((record, index) => (
-                                    <View
-                                        key={`${record.date.toISOString()}-${index}`}
-                                        style={[
-                                            styles.historyItem,
-                                            {
-                                                borderColor: getStatusColor(
-                                                    record.status,
-                                                ),
-                                            },
-                                        ]}
-                                    >
-                                        <Text style={styles.historyDate}>
-                                            {formatDate(record.date)}
-                                        </Text>
-                                        <Text
-                                            style={[
-                                                styles.historyStatus,
-                                                {
-                                                    color: getStatusColor(
-                                                        record.status,
-                                                    ),
-                                                },
-                                            ]}
-                                        >
-                                            {
-                                                getHabitStatusPresentation(
-                                                    record.status,
-                                                ).label
-                                            }
-                                        </Text>
-                                        {record.completionTime ? (
-                                            <Text style={styles.historyDetail}>
-                                                {formatTime(
-                                                    record.completionTime,
-                                                )}
-                                            </Text>
-                                        ) : null}
-                                        {record.incompletionReason ? (
-                                            <Text style={styles.historyDetail}>
-                                                Reason:{' '}
-                                                {record.incompletionReason}
-                                            </Text>
-                                        ) : null}
-                                        {record.note ? (
-                                            <Text style={styles.historyDetail}>
-                                                {record.note}
-                                            </Text>
-                                        ) : null}
-                                    </View>
-                                ))}
+                                ) : null}
+                                {record.note ? (
+                                    <Text style={styles.historyDetail}>
+                                        {record.note}
+                                    </Text>
+                                ) : null}
                             </View>
-                        ) : (
-                            <Text style={styles.emptyHistory}>
-                                No activity recorded yet.
-                            </Text>
-                        )}
+                        ))}
+                    </View>
+                ) : (
+                    <Text style={styles.emptyHistory}>
+                        No activity recorded yet.
+                    </Text>
+                )}
 
-                        {latestNote ? (
-                            <View style={styles.noteBox}>
-                                <Text style={styles.detailLabel}>
-                                    Latest note
-                                </Text>
-                                <Text style={styles.noteText}>
-                                    {latestNote}
-                                </Text>
-                            </View>
-                        ) : null}
+                {latestNote ? (
+                    <View style={styles.noteBox}>
+                        <Text style={styles.detailLabel}>Latest note</Text>
+                        <Text style={styles.noteText}>{latestNote}</Text>
+                    </View>
+                ) : null}
 
-                        {habit.createdAt ? (
-                            <Text style={styles.createdText}>
-                                Created {formatDate(habit.createdAt)}
-                            </Text>
-                        ) : null}
-                    </ScrollView>
-                </Animated.View>
-            </View>
-        </Modal>
+                {habit.createdAt ? (
+                    <Text style={styles.createdText}>
+                        Created {formatDate(habit.createdAt)}
+                    </Text>
+                ) : null}
+            </ScrollView>
+        </BottomSheetLayout>
     )
 }
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    backdrop: {
-        backgroundColor: 'rgba(0, 0, 0, 0.52)',
-        bottom: 0,
-        left: 0,
-        position: 'absolute',
-        right: 0,
-        top: 0,
-    },
     sheet: {
-        backgroundColor: colors.background,
         borderColor: colors.border,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
         borderWidth: 1,
         paddingTop: 18,
-    },
-    header: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    headerTitle: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontWeight: '300',
-    },
-    closeButton: {
-        alignItems: 'center',
-        height: spacing.touchTarget,
-        justifyContent: 'center',
-        width: spacing.touchTarget,
     },
     titleBlock: {
         borderLeftWidth: 5,

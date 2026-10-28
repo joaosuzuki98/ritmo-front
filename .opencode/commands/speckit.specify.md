@@ -1,5 +1,5 @@
 ---
-description: Create or update the feature specification from a natural language feature description.
+description: Create or update a feature specification from a GitHub issue.
 handoffs:
   - label: Build Technical Plan
     agent: speckit.plan
@@ -17,6 +17,17 @@ $ARGUMENTS
 ```
 
 You **MUST** consider the user input before proceeding (if not empty).
+
+## Issue Input
+
+The input after `/speckit.specify` must be a single positive GitHub issue number (for example, `22` or `#22`). Validate it and normalize it to its decimal number. If it is missing or invalid, ask the user for a valid issue number and stop until they provide one.
+
+Before running hooks or creating any files:
+
+1. Resolve the GitHub repository from the project's `origin` remote URL. Support HTTPS and SSH GitHub remote formats. If `origin` is unavailable, use the sole GitHub remote if there is exactly one.
+2. Use the GitHub MCP to retrieve the issue using the resolved owner, repository, and issue number. Issues may be open or closed.
+3. If the repository cannot be resolved, the issue cannot be found or retrieved, or its body/description is empty or whitespace-only, tell the user what happened and ask them to write the change description manually. Wait for their response and use that text as the feature description. Do not generate a spec from the issue title alone or invent missing details.
+4. If the issue has a non-empty body, use that body as the feature description. Keep the issue title as additional context for naming and understanding the change; do not ask the user to repeat the issue description.
 
 ## Pre-Execution Checks
 
@@ -55,7 +66,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
-The text the user typed after `/speckit.specify` in the triggering message **is** the feature description. Assume you always have it available in this conversation even if `$ARGUMENTS` appears literally below. Do not ask the user to repeat it unless they provided an empty command.
+The text the user typed after `/speckit.specify` is the GitHub issue number, not the feature description. Use the issue body retrieved above (or the manual description supplied after a missing/empty issue fallback) as the feature description. Never use the raw issue number as feature content.
 
 Given that feature description, do this:
 
@@ -82,14 +93,11 @@ Given that feature description, do this:
    Specs live under the default `specs/` directory unless the user explicitly provides `SPECIFY_FEATURE_DIRECTORY`.
 
    **Resolution order for `SPECIFY_FEATURE_DIRECTORY`**:
-   1. If the user explicitly provided `SPECIFY_FEATURE_DIRECTORY` (e.g., via environment variable, argument, or configuration), use it as-is
-   2. Otherwise, auto-generate it under `specs/`:
-      - Check `.specify/init-options.json` for `feature_numbering` (preferred) or `branch_numbering` (deprecated, migration only — will be removed in a future release)
-      - If `"timestamp"`: prefix is `YYYYMMDD-HHMMSS` (current timestamp)
-      - If `"sequential"` or absent: prefix is `NNN` (next available 3-digit number after scanning existing directories in `specs/`)
-      - Construct the directory name: `<prefix>-<short-name>` (e.g., `003-user-auth` or `20260319-143022-user-auth`)
+    1. If `SPECIFY_FEATURE_DIRECTORY` was explicitly set via environment variable or project configuration, use it as-is
+    2. Otherwise, auto-generate it under `specs/`:
+      - Use the submitted GitHub issue number as the identifier; do not use timestamp or sequential numbering, consult `init-options.json`, or scan existing spec directories to choose an identifier
+      - Construct the directory name: `issue#<issue-number>-<short-name>` (e.g., `issue#22-update-onboarding-visuals`)
       - Set `SPECIFY_FEATURE_DIRECTORY` to `specs/<directory-name>`
-      - If `branch_numbering` was used (and `feature_numbering` was absent), emit a one-line warning: "⚠️ `branch_numbering` in init-options.json is deprecated. Rename to `feature_numbering`."
 
    **Create the directory and spec file**:
    - `mkdir -p SPECIFY_FEATURE_DIRECTORY`
@@ -102,7 +110,7 @@ Given that feature description, do this:
        "feature_directory": "<resolved feature dir>"
      }
      ```
-     Write the actual resolved directory path value (for example, `specs/003-user-auth`), not the literal string `SPECIFY_FEATURE_DIRECTORY`.
+      Write the actual resolved directory path value (for example, `specs/issue#22-update-onboarding-visuals`), not the literal string `SPECIFY_FEATURE_DIRECTORY`.
      This allows downstream commands (`/speckit.plan`, `/speckit.tasks`, etc.) to locate the feature directory without relying on git branch name conventions.
 
    **IMPORTANT**:
@@ -115,8 +123,9 @@ Given that feature description, do this:
 5. **IF EXISTS**: Load `.specify/memory/constitution.md` for project principles and governance constraints.
 
 6. Follow this execution flow:
-    1. Parse user description from arguments
-       If empty: ERROR "No feature description provided"
+    1. Set the feature description
+       Use the fetched issue body, or the manual description provided after the fallback prompt.
+       If neither is available: ask the user for a change description and wait; do not continue with an empty description.
     2. Extract key concepts from description
        Identify: actors, actions, data, constraints
     3. For unclear aspects:
@@ -139,7 +148,7 @@ Given that feature description, do this:
     7. Identify Key Entities (if data involved)
     8. Return: SUCCESS (spec ready for planning)
 
-7. Write the specification to SPEC_FILE using the template structure, replacing placeholders with concrete details derived from the feature description (arguments) while preserving section order and headings.
+7. Write the specification to SPEC_FILE using the template structure, replacing placeholders with concrete details derived from the issue body or manually supplied fallback description while preserving section order and headings. Set the template's Input field to identify the GitHub issue number and title when the issue was found; if the description was supplied manually because the issue was unavailable or empty, identify it as a manual description for that issue number.
 
 8. **Specification Quality Validation**: After writing the initial spec, validate it against quality criteria:
 

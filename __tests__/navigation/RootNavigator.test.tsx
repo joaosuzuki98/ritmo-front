@@ -3,28 +3,29 @@ import type { ReactTestRenderer } from 'react-test-renderer'
 import { Platform, View } from 'react-native'
 import BootSplash from 'react-native-bootsplash'
 
-import { restoreLocalSession } from '../database/localAuth'
-import type { User } from '../database'
-import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen'
-import { AppDrawerNavigator } from './AppDrawerNavigator'
-import { RootNavigator } from './RootNavigator'
+import { restoreLocalSession } from '../../src/database/localAuth'
+import type { User } from '../../src/database'
+import { OnboardingScreen } from '../../src/screens/Onboarding/OnboardingScreen'
+import { AuthNavigator } from '../../src/navigation/AuthNavigator'
+import { AppDrawerNavigator } from '../../src/navigation/AppDrawerNavigator'
+import { RootNavigator } from '../../src/navigation/RootNavigator'
 
 jest.mock('@react-navigation/native', () => ({
     NavigationContainer: ({ children }: { children: React.ReactNode }) =>
         children,
     createNavigationContainerRef: () => ({}),
 }))
-jest.mock('../database/localAuth', () => ({
+jest.mock('../../src/database/localAuth', () => ({
     restoreLocalSession: jest.fn(),
     logoutLocalUser: jest.fn(),
 }))
-jest.mock('../screens/Onboarding/OnboardingScreen', () => ({
+jest.mock('../../src/screens/Onboarding/OnboardingScreen', () => ({
     OnboardingScreen: () => null,
 }))
-jest.mock('./AppDrawerNavigator', () => ({
+jest.mock('../../src/navigation/AppDrawerNavigator', () => ({
     AppDrawerNavigator: () => null,
 }))
-jest.mock('./AuthNavigator', () => ({
+jest.mock('../../src/navigation/AuthNavigator', () => ({
     AuthNavigator: () => null,
 }))
 
@@ -96,5 +97,62 @@ describe('RootNavigator splash lifecycle', () => {
         await act(async () => renderer.root.findByType(View).props.onLayout())
 
         expect(BootSplash.hide).toHaveBeenCalledWith({ fade: true })
+    })
+
+    it('hands the onboarding identity to the registration route in memory', async () => {
+        jest.mocked(restoreLocalSession).mockResolvedValue(null)
+
+        await act(async () => {
+            renderer = create(<RootNavigator />)
+        })
+        const identity = { name: 'Ana Silva', mascotName: 'Lua' }
+
+        await act(async () => {
+            renderer.root
+                .findByType(OnboardingScreen)
+                .props.onComplete(identity)
+        })
+
+        const authNavigator = renderer.root.findByType(AuthNavigator)
+        expect(authNavigator.props.initialRoute).toBe('Register')
+        expect(authNavigator.props.registrationIdentity).toEqual(identity)
+    })
+
+    it('opens Login directly and clears registration identity for Sign in', async () => {
+        jest.mocked(restoreLocalSession).mockResolvedValue(null)
+
+        await act(async () => {
+            renderer = create(<RootNavigator />)
+        })
+        await act(async () => {
+            renderer.root.findByType(OnboardingScreen).props.onSignIn()
+        })
+
+        const authNavigator = renderer.root.findByType(AuthNavigator)
+        expect(authNavigator.props.initialRoute).toBe('Login')
+        expect(authNavigator.props.registrationIdentity).toBeUndefined()
+    })
+
+    it('starts a fresh root mount at onboarding without the previous identity', async () => {
+        jest.mocked(restoreLocalSession).mockResolvedValue(null)
+
+        await act(async () => {
+            renderer = create(<RootNavigator />)
+        })
+        await act(async () => {
+            renderer.root.findByType(OnboardingScreen).props.onComplete({
+                name: 'Ana Silva',
+                mascotName: 'Lua',
+            })
+        })
+        expect(renderer.root.findByType(AuthNavigator)).toBeDefined()
+
+        await act(async () => renderer.unmount())
+        await act(async () => {
+            renderer = create(<RootNavigator />)
+        })
+
+        expect(renderer.root.findByType(OnboardingScreen)).toBeDefined()
+        expect(renderer.root.findAllByType(AuthNavigator)).toHaveLength(0)
     })
 })
