@@ -1,5 +1,6 @@
 import { act, create } from 'react-test-renderer'
 import type { ReactTestRenderer } from 'react-test-renderer'
+import { Keyboard, KeyboardAvoidingView, TextInput } from 'react-native'
 import Sound from 'react-native-sound'
 
 import { OnboardingScreen } from '../../../src/screens/Onboarding/OnboardingScreen'
@@ -162,6 +163,73 @@ describe('OnboardingScreen', () => {
             }).props.accessibilityState,
         ).toEqual({ selected: true })
     })
+
+    it.each([2, 3])(
+        'releases the keyboard layout immediately when advancing from input page %s',
+        async page => {
+            const isKeyboardVisible = jest
+                .spyOn(Keyboard, 'isVisible')
+                .mockReturnValue(false)
+            const dismissKeyboard = jest
+                .spyOn(Keyboard, 'dismiss')
+                .mockImplementation(() => undefined)
+
+            await act(async () => {
+                renderer = create(
+                    <OnboardingScreen
+                        onComplete={onComplete}
+                        onSignIn={onSignIn}
+                    />,
+                )
+            })
+            await press('Continue onboarding')
+            await enterText('Mascot name', 'Lua')
+            if (page === 3) {
+                await press('Next onboarding page')
+                await enterText('Your name', 'Ana Silva')
+            }
+
+            const previousInput = renderer.root.findByType(TextInput)
+            await act(async () => {
+                isKeyboardVisible.mockReturnValue(true)
+                previousInput.props.onFocus()
+            })
+            expect(
+                renderer.root.findByType(KeyboardAvoidingView).props.enabled,
+            ).toBe(true)
+            dismissKeyboard.mockClear()
+
+            await press('Next onboarding page')
+
+            // The next page must not wait for the native keyboard-hide event.
+            expect(Keyboard.isVisible()).toBe(true)
+            expect(dismissKeyboard).toHaveBeenCalledTimes(1)
+            const keyboardLayout =
+                renderer.root.findByType(KeyboardAvoidingView)
+            expect(keyboardLayout.props.enabled).toBe(false)
+            expect(keyboardLayout.props.behavior).toBeUndefined()
+            expect(textFor(`Onboarding copy page ${page + 1}`)).toBeTruthy()
+            expect(
+                renderer.root.findByProps({
+                    accessibilityLabel: `Go to onboarding page ${page + 1}`,
+                }).props.accessibilityState,
+            ).toEqual({ selected: true })
+
+            if (page === 2) {
+                const nextInput = renderer.root.findByType(TextInput)
+                expect(nextInput).not.toBe(previousInput)
+                expect(nextInput.props.accessibilityLabel).toBe('Your name')
+                expect(nextInput.props.value).toBe('')
+                await act(async () => nextInput.props.onFocus())
+                expect(
+                    renderer.root.findByType(KeyboardAvoidingView).props
+                        .enabled,
+                ).toBe(true)
+            } else {
+                expect(renderer.root.findAllByType(TextInput)).toHaveLength(0)
+            }
+        },
+    )
 
     it('preserves the existing looping-music lifecycle', async () => {
         const category = jest.spyOn(Sound, 'setCategory')

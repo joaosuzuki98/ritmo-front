@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
     Animated,
     Easing,
@@ -98,6 +98,9 @@ export const OnboardingScreen = ({
     onSignIn,
 }: OnboardingScreenProps) => {
     const [currentPage, setCurrentPage] = useState(1)
+    const [focusedInputPage, setFocusedInputPage] = useState<number | null>(
+        null,
+    )
     const [mascotName, setMascotName] = useState('')
     const [name, setName] = useState('')
     const [mascotNameError, setMascotNameError] = useState('')
@@ -110,11 +113,14 @@ export const OnboardingScreen = ({
     const { top: safeAreaTop } = useSafeAreaInsets()
     const {
         scrollRef,
+        resetScroll,
         ensureFocusedInputVisible,
         handleScroll,
         isKeyboardVisible,
     } = useFocusedInputScroll()
-    const isMascotKeyboardVisible = currentPage === 2 && isKeyboardVisible
+    const hasFocusedInput = focusedInputPage === currentPage
+    const isMascotKeyboardVisible =
+        currentPage === 2 && hasFocusedInput && isKeyboardVisible
     const isEntryPage = currentPage === 1
     const page = isEntryPage ? undefined : onboardingPages[currentPage - 2]
     // Align the copy with page 4 while preserving each illustration's aspect ratio.
@@ -177,9 +183,8 @@ export const OnboardingScreen = ({
         }
     }, [])
 
-    useEffect(() => {
-        Keyboard.dismiss()
-        scrollRef.current?.scrollTo({ y: 0, animated: false })
+    useLayoutEffect(() => {
+        resetScroll()
         pageTransition.setValue(0)
         const animation = Animated.timing(pageTransition, {
             toValue: 1,
@@ -189,11 +194,19 @@ export const OnboardingScreen = ({
         })
         animation.start()
         return () => animation.stop()
-    }, [currentPage, pageTransition, scrollRef])
+    }, [currentPage, pageTransition, resetScroll])
+
+    const handlePageChange = (nextPage: number) => {
+        if (nextPage === currentPage) return
+        // Release keyboard avoidance with the page change, not after keyboardDidHide.
+        setFocusedInputPage(null)
+        Keyboard.dismiss()
+        setCurrentPage(nextPage)
+    }
 
     const handleContinue = () => {
         if (isEntryPage) {
-            setCurrentPage(2)
+            handlePageChange(2)
             return
         }
 
@@ -206,7 +219,7 @@ export const OnboardingScreen = ({
             }
             setMascotName(result.data)
             setMascotNameError('')
-            setCurrentPage(3)
+            handlePageChange(3)
             return
         }
 
@@ -218,14 +231,14 @@ export const OnboardingScreen = ({
             }
             setName(result.data)
             setNameError('')
-            setCurrentPage(4)
+            handlePageChange(4)
             return
         }
 
         if (currentPage === 7) {
             const result = onboardingSchema.safeParse({ name, mascotName })
             if (!result.success) {
-                setCurrentPage(
+                handlePageChange(
                     result.error.issues[0]?.path[0] === 'mascotName' ? 2 : 3,
                 )
                 return
@@ -234,11 +247,11 @@ export const OnboardingScreen = ({
             return
         }
 
-        setCurrentPage(currentPage + 1)
+        handlePageChange(currentPage + 1)
     }
 
     const handleBack = () => {
-        if (currentPage > 1) setCurrentPage(currentPage - 1)
+        if (currentPage > 1) handlePageChange(currentPage - 1)
     }
 
     const handleToggleAudio = () => {
@@ -256,7 +269,14 @@ export const OnboardingScreen = ({
             <StarBackground />
             <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    behavior={
+                        hasFocusedInput
+                            ? Platform.OS === 'ios'
+                                ? 'padding'
+                                : 'height'
+                            : undefined
+                    }
+                    enabled={hasFocusedInput}
                     style={styles.keyboardView}
                 >
                     <View style={styles.screen}>
@@ -393,6 +413,7 @@ export const OnboardingScreen = ({
                                                 ]}
                                             >
                                                 <TextInput
+                                                    key={page.input}
                                                     accessibilityLabel={
                                                         page.input ===
                                                         'mascotName'
@@ -401,6 +422,11 @@ export const OnboardingScreen = ({
                                                     }
                                                     autoCapitalize="words"
                                                     autoCorrect={false}
+                                                    onFocus={() =>
+                                                        setFocusedInputPage(
+                                                            currentPage,
+                                                        )
+                                                    }
                                                     onChangeText={value => {
                                                         if (
                                                             page.input ===
@@ -523,7 +549,7 @@ export const OnboardingScreen = ({
                                     <OnboardingProgress
                                         currentStep={currentPage - 1}
                                         onStepPress={step =>
-                                            setCurrentPage(step + 1)
+                                            handlePageChange(step + 1)
                                         }
                                     />
                                 </View>

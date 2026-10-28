@@ -13,6 +13,15 @@ export const useFocusedInputScroll = () => {
     const scrollOffset = useRef(0)
     const frameRef = useRef<number | null>(null)
 
+    const resetScroll = useCallback(() => {
+        if (frameRef.current !== null) {
+            cancelAnimationFrame(frameRef.current)
+            frameRef.current = null
+        }
+        scrollOffset.current = 0
+        scrollRef.current?.scrollTo({ y: 0, animated: false })
+    }, [])
+
     const ensureFocusedInputVisible = useCallback(() => {
         if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
 
@@ -88,6 +97,7 @@ export const useFocusedInputScroll = () => {
 
     return {
         scrollRef,
+        resetScroll,
         ensureFocusedInputVisible,
         handleScroll,
         isKeyboardVisible,
