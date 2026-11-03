@@ -5,6 +5,8 @@ import { StyleSheet, Text } from 'react-native'
 import { database, type User } from '../../../src/database'
 import { BottomSheetLayout } from '../../../src/components/BottomSheetLayout'
 import { StartYourDayScreen } from '../../../src/screens/StartYourDay/StartYourDayScreen'
+import { spacing } from '../../../src/styles/spacing'
+import { typography } from '../../../src/styles/typography'
 
 jest.mock('../../../src/database', () => ({
     database: { get: jest.fn(), write: jest.fn() },
@@ -235,6 +237,26 @@ describe('StartYourDayScreen', () => {
             renderer.root.findByProps({ testID: 'selected-habits-walk' }).props
                 .children,
         ).toBe('Caminhar - Tomar água - Tomar banho')
+        const selectedHabitsList = renderer.root.findByProps({
+            testID: 'selected-habits-list',
+        })
+        expect(
+            renderer.root.findByProps({ testID: 'selected-habits-read' }).props
+                .numberOfLines,
+        ).toBe(1)
+        expect(
+            renderer.root.findByProps({ testID: 'selected-habits-read' }).props
+                .ellipsizeMode,
+        ).toBe('tail')
+        expect(StyleSheet.flatten(selectedHabitsList.props.style).height).toBe(
+            2 * (typography.body.lineHeight + spacing.sm),
+        )
+        expect(selectedHabitsList.props.showsVerticalScrollIndicator).toBe(
+            false,
+        )
+        expect(selectedHabitsList.parent).toBe(
+            renderer.root.findByProps({ testID: 'open-habit-picker' }).parent,
+        )
         expect(
             renderer.root.findByProps({ testID: 'focus-habit-walk' }).props
                 .accessibilityState.checked,
@@ -276,6 +298,43 @@ describe('StartYourDayScreen', () => {
             renderer.root.findByProps({ testID: 'selected-habits-bath' }).props
                 .children,
         ).toBe('Tomar banho')
+    })
+
+    it('caps the focus flag at three visible habit rows while keeping Add fixed', async () => {
+        records.habit_conditions = []
+        records.habit_dependencies = []
+        act(() => {
+            renderer = create(
+                <StartYourDayScreen
+                    currentUser={{ id: 'user-1' } as User}
+                    onMenuPress={jest.fn()}
+                />,
+            )
+        })
+        act(() =>
+            renderer.root
+                .findByProps({ testID: 'open-habit-picker' })
+                .props.onPress(),
+        )
+        for (const habitId of ['water', 'read', 'walk', 'bath']) {
+            await act(async () => {
+                renderer.root
+                    .findByProps({ testID: `focus-habit-${habitId}` })
+                    .props.onPress()
+            })
+        }
+        act(() => renderer.root.findByType(BottomSheetLayout).props.onClose())
+
+        const selectedHabitsList = renderer.root.findByProps({
+            testID: 'selected-habits-list',
+        })
+        expect(StyleSheet.flatten(selectedHabitsList.props.style).height).toBe(
+            3 * (typography.body.lineHeight + spacing.sm),
+        )
+        expect(selectedHabitsList.props.showsVerticalScrollIndicator).toBe(true)
+        expect(selectedHabitsList.parent).toBe(
+            renderer.root.findByProps({ testID: 'open-habit-picker' }).parent,
+        )
     })
 
     it('keeps the focus unselected and reports an error when saving fails', async () => {

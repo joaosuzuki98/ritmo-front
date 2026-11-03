@@ -25,6 +25,8 @@ type StartYourDayScreenProps = {
     onMenuPress: () => void
 }
 
+const maxVisibleFocusGroups = 3
+
 const getDayNumber = (createdAt?: Date) => {
     if (!createdAt) return 1
 
@@ -65,6 +67,9 @@ export const StartYourDayScreen = ({
         toggleHabit,
         retry,
     } = useStartYourDayViewModel(currentUser.id)
+    const selectedHabitsListHeight =
+        Math.min(selectedGroups.length, maxVisibleFocusGroups) *
+        (typography.body.lineHeight + spacing.sm)
     // Match the reference's proportions while letting large text grow the flag.
     const sceneHeight = height - top - bottom
     const moonWidth = Math.min(width * 0.38, spacing.touchTarget * 5)
@@ -166,15 +171,29 @@ export const StartYourDayScreen = ({
                                 ? 'Habits to focus today'
                                 : 'Choose habits to focus today'}
                         </Text>
-                        {selectedGroups.map(group => (
-                            <Text
-                                key={group.id}
-                                style={styles.selectedHabits}
-                                testID={`selected-habits-${group.id}`}
-                            >
-                                {group.labels.join(' - ')}
-                            </Text>
-                        ))}
+                        <ScrollView
+                            nestedScrollEnabled
+                            showsVerticalScrollIndicator={
+                                selectedGroups.length > maxVisibleFocusGroups
+                            }
+                            style={[
+                                styles.selectedHabitsList,
+                                { height: selectedHabitsListHeight },
+                            ]}
+                            testID="selected-habits-list"
+                        >
+                            {selectedGroups.map(group => (
+                                <Text
+                                    ellipsizeMode="tail"
+                                    key={group.id}
+                                    numberOfLines={1}
+                                    style={styles.selectedHabits}
+                                    testID={`selected-habits-${group.id}`}
+                                >
+                                    {group.labels.join(' - ')}
+                                </Text>
+                            ))}
+                        </ScrollView>
                         {saveError ? (
                             <Text
                                 accessibilityLiveRegion="polite"
@@ -407,6 +426,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: spacing.md,
     },
+    selectedHabitsList: { flexGrow: 0, flexShrink: 0 },
     selectedHabits: {
         ...typography.body,
         color: colors.text,
