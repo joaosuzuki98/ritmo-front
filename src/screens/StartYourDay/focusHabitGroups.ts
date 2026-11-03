@@ -5,6 +5,7 @@ export type FocusHabitEntry = {
     label: string
     depth: number
     isFocusOfDay: boolean
+    isLastChild: boolean
     parentLabel?: string
 }
 
@@ -60,7 +61,12 @@ export const buildFocusHabitGroups = (
     const addGroup = (rootId: string) => {
         const entries: FocusHabitEntry[] = []
         const visited = new Set<string>()
-        const visit = (id: string, depth: number, parentLabel?: string) => {
+        const visit = (
+            id: string,
+            depth: number,
+            parentLabel?: string,
+            isLastChild = false,
+        ) => {
             const habit = byId.get(id)
             if (!habit || visited.has(id)) return
             visited.add(id)
@@ -70,12 +76,21 @@ export const buildFocusHabitGroups = (
                 label: habit.name,
                 depth,
                 isFocusOfDay: habit.isFocusOfDay,
+                isLastChild,
                 parentLabel,
             })
             // Keep the same sibling order as the habit list, not relation creation order.
-            ownedHabits.forEach(child => {
-                if (children.get(id)?.has(child.id))
-                    visit(child.id, depth + 1, habit.name)
+            const childHabits = ownedHabits.filter(
+                child =>
+                    children.get(id)?.has(child.id) && !visited.has(child.id),
+            )
+            childHabits.forEach((child, index) => {
+                visit(
+                    child.id,
+                    depth + 1,
+                    habit.name,
+                    index === childHabits.length - 1,
+                )
             })
         }
         visit(rootId, 0)

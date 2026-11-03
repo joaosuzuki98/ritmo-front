@@ -293,6 +293,16 @@ export const StartYourDayScreen = ({
                                                     : null,
                                             ]}
                                         >
+                                            {habit.depth > 0 ? (
+                                                <Text
+                                                    style={styles.habitBranch}
+                                                    testID={`focus-habit-branch-${habit.id}`}
+                                                >
+                                                    {habit.isLastChild
+                                                        ? '└── '
+                                                        : '├── '}
+                                                </Text>
+                                            ) : null}
                                             {habit.label}
                                         </Text>
                                         {isSelected ? (
@@ -430,6 +440,11 @@ const styles = StyleSheet.create({
     },
     selectedHabitOption: { backgroundColor: colors.accent },
     selectedChildOption: { backgroundColor: colors.onboardingPurple },
+    habitBranch: {
+        color: colors.white,
+        fontFamily: typography.fontFamily,
+        fontWeight: '700',
+    },
     habitOptionText: {
         ...typography.body,
         color: colors.text,

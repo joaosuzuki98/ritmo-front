@@ -202,6 +202,14 @@ describe('StartYourDayScreen', () => {
         const child = renderer.root.findByProps({ testID: 'focus-habit-water' })
         expect(child.props.accessibilityHint).toBe('Depends on Caminhar')
         expect(
+            renderer.root.findByProps({ testID: 'focus-habit-branch-water' })
+                .props.children,
+        ).toBe('├── ')
+        expect(
+            renderer.root.findByProps({ testID: 'focus-habit-branch-bath' })
+                .props.children,
+        ).toBe('└── ')
+        expect(
             StyleSheet.flatten(child.props.style).paddingLeft,
         ).toBeGreaterThan(StyleSheet.flatten(parent.props.style).paddingLeft)
 

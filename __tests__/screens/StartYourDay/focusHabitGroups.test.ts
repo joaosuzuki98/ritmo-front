@@ -42,15 +42,19 @@ describe('focus habit hierarchy', () => {
         )
         expect(
             groups.map(group =>
-                group.entries.map(entry => [entry.id, entry.depth]),
+                group.entries.map(entry => [
+                    entry.id,
+                    entry.depth,
+                    entry.isLastChild,
+                ]),
             ),
         ).toEqual([
-            [['read', 0]],
+            [['read', 0, false]],
             [
-                ['walk', 0],
-                ['water', 1],
-                ['bath', 1],
-                ['sleep', 2],
+                ['walk', 0, false],
+                ['water', 1, false],
+                ['bath', 1, true],
+                ['sleep', 2, true],
             ],
         ])
         expect(getSelectedFocusGroups(groups)).toEqual([
