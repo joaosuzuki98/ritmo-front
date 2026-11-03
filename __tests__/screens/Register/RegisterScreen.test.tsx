@@ -21,7 +21,9 @@ describe('RegisterScreen', () => {
     const onRegisterSuccess = jest.fn()
 
     const findSubmitButton = () =>
-        renderer.root.findByProps({ accessibilityRole: 'button' })
+        renderer.root
+            .findAllByProps({ accessibilityRole: 'button' })
+            .find(button => button.props.accessibilityLabel === undefined)!
 
     beforeEach(() => {
         jest.clearAllMocks()
@@ -100,6 +102,48 @@ describe('RegisterScreen', () => {
         expect(layout.props.keyboardRevealRef).toBeDefined()
         await act(async () => password.props.onBlur())
         expect(layout.props.keyboardRevealRef).toBeUndefined()
+    })
+
+    it('allows the password to be shown and hidden', async () => {
+        await act(async () => {
+            renderer = create(
+                <RegisterScreen
+                    identity={identity}
+                    onBack={onBack}
+                    onRegisterSuccess={onRegisterSuccess}
+                />,
+            )
+        })
+
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Password' }).props
+                .secureTextEntry,
+        ).toBe(true)
+
+        await act(async () => {
+            renderer.root
+                .findByProps({ accessibilityLabel: 'Show password' })
+                .props.onPress()
+        })
+
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Password' }).props
+                .secureTextEntry,
+        ).toBe(false)
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Hide password' }),
+        ).toBeTruthy()
+
+        await act(async () => {
+            renderer.root
+                .findByProps({ accessibilityLabel: 'Hide password' })
+                .props.onPress()
+        })
+
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Password' }).props
+                .secureTextEntry,
+        ).toBe(true)
     })
 
     it('keeps the credentials and onboarding identity available after a failed submission', async () => {

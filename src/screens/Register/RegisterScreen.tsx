@@ -2,7 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRef, useState } from 'react'
 import type { ComponentRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Eye, EyeSlash } from 'phosphor-react-native'
 
 import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLayout'
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
@@ -29,6 +30,7 @@ export const RegisterScreen = ({
 }: RegisterScreenProps) => {
     const [submitError, setSubmitError] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false)
     const [isPasswordFocused, setIsPasswordFocused] = useState(false)
     const passwordRequirementsRef = useRef<ComponentRef<typeof View>>(null)
     const {
@@ -128,7 +130,37 @@ export const RegisterScreen = ({
                             onFocus={() => setIsPasswordFocused(true)}
                             onChangeText={field.onChange}
                             placeholder="At least 8 characters"
-                            secureTextEntry
+                            rightAccessory={
+                                <Pressable
+                                    accessibilityLabel={
+                                        isPasswordVisible
+                                            ? 'Hide password'
+                                            : 'Show password'
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityState={{
+                                        selected: isPasswordVisible,
+                                    }}
+                                    hitSlop={spacing.sm}
+                                    onPress={() =>
+                                        setIsPasswordVisible(!isPasswordVisible)
+                                    }
+                                    style={styles.passwordVisibilityButton}
+                                >
+                                    {isPasswordVisible ? (
+                                        <EyeSlash
+                                            color={colors.onboardingBackground}
+                                            size={18}
+                                        />
+                                    ) : (
+                                        <Eye
+                                            color={colors.onboardingBackground}
+                                            size={18}
+                                        />
+                                    )}
+                                </Pressable>
+                            }
+                            secureTextEntry={!isPasswordVisible}
                             textContentType="newPassword"
                             value={field.value}
                         />
@@ -174,6 +206,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     footerLink: { color: colors.white, fontWeight: '700' },
+    passwordVisibilityButton: {
+        alignItems: 'center',
+        height: spacing.touchTarget,
+        justifyContent: 'center',
+        width: spacing.touchTarget,
+    },
     passwordField: { marginBottom: spacing.md },
     passwordRequirements: {
         gap: spacing.md,
