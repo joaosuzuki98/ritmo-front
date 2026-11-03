@@ -10,7 +10,6 @@ const habitForm = {
     estimatedDurationMinutes: '',
     preferredTime: '',
     preferredTimePeriod: 'AM',
-    isFocusOfDay: false,
     dependencyHabitId: '',
     conditionHabitId: '',
     conditionStatus: '',

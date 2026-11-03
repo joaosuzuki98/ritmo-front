@@ -6,7 +6,6 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Switch,
     Text,
     View,
     useWindowDimensions,
@@ -64,7 +63,6 @@ const getInitialValues = (
         : '',
     preferredTime: formatPreferredTime(habit?.preferredTime).hour,
     preferredTimePeriod: formatPreferredTime(habit?.preferredTime).period,
-    isFocusOfDay: habit?.isFocusOfDay ?? false,
     dependencyHabitId: habit?.dependencyHabitId ?? '',
     conditionHabitId: habit?.conditionHabitId ?? '',
     conditionStatus:
@@ -105,7 +103,6 @@ export const AddHabitModal = ({
     const frequencyType = watch('frequencyType')
     const selectedWeekDays = watch('weekDays')
     const selectedPriority = watch('priority')
-    const isFocusOfDay = watch('isFocusOfDay')
     const dependencyHabitId = watch('dependencyHabitId')
     const conditionHabitId = watch('conditionHabitId')
     const conditionStatus = watch('conditionStatus')
@@ -757,31 +754,6 @@ export const AddHabitModal = ({
                     </View>
                 </View>
 
-                <View style={styles.focusRow}>
-                    <View style={styles.focusCopy}>
-                        <Text style={styles.focusTitle}>Focus of the day</Text>
-                        <Text style={styles.focusDescription}>
-                            Highlight this habit at the top of your day.
-                        </Text>
-                    </View>
-                    <Controller
-                        control={control}
-                        name="isFocusOfDay"
-                        render={({ field }) => (
-                            <Switch
-                                accessibilityLabel="Focus of the day"
-                                onValueChange={field.onChange}
-                                thumbColor={colors.text}
-                                trackColor={{
-                                    false: colors.border,
-                                    true: colors.accentStrong,
-                                }}
-                                value={isFocusOfDay}
-                            />
-                        )}
-                    />
-                </View>
-
                 {submitError ? (
                     <Text style={styles.submitError}>{submitError}</Text>
                 ) : null}
@@ -956,30 +928,6 @@ const styles = StyleSheet.create({
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
         fontSize: 12,
-    },
-    focusRow: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderRadius: 10,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-        marginTop: 22,
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-    },
-    focusCopy: { flex: 1, paddingRight: 12 },
-    focusTitle: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    focusDescription: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-        marginTop: 3,
     },
     submitError: {
         color: colors.danger,

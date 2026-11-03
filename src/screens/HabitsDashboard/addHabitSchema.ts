@@ -28,7 +28,6 @@ export const addHabitSchema = z
                 },
             ),
         preferredTimePeriod: z.enum(['AM', 'PM']),
-        isFocusOfDay: z.boolean(),
         dependencyHabitId: z.string(),
         conditionHabitId: z.string(),
         conditionStatus: z.enum(habitRequirementStatuses).or(z.literal('')),

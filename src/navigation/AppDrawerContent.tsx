@@ -6,6 +6,7 @@ import {
     ChartBar,
     CheckSquare,
     GearSix,
+    List,
     SignOut,
     Stack,
     UserCircle,
@@ -25,7 +26,23 @@ type AppDrawerContentProps = DrawerContentComponentProps & {
     currentUser: User
 }
 
-const menuItems = [
+type MenuRoute = keyof AppTabParamList | 'StartYourDay'
+type MenuItem = {
+    label: string
+    route: MenuRoute | null
+    icon:
+        | 'habits'
+        | 'schedule'
+        | 'reminders'
+        | 'todo'
+        | 'start'
+        | 'statistics'
+        | 'settings'
+    isAvailable: boolean
+    isTemporary?: boolean
+}
+
+const menuItems: MenuItem[] = [
     { label: 'Habits', route: 'Habits', icon: 'habits', isAvailable: true },
     {
         label: 'Schedule',
@@ -39,7 +56,19 @@ const menuItems = [
         icon: 'reminders',
         isAvailable: true,
     },
-    { label: 'Todo', route: 'Todo', icon: 'todo', isAvailable: true },
+    {
+        label: 'Todo',
+        route: 'Todo',
+        icon: 'todo',
+        isAvailable: true,
+    },
+    {
+        label: 'Start your day',
+        route: 'StartYourDay',
+        icon: 'start',
+        isAvailable: true,
+        isTemporary: true,
+    },
     {
         label: 'Statistics',
         route: null,
@@ -52,9 +81,9 @@ const menuItems = [
         icon: 'settings',
         isAvailable: false,
     },
-] as const
+]
 
-type MenuIconName = (typeof menuItems)[number]['icon']
+type MenuIconName = MenuItem['icon']
 
 const getMenuIcon = (name: MenuIconName, color: string) => {
     const iconProps = { color, size: 22, weight: 'regular' as const }
@@ -63,6 +92,7 @@ const getMenuIcon = (name: MenuIconName, color: string) => {
     if (name === 'schedule') return <CalendarBlank {...iconProps} />
     if (name === 'reminders') return <Bell {...iconProps} />
     if (name === 'todo') return <CheckSquare {...iconProps} />
+    if (name === 'start') return <List {...iconProps} />
     if (name === 'statistics') return <ChartBar {...iconProps} />
     return <GearSix {...iconProps} />
 }
@@ -76,10 +106,17 @@ export const AppDrawerContent = ({
     const { bottom } = useSafeAreaInsets()
     const mainRoute = state.routes.find(route => route.name === 'Main')
     const mainState = mainRoute?.state
+    const drawerRouteName = state.routes[state.index]?.name
     const activeRouteName =
-        mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
+        drawerRouteName === 'StartYourDay'
+            ? drawerRouteName
+            : mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
 
-    const onSelectRoute = (route: keyof AppTabParamList) => {
+    const onSelectRoute = (route: MenuRoute) => {
+        if (route === 'StartYourDay') {
+            navigation.navigate('StartYourDay')
+            return
+        }
         navigation.navigate('Main', { screen: route })
     }
 
@@ -110,6 +147,8 @@ export const AppDrawerContent = ({
                 <Text style={styles.sectionLabel}>MENU PRINCIPAL</Text>
                 <View style={styles.items}>
                     {menuItems.map(item => {
+                        if (item.isTemporary && !__DEV__) return null
+
                         const isActive = item.route === activeRouteName
                         const itemColor = item.isAvailable
                             ? isActive
@@ -146,7 +185,11 @@ export const AppDrawerContent = ({
                                 >
                                     {item.label}
                                 </Text>
-                                {!item.isAvailable ? (
+                                {item.isTemporary ? (
+                                    <Text style={styles.previewBadge}>
+                                        PREVIEW
+                                    </Text>
+                                ) : !item.isAvailable ? (
                                     <Text style={styles.comingSoon}>
                                         EM BREVE
                                     </Text>
@@ -258,6 +301,13 @@ const styles = StyleSheet.create({
     },
     comingSoon: {
         color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 8,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+    },
+    previewBadge: {
+        color: colors.onboardingPurple,
         fontFamily: typography.fontFamily,
         fontSize: 8,
         fontWeight: '700',

@@ -3,6 +3,7 @@ import type { DrawerContentComponentProps } from '@react-navigation/drawer'
 import { useCallback } from 'react'
 
 import type { User } from '../database'
+import { StartYourDayScreen } from '../screens/StartYourDay/StartYourDayScreen'
 import { colors } from '../styles/colors'
 import { AppDrawerContent } from './AppDrawerContent'
 import { AppDrawerLogoutContext } from './AppDrawerLogoutContext'
@@ -46,6 +47,14 @@ export const AppDrawerNavigator = ({
             >
                 <Drawer.Screen name="Main">
                     {() => <AppNavigator currentUser={currentUser} />}
+                </Drawer.Screen>
+                <Drawer.Screen name="StartYourDay">
+                    {({ navigation }) => (
+                        <StartYourDayScreen
+                            currentUser={currentUser}
+                            onMenuPress={() => navigation.openDrawer()}
+                        />
+                    )}
                 </Drawer.Screen>
             </Drawer.Navigator>
         </AppDrawerLogoutContext.Provider>

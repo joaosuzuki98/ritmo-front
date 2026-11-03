@@ -34,5 +34,6 @@ export const colors = {
     onboardingSurface: '#373942',
     onboardingAction: '#283AB0',
     onboardingGreen: '#56E39F',
+    startYourDayGrass: '#14D664',
     passwordSuccess: '#1CDD6C',
 } as const
