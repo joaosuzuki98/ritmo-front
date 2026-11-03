@@ -107,12 +107,18 @@ export const buildFocusHabitGroups = (
     return groups
 }
 
-export const getSelectedFocusGroups = (groups: readonly FocusHabitGroup[]) => {
+export const getSelectedFocusGroups = (
+    groups: readonly FocusHabitGroup[],
+    selectedIds?: readonly string[],
+) => {
+    const selected = selectedIds ? new Set(selectedIds) : undefined
     return groups
         .map(group => ({
             id: group.id,
             labels: group.entries
-                .filter(entry => entry.isFocusOfDay)
+                .filter(entry =>
+                    selected ? selected.has(entry.id) : entry.isFocusOfDay,
+                )
                 .map(entry => entry.label),
         }))
         .filter(group => group.labels.length > 0)

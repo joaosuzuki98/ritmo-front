@@ -19,6 +19,11 @@ type FocusHabitData = {
     status: 'loading' | 'success' | 'error'
 }
 
+type FocusSelectionDraft = {
+    userId: string
+    ids: string[]
+}
+
 export const useStartYourDayViewModel = (userId: string) => {
     const [data, setData] = useState<FocusHabitData>({
         userId,
@@ -26,7 +31,9 @@ export const useStartYourDayViewModel = (userId: string) => {
         status: 'loading',
     })
     const [reloadToken, setReloadToken] = useState(0)
-    const [pendingHabitIds, setPendingHabitIds] = useState<string[]>([])
+    const [selectionDraft, setSelectionDraft] =
+        useState<FocusSelectionDraft | null>(null)
+    const [isSavingSelection, setIsSavingSelection] = useState(false)
     const [saveError, setSaveError] = useState('')
 
     useEffect(() => {
@@ -101,45 +108,79 @@ export const useStartYourDayViewModel = (userId: string) => {
     }, [userId, reloadToken])
 
     const groups = data.userId === userId ? data.groups : []
-    const selectedIds = groups
+    const persistedSelectedIds = groups
         .flatMap(group => group.entries)
         .filter(entry => entry.isFocusOfDay)
         .map(entry => entry.id)
-    const toggleHabit = async (id: string) => {
-        const entry = groups
-            .flatMap(group => group.entries)
-            .find(habit => habit.id === id)
-        if (!entry || pendingHabitIds.includes(id)) return
+    const selectedIds =
+        selectionDraft?.userId === userId
+            ? selectionDraft.ids
+            : persistedSelectedIds
+    const toggleHabit = (id: string) => {
+        const entryExists = groups.some(group =>
+            group.entries.some(habit => habit.id === id),
+        )
+        if (!entryExists || isSavingSelection) return
 
         setSaveError('')
-        setPendingHabitIds(current => [...current, id])
+        setSelectionDraft(current => {
+            const ids = current?.userId === userId ? current.ids : selectedIds
+            return {
+                userId,
+                ids: ids.includes(id)
+                    ? ids.filter(value => value !== id)
+                    : [...ids, id],
+            }
+        })
+    }
+
+    const saveSelection = async () => {
+        if (isSavingSelection || data.userId !== userId) return
+
+        const selected = new Set(selectedIds)
+        setSaveError('')
+        setIsSavingSelection(true)
         try {
+            const habits = await database
+                .get<Habit>('habits')
+                .query(Q.where('user_id', userId))
+                .fetch()
             await database.write(async () => {
-                const habit = await database
-                    .get<Habit>('habits')
-                    .find(id)
-                    .catch(() => null)
-                if (!habit || habit.userId !== userId)
-                    throw new Error('The habit is unavailable.')
-                await habit.update(record => {
-                    record.isFocusOfDay = !entry.isFocusOfDay
-                })
+                for (const habit of habits) {
+                    const shouldFocus = selected.has(habit.id)
+                    if (habit.isFocusOfDay === shouldFocus) continue
+                    await habit.update(record => {
+                        record.isFocusOfDay = shouldFocus
+                    })
+                }
             })
+            setData(current => ({
+                ...current,
+                groups: current.groups.map(group => ({
+                    ...group,
+                    entries: group.entries.map(entry => ({
+                        ...entry,
+                        isFocusOfDay: selected.has(entry.id),
+                    })),
+                })),
+            }))
+            setSelectionDraft(null)
         } catch {
-            setSaveError('Unable to update today’s focus. Please try again.')
+            setSaveError('Unable to save today’s focus. Please try again.')
         } finally {
-            setPendingHabitIds(current => current.filter(value => value !== id))
+            setIsSavingSelection(false)
         }
     }
 
     return {
         groups,
         selectedIds,
-        selectedGroups: getSelectedFocusGroups(groups),
+        selectedGroups: getSelectedFocusGroups(groups, selectedIds),
         status: data.userId === userId ? data.status : 'loading',
-        pendingHabitIds,
+        isSavingSelection,
         saveError,
         toggleHabit,
+        saveSelection,
         retry: () => setReloadToken(current => current + 1),
     }
 }

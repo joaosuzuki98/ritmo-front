@@ -5,6 +5,7 @@ import { StyleSheet, Text } from 'react-native'
 import { database, type User } from '../../../src/database'
 import { BottomSheetLayout } from '../../../src/components/BottomSheetLayout'
 import { StartYourDayScreen } from '../../../src/screens/StartYourDay/StartYourDayScreen'
+import { colors } from '../../../src/styles/colors'
 import { spacing } from '../../../src/styles/spacing'
 import { typography } from '../../../src/styles/typography'
 
@@ -121,6 +122,7 @@ describe('StartYourDayScreen', () => {
         })
         ;(database.get as jest.Mock).mockImplementation((table: string) => ({
             query: () => ({
+                fetch: async () => records[table as keyof typeof records],
                 observeWithColumns: () => ({
                     subscribe: (observer: MockObserver) => {
                         const tableObservers = (observers[table] ??= [])
@@ -154,7 +156,7 @@ describe('StartYourDayScreen', () => {
         act(() => renderer?.unmount())
     })
 
-    it('uses the idle 2 moon animation and persists selected focus habits', async () => {
+    it('uses the idle 2 moon animation and saves focus only after Continue', async () => {
         const onMenuPress = jest.fn()
         const currentUser = {
             id: 'user-1',
@@ -171,6 +173,16 @@ describe('StartYourDayScreen', () => {
                 />,
             )
         })
+        const continueButton = renderer.root.findByProps({
+            testID: 'continue-focus-selection',
+        })
+        expect(StyleSheet.flatten(continueButton.props.style).right).toBe(
+            spacing.md,
+        )
+        expect(
+            StyleSheet.flatten(continueButton.findByType(Text).props.style)
+                .color,
+        ).toBe(colors.white)
 
         const moon = renderer.root.findByProps({
             testID: 'start-your-day-moon',
@@ -223,11 +235,7 @@ describe('StartYourDayScreen', () => {
             })
         }
 
-        expect(
-            records.habits
-                .filter(habit => habit.isFocusOfDay)
-                .map(habit => habit.id),
-        ).toEqual(['water', 'read', 'walk', 'bath'])
+        expect(records.habits.some(habit => habit.isFocusOfDay)).toBe(false)
 
         expect(
             renderer.root.findByProps({ testID: 'selected-habits-read' }).props
@@ -266,6 +274,16 @@ describe('StartYourDayScreen', () => {
         expect(
             renderer.root.findByType(BottomSheetLayout).props.isVisible,
         ).toBe(false)
+        await act(async () => {
+            await renderer.root
+                .findByProps({ testID: 'continue-focus-selection' })
+                .props.onPress()
+        })
+        expect(
+            records.habits
+                .filter(habit => habit.isFocusOfDay)
+                .map(habit => habit.id),
+        ).toEqual(['water', 'read', 'walk', 'bath'])
         expect(
             renderer.root.findByProps({ testID: 'selected-habits-walk' }).props
                 .children,
@@ -282,11 +300,20 @@ describe('StartYourDayScreen', () => {
         )
         expect(
             records.habits.find(habit => habit.id === 'water')?.isFocusOfDay,
-        ).toBe(false)
+        ).toBe(true)
         expect(
             renderer.root.findByProps({ testID: 'selected-habits-walk' }).props
                 .children,
         ).toBe('Caminhar - Tomar banho')
+        act(() => renderer.root.findByType(BottomSheetLayout).props.onClose())
+        await act(async () => {
+            await renderer.root
+                .findByProps({ testID: 'continue-focus-selection' })
+                .props.onPress()
+        })
+        expect(
+            records.habits.find(habit => habit.id === 'water')?.isFocusOfDay,
+        ).toBe(false)
 
         // A removed relation makes the selected child an independent flag line.
         act(() => observers.habit_dependencies[0].next([]))
@@ -337,7 +364,7 @@ describe('StartYourDayScreen', () => {
         )
     })
 
-    it('keeps the focus unselected and reports an error when saving fails', async () => {
+    it('keeps the draft and reports an error when Continue cannot save', async () => {
         const currentUser = { id: 'user-1', name: 'John' } as User
         act(() => {
             renderer = create(
@@ -352,10 +379,19 @@ describe('StartYourDayScreen', () => {
                 .findByProps({ testID: 'open-habit-picker' })
                 .props.onPress(),
         )
-        shouldFailWrite = true
         await act(async () => {
             await renderer.root
                 .findByProps({ testID: 'focus-habit-walk' })
+                .props.onPress()
+        })
+        expect(
+            records.habits.find(habit => habit.id === 'walk')?.isFocusOfDay,
+        ).toBe(false)
+        act(() => renderer.root.findByType(BottomSheetLayout).props.onClose())
+        shouldFailWrite = true
+        await act(async () => {
+            await renderer.root
+                .findByProps({ testID: 'continue-focus-selection' })
                 .props.onPress()
         })
 
@@ -363,16 +399,16 @@ describe('StartYourDayScreen', () => {
             records.habits.find(habit => habit.id === 'walk')?.isFocusOfDay,
         ).toBe(false)
         expect(
-            renderer.root.findByProps({ testID: 'focus-habit-walk' }).props
-                .accessibilityState.checked,
-        ).toBe(false)
+            renderer.root.findByProps({ testID: 'selected-habits-walk' }).props
+                .children,
+        ).toBe('Caminhar')
         expect(
             renderer.root
                 .findAllByType(Text)
                 .some(
                     text =>
                         text.props.children ===
-                        'Unable to update today’s focus. Please try again.',
+                        'Unable to save today’s focus. Please try again.',
                 ),
         ).toBe(true)
     })

@@ -1,7 +1,8 @@
 import LottieView from 'lottie-react-native'
-import { CheckFat, List } from 'phosphor-react-native'
-import { useState } from 'react'
+import { ArrowFatLinesRight, CheckFat, List } from 'phosphor-react-native'
+import { useEffect, useRef, useState } from 'react'
 import {
+    Animated,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -57,14 +58,36 @@ export const StartYourDayScreen = ({
     const scale = getResponsiveScale(width)
     const isPortrait = height >= width
     const [isHabitSheetVisible, setIsHabitSheetVisible] = useState(false)
+    const continueBlink = useRef(new Animated.Value(1)).current
+    useEffect(() => {
+        const blinkAnimation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(continueBlink, {
+                    toValue: 0,
+                    duration: 0,
+                    useNativeDriver: true,
+                }),
+                Animated.delay(600),
+                Animated.timing(continueBlink, {
+                    toValue: 1,
+                    duration: 0,
+                    useNativeDriver: true,
+                }),
+                Animated.delay(600),
+            ]),
+        )
+        blinkAnimation.start()
+        return () => blinkAnimation.stop()
+    }, [continueBlink])
     const {
         groups,
         selectedIds,
         selectedGroups,
         status,
-        pendingHabitIds,
+        isSavingSelection,
         saveError,
         toggleHabit,
+        saveSelection,
         retry,
     } = useStartYourDayViewModel(currentUser.id)
     const selectedHabitsListHeight =
@@ -221,6 +244,30 @@ export const StartYourDayScreen = ({
                 />
             </ScrollView>
 
+            <Pressable
+                accessibilityRole="button"
+                accessibilityState={{
+                    disabled: isSavingSelection || status !== 'success',
+                }}
+                disabled={isSavingSelection || status !== 'success'}
+                onPress={saveSelection}
+                style={[styles.continueButton, { bottom: bottom + spacing.md }]}
+                testID="continue-focus-selection"
+            >
+                <Animated.View
+                    style={[styles.continueContent, { opacity: continueBlink }]}
+                >
+                    <Animated.Text style={styles.continueText}>
+                        {isSavingSelection ? 'Saving…' : 'Continue'}
+                    </Animated.Text>
+                    <ArrowFatLinesRight
+                        color={colors.white}
+                        size={22}
+                        weight="bold"
+                    />
+                </Animated.View>
+            </Pressable>
+
             <BottomSheetLayout
                 closeAccessibilityLabel="Close add habits modal"
                 heightMode="max"
@@ -270,9 +317,6 @@ export const StartYourDayScreen = ({
                                 const isSelected = selectedIds.includes(
                                     habit.id,
                                 )
-                                const isSaving = pendingHabitIds.includes(
-                                    habit.id,
-                                )
                                 return (
                                     <Pressable
                                         accessibilityLabel={habit.label}
@@ -284,9 +328,9 @@ export const StartYourDayScreen = ({
                                         accessibilityRole="checkbox"
                                         accessibilityState={{
                                             checked: isSelected,
-                                            disabled: isSaving,
+                                            disabled: isSavingSelection,
                                         }}
-                                        disabled={isSaving}
+                                        disabled={isSavingSelection}
                                         key={habit.id}
                                         onPress={() => toggleHabit(habit.id)}
                                         style={[
@@ -451,6 +495,25 @@ const styles = StyleSheet.create({
         color: colors.danger,
         fontFamily: typography.fontFamily,
         marginBottom: spacing.sm,
+    },
+    continueButton: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: spacing.touchTarget,
+        minWidth: spacing.touchTarget,
+        position: 'absolute',
+        right: spacing.md,
+        zIndex: 2,
+    },
+    continueText: {
+        ...typography.bodyStrong,
+        color: colors.white,
+        fontFamily: typography.fontFamily,
+    },
+    continueContent: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: spacing.xs,
     },
     habitOptions: { gap: spacing.sm, paddingBottom: spacing.lg },
     habitOption: {
