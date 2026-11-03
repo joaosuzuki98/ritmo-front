@@ -1,5 +1,5 @@
 import LottieView from 'lottie-react-native'
-import { Check, List } from 'phosphor-react-native'
+import { CheckFat, List } from 'phosphor-react-native'
 import { useState } from 'react'
 import {
     Pressable,
@@ -296,9 +296,9 @@ export const StartYourDayScreen = ({
                                             {habit.label}
                                         </Text>
                                         {isSelected ? (
-                                            <Check
+                                            <CheckFat
                                                 color={colors.white}
-                                                size={22}
+                                                size={16}
                                                 weight="bold"
                                             />
                                         ) : null}
