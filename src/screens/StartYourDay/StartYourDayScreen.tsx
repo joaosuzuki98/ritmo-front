@@ -53,6 +53,7 @@ export const StartYourDayScreen = ({
     const { width, height } = useWindowDimensions()
     const { top, bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
+    const isPortrait = height >= width
     const [isHabitSheetVisible, setIsHabitSheetVisible] = useState(false)
     const {
         groups,
@@ -141,7 +142,7 @@ export const StartYourDayScreen = ({
                     style={[
                         styles.focusArea,
                         {
-                            minHeight: sceneHeight * 0.56,
+                            minHeight: sceneHeight * (isPortrait ? 0.5 : 0.56),
                             paddingHorizontal: width * 0.045,
                             gap: width * 0.023,
                         },
@@ -196,7 +197,7 @@ export const StartYourDayScreen = ({
                     accessible={false}
                     style={[
                         styles.grass,
-                        { height: sceneHeight * 0.03 + bottom },
+                        { height: sceneHeight * 0.02 + bottom },
                     ]}
                 />
             </ScrollView>
@@ -400,15 +401,17 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.xs,
     },
     focusTitle: {
-        ...typography.body,
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        marginBottom: spacing.md,
-    },
-    selectedHabits: {
         ...typography.bodyStrong,
         color: colors.text,
         fontFamily: typography.fontFamily,
+        fontSize: 16,
+        marginBottom: spacing.md,
+    },
+    selectedHabits: {
+        ...typography.body,
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 12,
         marginBottom: spacing.sm,
     },
     addButton: {
