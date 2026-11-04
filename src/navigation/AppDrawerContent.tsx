@@ -25,7 +25,21 @@ type AppDrawerContentProps = DrawerContentComponentProps & {
     currentUser: User
 }
 
-const menuItems = [
+type MenuRoute = keyof AppTabParamList
+type MenuItem = {
+    label: string
+    route: MenuRoute | null
+    icon:
+        | 'habits'
+        | 'schedule'
+        | 'reminders'
+        | 'todo'
+        | 'statistics'
+        | 'settings'
+    isAvailable: boolean
+}
+
+const menuItems: MenuItem[] = [
     { label: 'Habits', route: 'Habits', icon: 'habits', isAvailable: true },
     {
         label: 'Schedule',
@@ -39,7 +53,12 @@ const menuItems = [
         icon: 'reminders',
         isAvailable: true,
     },
-    { label: 'Todo', route: 'Todo', icon: 'todo', isAvailable: true },
+    {
+        label: 'Todo',
+        route: 'Todo',
+        icon: 'todo',
+        isAvailable: true,
+    },
     {
         label: 'Statistics',
         route: null,
@@ -52,9 +71,9 @@ const menuItems = [
         icon: 'settings',
         isAvailable: false,
     },
-] as const
+]
 
-type MenuIconName = (typeof menuItems)[number]['icon']
+type MenuIconName = MenuItem['icon']
 
 const getMenuIcon = (name: MenuIconName, color: string) => {
     const iconProps = { color, size: 22, weight: 'regular' as const }
@@ -76,10 +95,13 @@ export const AppDrawerContent = ({
     const { bottom } = useSafeAreaInsets()
     const mainRoute = state.routes.find(route => route.name === 'Main')
     const mainState = mainRoute?.state
+    const drawerRouteName = state.routes[state.index]?.name
     const activeRouteName =
-        mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
+        drawerRouteName === 'StartYourDay'
+            ? drawerRouteName
+            : mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
 
-    const onSelectRoute = (route: keyof AppTabParamList) => {
+    const onSelectRoute = (route: MenuRoute) => {
         navigation.navigate('Main', { screen: route })
     }
 

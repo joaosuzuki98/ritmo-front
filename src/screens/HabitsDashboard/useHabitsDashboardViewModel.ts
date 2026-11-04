@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Q } from '@nozbe/watermelondb'
 import { AccessibilityInfo } from 'react-native'
 
 import { getHabitStatusPresentation } from '../../constants/habitStatuses'
@@ -772,6 +773,36 @@ export const useHabitsDashboardViewModel = (
     }, [])
 
     useEffect(() => {
+        const subscription = database
+            .get<Habit>('habits')
+            .query(Q.where('user_id', currentUserId))
+            .observeWithColumns(['is_focus_of_day'])
+            .subscribe({
+                next: habits => {
+                    const focusByHabitId = new Map(
+                        habits.map(habit => [habit.id, habit.isFocusOfDay]),
+                    )
+                    setData(current => {
+                        let hasChanges = false
+                        const cards = current.cards.map(card => {
+                            const isFocusOfDay = focusByHabitId.get(card.id)
+                            if (
+                                isFocusOfDay === undefined ||
+                                isFocusOfDay === card.isFocusOfDay
+                            )
+                                return card
+                            hasChanges = true
+                            return { ...card, isFocusOfDay }
+                        })
+                        return hasChanges ? { ...current, cards } : current
+                    })
+                },
+            })
+
+        return () => subscription.unsubscribe()
+    }, [currentUserId])
+
+    useEffect(() => {
         let active = true
         const load = async () => {
             try {
@@ -963,7 +994,7 @@ export const useHabitsDashboardViewModel = (
                     formData.preferredTimePeriod,
                 )
                 record.priority = formData.priority
-                record.isFocusOfDay = formData.isFocusOfDay
+                record.isFocusOfDay = false
                 record.status = 'pending'
             })
             await saveHabitRequirements(habit.id, formData)
@@ -1013,7 +1044,6 @@ export const useHabitsDashboardViewModel = (
                                   formData.preferredTime,
                                   formData.preferredTimePeriod,
                               ),
-                              isFocusOfDay: formData.isFocusOfDay,
                           }
                         : card,
                 ),
@@ -1067,7 +1097,6 @@ export const useHabitsDashboardViewModel = (
                     formData.preferredTimePeriod,
                 )
                 record.priority = formData.priority
-                record.isFocusOfDay = formData.isFocusOfDay
             })
             await saveHabitRequirements(
                 habitId,

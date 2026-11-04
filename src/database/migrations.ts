@@ -297,5 +297,26 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 13,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'users',
+                    columns: [
+                        {
+                            name: 'total_access_days',
+                            type: 'number',
+                            isOptional: true,
+                        },
+                        {
+                            name: 'last_access_date',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 })

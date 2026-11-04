@@ -9,4 +9,5 @@ export type AppTabParamList = {
 
 export type RootParamList = {
     Main: NavigatorScreenParams<AppTabParamList>
+    StartYourDay: undefined
 }

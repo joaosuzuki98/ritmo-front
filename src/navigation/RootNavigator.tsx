@@ -73,6 +73,7 @@ export const RootNavigator = () => {
             <NavigationContainer ref={navigationRef}>
                 {currentUser ? (
                     <AppDrawerNavigator
+                        key={currentUser.id}
                         currentUser={currentUser}
                         onLogout={handleLogout}
                     />

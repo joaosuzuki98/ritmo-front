@@ -2,12 +2,26 @@ import { databaseMigrations } from '../../src/database/migrations'
 import { databaseSchema } from '../../src/database/schema'
 
 describe('local account database migration', () => {
+    it('adds device-local access tracking with a zero count for existing accounts', () => {
+        const columns = [
+            { name: 'total_access_days', type: 'number', isOptional: true },
+            { name: 'last_access_date', type: 'string', isOptional: true },
+        ]
+        expect(
+            databaseMigrations.sortedMigrations.find(
+                item => item.toVersion === 13,
+            )?.steps,
+        ).toContainEqual({ type: 'add_columns', table: 'users', columns })
+        expect(databaseSchema.tables.users.columnArray).toEqual(
+            expect.arrayContaining(columns),
+        )
+    })
     it('adds credential columns for databases that already reached version 8', () => {
         const migration = databaseMigrations.sortedMigrations.find(
             item => item.toVersion === 9,
         )
 
-        expect(databaseSchema.version).toBe(12)
+        expect(databaseSchema.version).toBe(13)
         expect(migration?.steps).toContainEqual({
             type: 'add_columns',
             table: 'users',
