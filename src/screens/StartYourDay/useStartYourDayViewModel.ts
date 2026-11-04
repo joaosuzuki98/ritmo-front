@@ -135,7 +135,12 @@ export const useStartYourDayViewModel = (userId: string) => {
     }
 
     const saveSelection = async () => {
-        if (isSavingSelection || data.userId !== userId) return
+        if (
+            isSavingSelection ||
+            data.userId !== userId ||
+            data.status !== 'success'
+        )
+            return false
 
         const selected = new Set(selectedIds)
         setSaveError('')
@@ -165,8 +170,10 @@ export const useStartYourDayViewModel = (userId: string) => {
                 })),
             }))
             setSelectionDraft(null)
+            return true
         } catch {
             setSaveError('Unable to save today’s focus. Please try again.')
+            return false
         } finally {
             setIsSavingSelection(false)
         }

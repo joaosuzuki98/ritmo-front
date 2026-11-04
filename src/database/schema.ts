@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 12,
+    version: 13,
     tables: [
         tableSchema({
             name: 'users',
@@ -30,6 +30,8 @@ export const databaseSchema = appSchema({
                 { name: 'total_points', type: 'number' },
                 { name: 'level', type: 'number' },
                 { name: 'is_logged_in', type: 'boolean', isOptional: true },
+                { name: 'total_access_days', type: 'number', isOptional: true },
+                { name: 'last_access_date', type: 'string', isOptional: true },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],

@@ -27,6 +27,8 @@ const localUserFields = [
     'password_hash',
     'password_salt',
     'is_logged_in',
+    'total_access_days',
+    'last_access_date',
 ]
 
 const removeLocalUserFields = (record: DirtyRaw): DirtyRaw => {

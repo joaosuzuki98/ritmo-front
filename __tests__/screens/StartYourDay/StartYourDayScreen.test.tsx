@@ -158,10 +158,12 @@ describe('StartYourDayScreen', () => {
 
     it('uses the idle 2 moon animation and saves focus only after Continue', async () => {
         const onMenuPress = jest.fn()
+        const onContinue = jest.fn()
         const currentUser = {
             id: 'user-1',
             name: 'John',
             mascotName: 'Lua',
+            totalAccessDays: 7,
             createdAt: new Date(),
         } as User
 
@@ -169,13 +171,25 @@ describe('StartYourDayScreen', () => {
             renderer = create(
                 <StartYourDayScreen
                     currentUser={currentUser}
+                    dayNumber={7}
                     onMenuPress={onMenuPress}
+                    onContinue={onContinue}
                 />,
             )
         })
         const continueButton = renderer.root.findByProps({
             testID: 'continue-focus-selection',
         })
+        expect(
+            renderer.root
+                .findAllByType(Text)
+                .some(
+                    text =>
+                        Array.isArray(text.props.children) &&
+                        text.props.children.join('') === 'Day n° 7',
+                ),
+        ).toBe(true)
+        expect(onContinue).not.toHaveBeenCalled()
         expect(StyleSheet.flatten(continueButton.props.style).right).toBe(
             spacing.md,
         )
@@ -284,6 +298,7 @@ describe('StartYourDayScreen', () => {
                 .filter(habit => habit.isFocusOfDay)
                 .map(habit => habit.id),
         ).toEqual(['water', 'read', 'walk', 'bath'])
+        expect(onContinue).toHaveBeenCalledTimes(1)
         expect(
             renderer.root.findByProps({ testID: 'selected-habits-walk' }).props
                 .children,
@@ -334,6 +349,7 @@ describe('StartYourDayScreen', () => {
             renderer = create(
                 <StartYourDayScreen
                     currentUser={{ id: 'user-1' } as User}
+                    dayNumber={1}
                     onMenuPress={jest.fn()}
                 />,
             )
@@ -365,12 +381,15 @@ describe('StartYourDayScreen', () => {
     })
 
     it('keeps the draft and reports an error when Continue cannot save', async () => {
+        const onContinue = jest.fn()
         const currentUser = { id: 'user-1', name: 'John' } as User
         act(() => {
             renderer = create(
                 <StartYourDayScreen
                     currentUser={currentUser}
+                    dayNumber={1}
                     onMenuPress={jest.fn()}
+                    onContinue={onContinue}
                 />,
             )
         })
@@ -395,6 +414,7 @@ describe('StartYourDayScreen', () => {
                 .props.onPress()
         })
 
+        expect(onContinue).not.toHaveBeenCalled()
         expect(
             records.habits.find(habit => habit.id === 'walk')?.isFocusOfDay,
         ).toBe(false)
@@ -419,6 +439,7 @@ describe('StartYourDayScreen', () => {
             renderer = create(
                 <StartYourDayScreen
                     currentUser={{ id: 'user-1' } as User}
+                    dayNumber={1}
                     onMenuPress={jest.fn()}
                 />,
             )

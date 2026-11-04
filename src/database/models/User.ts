@@ -13,6 +13,8 @@ export class User extends Model {
     @field('total_points') totalPoints!: number
     @field('level') level!: number
     @field('is_logged_in') isLoggedIn?: boolean
+    @field('total_access_days') totalAccessDays?: number
+    @field('last_access_date') lastAccessDate?: string
     @date('created_at') createdAt?: Date
     @date('updated_at') updatedAt?: Date
 }

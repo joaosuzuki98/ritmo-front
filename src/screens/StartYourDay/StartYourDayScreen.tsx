@@ -23,35 +23,18 @@ import { useStartYourDayViewModel } from './useStartYourDayViewModel'
 
 type StartYourDayScreenProps = {
     currentUser: User
+    dayNumber: number
     onMenuPress: () => void
+    onContinue?: () => void
 }
 
 const maxVisibleFocusGroups = 3
 
-const getDayNumber = (createdAt?: Date) => {
-    if (!createdAt) return 1
-
-    const today = new Date()
-    const startOfToday = Date.UTC(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-    )
-    const startOfCreation = Date.UTC(
-        createdAt.getFullYear(),
-        createdAt.getMonth(),
-        createdAt.getDate(),
-    )
-
-    return Math.max(
-        1,
-        Math.floor((startOfToday - startOfCreation) / 86_400_000) + 1,
-    )
-}
-
 export const StartYourDayScreen = ({
     currentUser,
+    dayNumber,
     onMenuPress,
+    onContinue,
 }: StartYourDayScreenProps) => {
     const { width, height } = useWindowDimensions()
     const { top, bottom } = useSafeAreaInsets()
@@ -90,6 +73,9 @@ export const StartYourDayScreen = ({
         saveSelection,
         retry,
     } = useStartYourDayViewModel(currentUser.id)
+    const handleContinue = async () => {
+        if (await saveSelection()) onContinue?.()
+    }
     const selectedHabitsListHeight =
         Math.min(selectedGroups.length, maxVisibleFocusGroups) *
         (typography.body.lineHeight + spacing.sm)
@@ -161,9 +147,7 @@ export const StartYourDayScreen = ({
                     >
                         Start your day
                     </Text>
-                    <Text style={styles.dayNumber}>
-                        Day n° {getDayNumber(currentUser.createdAt)}
-                    </Text>
+                    <Text style={styles.dayNumber}>Day n° {dayNumber}</Text>
                 </View>
 
                 <View
@@ -250,7 +234,7 @@ export const StartYourDayScreen = ({
                     disabled: isSavingSelection || status !== 'success',
                 }}
                 disabled={isSavingSelection || status !== 'success'}
-                onPress={saveSelection}
+                onPress={handleContinue}
                 style={[styles.continueButton, { bottom: bottom + spacing.md }]}
                 testID="continue-focus-selection"
             >

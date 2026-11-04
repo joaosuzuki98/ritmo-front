@@ -6,7 +6,6 @@ import {
     ChartBar,
     CheckSquare,
     GearSix,
-    List,
     SignOut,
     Stack,
     UserCircle,
@@ -26,7 +25,7 @@ type AppDrawerContentProps = DrawerContentComponentProps & {
     currentUser: User
 }
 
-type MenuRoute = keyof AppTabParamList | 'StartYourDay'
+type MenuRoute = keyof AppTabParamList
 type MenuItem = {
     label: string
     route: MenuRoute | null
@@ -35,11 +34,9 @@ type MenuItem = {
         | 'schedule'
         | 'reminders'
         | 'todo'
-        | 'start'
         | 'statistics'
         | 'settings'
     isAvailable: boolean
-    isTemporary?: boolean
 }
 
 const menuItems: MenuItem[] = [
@@ -61,13 +58,6 @@ const menuItems: MenuItem[] = [
         route: 'Todo',
         icon: 'todo',
         isAvailable: true,
-    },
-    {
-        label: 'Start your day',
-        route: 'StartYourDay',
-        icon: 'start',
-        isAvailable: true,
-        isTemporary: true,
     },
     {
         label: 'Statistics',
@@ -92,7 +82,6 @@ const getMenuIcon = (name: MenuIconName, color: string) => {
     if (name === 'schedule') return <CalendarBlank {...iconProps} />
     if (name === 'reminders') return <Bell {...iconProps} />
     if (name === 'todo') return <CheckSquare {...iconProps} />
-    if (name === 'start') return <List {...iconProps} />
     if (name === 'statistics') return <ChartBar {...iconProps} />
     return <GearSix {...iconProps} />
 }
@@ -113,10 +102,6 @@ export const AppDrawerContent = ({
             : mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
 
     const onSelectRoute = (route: MenuRoute) => {
-        if (route === 'StartYourDay') {
-            navigation.navigate('StartYourDay')
-            return
-        }
         navigation.navigate('Main', { screen: route })
     }
 
@@ -147,8 +132,6 @@ export const AppDrawerContent = ({
                 <Text style={styles.sectionLabel}>MENU PRINCIPAL</Text>
                 <View style={styles.items}>
                     {menuItems.map(item => {
-                        if (item.isTemporary && !__DEV__) return null
-
                         const isActive = item.route === activeRouteName
                         const itemColor = item.isAvailable
                             ? isActive
@@ -185,11 +168,7 @@ export const AppDrawerContent = ({
                                 >
                                     {item.label}
                                 </Text>
-                                {item.isTemporary ? (
-                                    <Text style={styles.previewBadge}>
-                                        PREVIEW
-                                    </Text>
-                                ) : !item.isAvailable ? (
+                                {!item.isAvailable ? (
                                     <Text style={styles.comingSoon}>
                                         EM BREVE
                                     </Text>
@@ -301,13 +280,6 @@ const styles = StyleSheet.create({
     },
     comingSoon: {
         color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 8,
-        fontWeight: '700',
-        letterSpacing: 0.5,
-    },
-    previewBadge: {
-        color: colors.onboardingPurple,
         fontFamily: typography.fontFamily,
         fontSize: 8,
         fontWeight: '700',

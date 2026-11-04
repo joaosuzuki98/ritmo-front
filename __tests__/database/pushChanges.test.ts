@@ -17,17 +17,22 @@ describe('pushChanges', () => {
                             name: 'Ana Silva',
                             email: 'ana@example.com',
                             _changed:
-                                'name,email,password_hash,password_salt,is_logged_in',
+                                'name,email,password_hash,password_salt,is_logged_in,total_access_days,last_access_date',
                             password_hash: 'private-hash',
                             password_salt: 'private-salt',
                             is_logged_in: true,
+                            total_access_days: 12,
+                            last_access_date: '2026-11-03',
                         },
                     ],
                     updated: [
                         {
                             id: 'user-2',
-                            _changed: 'is_logged_in,updated_at',
+                            _changed:
+                                'is_logged_in,updated_at,total_access_days,last_access_date',
                             is_logged_in: false,
+                            total_access_days: 8,
+                            last_access_date: '2026-11-03',
                             updated_at: 123,
                         },
                     ],
