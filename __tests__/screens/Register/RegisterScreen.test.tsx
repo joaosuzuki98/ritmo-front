@@ -2,13 +2,13 @@ import { act, create } from 'react-test-renderer'
 import type { ReactTestRenderer } from 'react-test-renderer'
 import { Text, TextInput } from 'react-native'
 
-import { registerLocalUser } from '../../../src/database/localAuth'
+import { registerUser } from '../../../src/services/auth'
 import { AuthScreenLayout } from '../../../src/components/AuthScreenLayout/AuthScreenLayout'
 import { RegisterScreen } from '../../../src/screens/Register/RegisterScreen'
 import type { OnboardingIdentity } from '../../../src/types/onboarding'
 
-jest.mock('../../../src/database/localAuth', () => ({
-    registerLocalUser: jest.fn(),
+jest.mock('../../../src/services/auth', () => ({
+    registerUser: jest.fn(),
 }))
 
 describe('RegisterScreen', () => {
@@ -34,7 +34,7 @@ describe('RegisterScreen', () => {
     })
 
     it('renders only email and password and includes the onboarding identity in registration', async () => {
-        jest.mocked(registerLocalUser).mockResolvedValue({
+        jest.mocked(registerUser).mockResolvedValue({
             id: 'user-1',
         } as never)
 
@@ -74,7 +74,7 @@ describe('RegisterScreen', () => {
             await findSubmitButton().props.onPress()
         })
 
-        expect(registerLocalUser).toHaveBeenCalledWith({
+        expect(registerUser).toHaveBeenCalledWith({
             email: 'ana@example.com',
             password: 'password123!',
             ...identity,
@@ -147,7 +147,7 @@ describe('RegisterScreen', () => {
     })
 
     it('keeps the credentials and onboarding identity available after a failed submission', async () => {
-        jest.mocked(registerLocalUser).mockRejectedValue(new Error('Offline'))
+        jest.mocked(registerUser).mockRejectedValue(new Error('Offline'))
 
         await act(async () => {
             renderer = create(
@@ -174,7 +174,7 @@ describe('RegisterScreen', () => {
             renderer.root.findByProps({ accessibilityLabel: 'Email' }).props
                 .value,
         ).toBe('ana@example.com')
-        expect(registerLocalUser).toHaveBeenCalledWith({
+        expect(registerUser).toHaveBeenCalledWith({
             email: 'ana@example.com',
             password: 'password123!',
             ...identity,

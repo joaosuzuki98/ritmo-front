@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 13,
+    version: 14,
     tables: [
         tableSchema({
             name: 'users',
@@ -24,9 +24,6 @@ export const databaseSchema = appSchema({
                 { name: 'name', type: 'string' },
                 { name: 'mascot_name', type: 'string', isOptional: true },
                 { name: 'email', type: 'string', isIndexed: true },
-                { name: 'password', type: 'string', isOptional: true },
-                { name: 'password_hash', type: 'string', isOptional: true },
-                { name: 'password_salt', type: 'string', isOptional: true },
                 { name: 'total_points', type: 'number' },
                 { name: 'level', type: 'number' },
                 { name: 'is_logged_in', type: 'boolean', isOptional: true },

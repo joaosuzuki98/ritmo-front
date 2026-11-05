@@ -7,7 +7,7 @@ import {
 import BootSplash from 'react-native-bootsplash'
 
 import type { User } from '../database'
-import { logoutLocalUser, restoreLocalSession } from '../database/localAuth'
+import { logoutUser, restoreLocalSession } from '../services/auth'
 import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen'
 import { colors } from '../styles/colors'
 import type { OnboardingIdentity } from '../types/onboarding'
@@ -36,7 +36,7 @@ export const RootNavigator = () => {
 
     const handleLogout = async () => {
         if (currentUser) {
-            await logoutLocalUser(currentUser.id).catch(() => null)
+            await logoutUser(currentUser.id).catch(() => null)
         }
         setCurrentUser(null)
         setRegistrationIdentity(undefined)

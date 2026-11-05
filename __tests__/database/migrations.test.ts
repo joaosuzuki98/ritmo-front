@@ -21,7 +21,7 @@ describe('local account database migration', () => {
             item => item.toVersion === 9,
         )
 
-        expect(databaseSchema.version).toBe(13)
+        expect(databaseSchema.version).toBe(14)
         expect(migration?.steps).toContainEqual({
             type: 'add_columns',
             table: 'users',
@@ -38,6 +38,33 @@ describe('local account database migration', () => {
                 },
             ],
         })
+    })
+
+    it('removes local credential columns in version 14', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 14,
+        )
+
+        expect(
+            databaseSchema.tables.users.columnArray.map(column => column.name),
+        ).not.toEqual(
+            expect.arrayContaining([
+                'password',
+                'password_hash',
+                'password_salt',
+            ]),
+        )
+        expect(migration?.steps).toEqual([
+            { type: 'sql', sql: 'ALTER TABLE "users" DROP COLUMN "password";' },
+            {
+                type: 'sql',
+                sql: 'ALTER TABLE "users" DROP COLUMN "password_hash";',
+            },
+            {
+                type: 'sql',
+                sql: 'ALTER TABLE "users" DROP COLUMN "password_salt";',
+            },
+        ])
     })
 
     it('adds the reminder type column when migrating to version 10', () => {

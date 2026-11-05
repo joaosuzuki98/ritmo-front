@@ -9,7 +9,7 @@ import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLa
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
 import { FormActionButton } from '../../components/FormActionButton'
 import type { User } from '../../database'
-import { registerLocalUser } from '../../database/localAuth'
+import { registerUser } from '../../services/auth'
 import type { OnboardingIdentity } from '../../types/onboarding'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
@@ -65,7 +65,7 @@ export const RegisterScreen = ({
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            const user = await registerLocalUser({ ...data, ...identity })
+            const user = await registerUser({ ...data, ...identity })
             onRegisterSuccess(user)
         } catch (error) {
             setSubmitError(

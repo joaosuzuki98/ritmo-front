@@ -17,7 +17,8 @@ describe('pushChanges', () => {
                             name: 'Ana Silva',
                             email: 'ana@example.com',
                             _changed:
-                                'name,email,password_hash,password_salt,is_logged_in,total_access_days,last_access_date',
+                                'name,email,password,password_hash,password_salt,is_logged_in,total_access_days,last_access_date',
+                            password: 'private-password',
                             password_hash: 'private-hash',
                             password_salt: 'private-salt',
                             is_logged_in: true,
@@ -82,7 +83,10 @@ describe('pushChanges', () => {
                             mascot_name: 'Lua',
                             email: 'ana@example.com',
                             password: 'local-password',
-                            _changed: 'name,mascot_name,email,password',
+                            _changed:
+                                'name,mascot_name,email,password,password_hash,password_salt',
+                            password_hash: 'private-hash',
+                            password_salt: 'private-salt',
                         },
                     ],
                     updated: [],
