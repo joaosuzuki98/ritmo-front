@@ -26,6 +26,7 @@ import {
 
 type RemindersScreenProps = {
     currentUser: User
+    totalAccessDays: number
     isAddEventModalVisible: boolean
     onMenuPress?: () => void
     onCloseAddEventModal: () => void
@@ -59,6 +60,7 @@ const formatEventDate = (date: Date): string => {
 
 export const RemindersScreen = ({
     currentUser,
+    totalAccessDays,
     isAddEventModalVisible,
     onMenuPress = () => undefined,
     onCloseAddEventModal,
@@ -109,7 +111,7 @@ export const RemindersScreen = ({
             subtitle={
                 <ScreenSubtitle>Keep track of important dates</ScreenSubtitle>
             }
-            level={currentUser.level}
+            totalAccessDays={totalAccessDays}
             onMenuPress={onMenuPress}
             onProfilePress={() => undefined}
             totalPoints={currentUser.totalPoints}

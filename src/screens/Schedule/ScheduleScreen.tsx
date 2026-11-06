@@ -21,6 +21,7 @@ import { useScheduleViewModel } from './useScheduleViewModel'
 
 type ScheduleScreenProps = {
     currentUser: User
+    totalAccessDays: number
     isAddItemModalVisible: boolean
     onMenuPress?: () => void
     onCloseAddItemModal: () => void
@@ -28,6 +29,7 @@ type ScheduleScreenProps = {
 
 export const ScheduleScreen = ({
     currentUser,
+    totalAccessDays,
     isAddItemModalVisible,
     onMenuPress = () => undefined,
     onCloseAddItemModal,
@@ -134,7 +136,7 @@ export const ScheduleScreen = ({
                     </Pressable>
                 </View>
             }
-            level={currentUser.level}
+            totalAccessDays={totalAccessDays}
             onMenuPress={onMenuPress}
             onProfilePress={() => undefined}
             totalPoints={currentUser.totalPoints}

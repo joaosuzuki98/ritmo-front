@@ -74,7 +74,12 @@ export const AppDrawerNavigator = ({
                 }}
             >
                 <Drawer.Screen name="Main">
-                    {() => <AppNavigator currentUser={currentUser} />}
+                    {() => (
+                        <AppNavigator
+                            currentUser={currentUser}
+                            totalAccessDays={access.totalAccessDays}
+                        />
+                    )}
                 </Drawer.Screen>
                 {access.shouldShowStart ? (
                     <Drawer.Screen

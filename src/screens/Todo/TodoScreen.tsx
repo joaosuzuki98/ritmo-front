@@ -27,6 +27,7 @@ import { useTodoTasksViewModel } from './useTodoTasksViewModel'
 
 type TodoScreenProps = {
     currentUser: User
+    totalAccessDays: number
     isAddTaskModalVisible: boolean
     onMenuPress?: () => void
     onCloseAddTaskModal: () => void
@@ -34,6 +35,7 @@ type TodoScreenProps = {
 
 export const TodoScreen = ({
     currentUser,
+    totalAccessDays,
     isAddTaskModalVisible,
     onMenuPress = () => undefined,
     onCloseAddTaskModal,
@@ -101,7 +103,7 @@ export const TodoScreen = ({
             title="To-do"
             subtitle={<ScreenSubtitle>Organize your next steps</ScreenSubtitle>}
             userName={currentUser.name}
-            level={currentUser.level}
+            totalAccessDays={totalAccessDays}
             totalPoints={currentUser.totalPoints}
             onProfilePress={() => undefined}
             onMenuPress={onMenuPress}

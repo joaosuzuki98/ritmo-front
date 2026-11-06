@@ -8,7 +8,7 @@ import { getResponsiveScale } from '../../styles/responsive'
 
 export type TopBarProps = {
     userName: string
-    level: number
+    totalAccessDays: number
     totalPoints: number
     onProfilePress: () => void
     onMenuPress: () => void
@@ -16,7 +16,7 @@ export type TopBarProps = {
 
 export const TopBar = ({
     userName,
-    level,
+    totalAccessDays,
     totalPoints,
     onProfilePress,
     onMenuPress,
@@ -88,7 +88,7 @@ export const TopBar = ({
                             { fontSize: 24 * scale },
                         ]}
                     >
-                        {level}
+                        {totalAccessDays}
                     </Text>
                 </View>
             </View>

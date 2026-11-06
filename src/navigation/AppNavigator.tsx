@@ -14,11 +14,15 @@ import type { AppTabParamList, RootParamList } from './types'
 
 type AppNavigatorProps = {
     currentUser: User
+    totalAccessDays: number
 }
 
 const Tab = createBottomTabNavigator<AppTabParamList>()
 
-export const AppNavigator = ({ currentUser }: AppNavigatorProps) => {
+export const AppNavigator = ({
+    currentUser,
+    totalAccessDays,
+}: AppNavigatorProps) => {
     const navigation = useNavigation<DrawerNavigationProp<RootParamList>>()
     const [isAddHabitModalVisible, setIsAddHabitModalVisible] = useState(false)
     const [isAddScheduleItemModalVisible, setIsAddScheduleItemModalVisible] =
@@ -65,6 +69,7 @@ export const AppNavigator = ({ currentUser }: AppNavigatorProps) => {
                 {() => (
                     <HabitsDashboardScreen
                         currentUser={currentUser}
+                        totalAccessDays={totalAccessDays}
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onOpenAddHabitModal={openAddHabitModal}
@@ -80,6 +85,7 @@ export const AppNavigator = ({ currentUser }: AppNavigatorProps) => {
                 {() => (
                     <ScheduleScreen
                         currentUser={currentUser}
+                        totalAccessDays={totalAccessDays}
                         isAddItemModalVisible={isAddScheduleItemModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onCloseAddItemModal={() =>
@@ -92,6 +98,7 @@ export const AppNavigator = ({ currentUser }: AppNavigatorProps) => {
                 {() => (
                     <RemindersScreen
                         currentUser={currentUser}
+                        totalAccessDays={totalAccessDays}
                         isAddEventModalVisible={isAddReminderEventModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onCloseAddEventModal={() =>
@@ -104,6 +111,7 @@ export const AppNavigator = ({ currentUser }: AppNavigatorProps) => {
                 {() => (
                     <TodoScreen
                         currentUser={currentUser}
+                        totalAccessDays={totalAccessDays}
                         isAddTaskModalVisible={isAddTodoTaskModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onCloseAddTaskModal={() =>

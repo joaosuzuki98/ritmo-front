@@ -40,6 +40,7 @@ import { getHabitCardOffset } from './habitDragUtils'
 
 export const HabitsDashboardScreen = ({
     currentUser,
+    totalAccessDays,
     title = 'Habits',
     initialWeekDay,
     isAddHabitModalVisible = false,
@@ -224,7 +225,7 @@ export const HabitsDashboardScreen = ({
                 />
             }
             userName={currentUser.name}
-            level={currentUser.level}
+            totalAccessDays={totalAccessDays}
             totalPoints={currentUser.totalPoints}
             onProfilePress={() => undefined}
             onMenuPress={onMenuPress}
