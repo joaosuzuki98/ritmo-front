@@ -31,8 +31,6 @@ export const AppNavigator = ({
         useState(false)
     const [isAddTodoTaskModalVisible, setIsAddTodoTaskModalVisible] =
         useState(false)
-    // TODO: Persist this dismissal in onboarding/preferences instead of resetting on app launch.
-    const [isDoubleTapHintVisible, setIsDoubleTapHintVisible] = useState(true)
     const openAddHabitModal = () => setIsAddHabitModalVisible(true)
     const closeAddHabitModal = () => setIsAddHabitModalVisible(false)
     const openAddItem = useCallback((routeName: string) => {
@@ -74,10 +72,6 @@ export const AppNavigator = ({
                         onMenuPress={() => navigation.openDrawer()}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}
-                        isDoubleTapHintVisible={isDoubleTapHintVisible}
-                        onCloseDoubleTapHint={() =>
-                            setIsDoubleTapHintVisible(false)
-                        }
                     />
                 )}
             </Tab.Screen>

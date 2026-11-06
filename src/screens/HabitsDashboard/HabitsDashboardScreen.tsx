@@ -28,7 +28,6 @@ import { AddHabitModal } from './components/AddHabitModal'
 import { HabitCard } from './components/HabitCard'
 import { HabitToolbar } from './components/HabitToolbar'
 import { HabitDetailsModal } from './components/HabitDetailsModal'
-import { DoubleTapHintModal } from './components/DoubleTapHintModal'
 import { LogHabitProgressModal } from './components/LogHabitProgressModal'
 import { SearchInput } from './components/SearchInput'
 import type {
@@ -47,8 +46,6 @@ export const HabitsDashboardScreen = ({
     onMenuPress = () => undefined,
     onOpenAddHabitModal = () => undefined,
     onCloseAddHabitModal = () => undefined,
-    isDoubleTapHintVisible = true,
-    onCloseDoubleTapHint = () => undefined,
 }: HabitsDashboardScreenProps) => {
     const viewModel = useHabitsDashboardViewModel(
         currentUser.id,
@@ -450,10 +447,6 @@ export const HabitsDashboardScreen = ({
                 selectedDate={viewModel.selectedDate}
                 onClose={() => setHabitToLog(null)}
                 onSave={handleSaveHabitProgress}
-            />
-            <DoubleTapHintModal
-                isVisible={isDoubleTapHintVisible}
-                onClose={onCloseDoubleTapHint}
             />
         </ScreenLayout>
     )
