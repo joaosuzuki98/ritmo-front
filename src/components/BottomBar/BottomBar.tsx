@@ -5,7 +5,7 @@ import {
     Bell,
     CalendarBlank,
     CheckSquare,
-    Plus,
+    FirstAid,
     Stack,
 } from 'phosphor-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -42,9 +42,9 @@ export const BottomBar = ({
                 },
             ]}
         >
-            <Plus
+            <FirstAid
                 color={bottomBarStyles.addIcon.color}
-                size={55 * scale}
+                size={50 * scale}
                 weight="regular"
             />
             <Text
@@ -78,25 +78,25 @@ export const BottomBar = ({
                     route.name === 'Habits' ? (
                         <Stack
                             color={iconColor}
-                            size={39 * scale}
+                            size={36 * scale}
                             weight={isFocused ? 'bold' : 'regular'}
                         />
                     ) : route.name === 'Schedule' ? (
                         <CalendarBlank
                             color={iconColor}
-                            size={38 * scale}
+                            size={35 * scale}
                             weight={isFocused ? 'bold' : 'regular'}
                         />
                     ) : route.name === 'Reminders' ? (
                         <Bell
                             color={iconColor}
-                            size={38 * scale}
+                            size={35 * scale}
                             weight={isFocused ? 'bold' : 'regular'}
                         />
                     ) : (
                         <CheckSquare
                             color={iconColor}
-                            size={38 * scale}
+                            size={35 * scale}
                             weight={isFocused ? 'bold' : 'regular'}
                         />
                     )
