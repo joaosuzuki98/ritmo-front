@@ -2,6 +2,7 @@ import { Pressable, Text, View, useWindowDimensions } from 'react-native'
 import { Fire, Lightning, List } from 'phosphor-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import UserMascot from '../../assets/images/mascot/default-mascot.svg'
 import { topBarStyles } from './TopBar.styles'
 import { getResponsiveScale } from '../../styles/responsive'
 
@@ -48,7 +49,9 @@ export const TopBar = ({
                         width: 64 * scale,
                     },
                 ]}
-            />
+            >
+                <UserMascot height={56 * scale} width={56 * scale} />
+            </Pressable>
             <View style={[topBarStyles.identity, { marginLeft: 12 * scale }]}>
                 <Text
                     numberOfLines={1}
