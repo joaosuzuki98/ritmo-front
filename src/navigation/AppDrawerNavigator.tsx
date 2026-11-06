@@ -1,8 +1,10 @@
 import { createDrawerNavigator } from '@react-navigation/drawer'
 import type { DrawerContentComponentProps } from '@react-navigation/drawer'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { ActivityIndicator, Pressable, Text, View } from 'react-native'
 
+import { API_BASE_URL } from '../constants/api'
+import { createSyncManager } from '../database/sync'
 import type { User } from '../database'
 import { StartYourDayScreen } from '../screens/StartYourDay/StartYourDayScreen'
 import { colors } from '../styles/colors'
@@ -23,6 +25,20 @@ export const AppDrawerNavigator = ({
     currentUser,
     onLogout,
 }: AppDrawerNavigatorProps) => {
+    useEffect(() => {
+        const syncManager = createSyncManager({
+            baseUrl: API_BASE_URL,
+            onError: error =>
+                console.warn(
+                    'Database synchronization failed',
+                    error instanceof Error ? error.message : 'Unknown error',
+                ),
+        })
+        syncManager.start()
+
+        return syncManager.stop
+    }, [currentUser.id])
+
     const { access, hasError, finishStart, retry } = useDailyAccess(
         currentUser.id,
     )

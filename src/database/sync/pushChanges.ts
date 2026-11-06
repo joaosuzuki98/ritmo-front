@@ -8,6 +8,8 @@ import type {
     SyncTableChangeSet,
 } from '@nozbe/watermelondb/sync'
 
+const maxPushChanges = 5000
+
 const pushResponseSchema = z
     .object({
         experimentalRejectedIds: z
@@ -70,11 +72,84 @@ const removeLocalUserChanges = (
         ...changes,
         users: {
             ...userChanges,
-            created: userChanges.created.map(removeLocalUserFields),
+            created: [],
             updated,
+            deleted: [],
         },
     }
 }
+
+const removeReadOnlyChanges = (
+    changes: SyncDatabaseChangeSet,
+): SyncDatabaseChangeSet => {
+    const writableChanges = {
+        ...(changes as Record<string, SyncTableChangeSet>),
+    }
+    delete writableChanges.incompletion_reasons
+    return writableChanges as SyncDatabaseChangeSet
+}
+
+const removeChangesWithLocalReasonIds = (changes: SyncDatabaseChangeSet) => {
+    const localChanges = changes as Record<string, SyncTableChangeSet>
+    const localReasons = localChanges.incompletion_reasons
+    if (!localReasons) return { changes, rejectedIds: {} }
+
+    const localReasonIds = new Set([
+        ...localReasons.created.map(record => record.id),
+        ...localReasons.updated.map(record => record.id),
+        ...localReasons.deleted,
+    ])
+    const completionRecords = localChanges.completion_records
+    if (!completionRecords || !localReasonIds.size) {
+        return {
+            changes,
+            rejectedIds: { incompletion_reasons: [...localReasonIds] },
+        }
+    }
+
+    const rejectedCompletionIds = [
+        ...completionRecords.created,
+        ...completionRecords.updated,
+    ]
+        .filter(
+            record =>
+                typeof record.incompletion_reason_id === 'string' &&
+                localReasonIds.has(record.incompletion_reason_id),
+        )
+        .map(record => record.id)
+    const rejectedIds: Record<string, string[]> = {
+        incompletion_reasons: [...localReasonIds],
+    }
+    if (rejectedCompletionIds.length) {
+        rejectedIds.completion_records = rejectedCompletionIds
+    }
+
+    return {
+        changes: {
+            ...changes,
+            completion_records: {
+                ...completionRecords,
+                created: completionRecords.created.filter(
+                    record => !rejectedCompletionIds.includes(record.id),
+                ),
+                updated: completionRecords.updated.filter(
+                    record => !rejectedCompletionIds.includes(record.id),
+                ),
+            },
+        } as SyncDatabaseChangeSet,
+        rejectedIds,
+    }
+}
+
+const countChanges = (changes: SyncDatabaseChangeSet): number =>
+    Object.values(changes as Record<string, SyncTableChangeSet>).reduce(
+        (total, table) =>
+            total +
+            table.created.length +
+            table.updated.length +
+            table.deleted.length,
+        0,
+    )
 
 export const createPushChanges =
     ({ api, path, getAuthToken }: PushChangesOptions) =>
@@ -82,13 +157,19 @@ export const createPushChanges =
         changes,
         lastPulledAt,
     }: SyncPushArgs): Promise<SyncPushResult> => {
+        const { changes: changesWithoutLocalReasonRefs, rejectedIds } =
+            removeChangesWithLocalReasonIds(removeLocalUserChanges(changes))
+        const safeChanges = removeReadOnlyChanges(changesWithoutLocalReasonRefs)
+        if (countChanges(safeChanges) > maxPushChanges) {
+            throw new Error('Sync push exceeds the 5,000-change limit.')
+        }
+
         const token = await getAuthToken?.()
-        const safeChanges = removeLocalUserChanges(changes)
         const response = await api.post(
             path,
             {
                 changes: safeChanges,
-                last_pulled_at: lastPulledAt,
+                lastPulledAt,
             },
             {
                 headers: token
@@ -97,5 +178,27 @@ export const createPushChanges =
             },
         )
 
-        return pushResponseSchema.parse(response.data ?? {})
+        const pushResult =
+            response.status === 204 || response.data == null
+                ? {}
+                : pushResponseSchema.parse(response.data)
+        if (Object.keys(rejectedIds).length === 0) return pushResult
+
+        const serverRejectedIds = pushResult.experimentalRejectedIds ?? {}
+        return {
+            ...pushResult,
+            experimentalRejectedIds: Object.fromEntries(
+                Object.entries({ ...serverRejectedIds, ...rejectedIds }).map(
+                    ([table, ids]) => [
+                        table,
+                        [
+                            ...new Set([
+                                ...(serverRejectedIds[table] ?? []),
+                                ...(ids ?? []),
+                            ]),
+                        ],
+                    ],
+                ),
+            ),
+        }
     }
