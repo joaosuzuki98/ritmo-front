@@ -1,6 +1,6 @@
 import { act, create } from 'react-test-renderer'
 import type { ReactTestRenderer } from 'react-test-renderer'
-import { ActivityIndicator, Text } from 'react-native'
+import { Text } from 'react-native'
 import LottieView from 'lottie-react-native'
 import { useIsFocused } from '@react-navigation/native'
 
@@ -128,22 +128,12 @@ describe('AskTheStarsScreen analysis loading', () => {
                             'Reading your habit history…',
                     ),
             ).toBe(true)
-            expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(
-                1,
-            )
-
             emit('habits', [makeHabit('Read')])
             emit(lastTable === 'events' ? 'completion_records' : 'events', [])
             expect(messages()).toEqual([])
 
             emit(lastTable, [])
-            expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(
-                1,
-            )
             act(() => jest.advanceTimersByTime(700))
-            expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(
-                0,
-            )
             expect(messages()).toEqual([
                 'I need a little more history with Read before I can find a reliable pattern. Keep tracking it and ask me again soon.',
             ])
@@ -158,7 +148,6 @@ describe('AskTheStarsScreen analysis loading', () => {
         expect([...new Set(messages())]).toEqual([
             'Coming soon! Ask the stars for guidance with your habits.',
         ])
-        expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(0)
     })
 
     it('uses the requested habit immediately when returning from another modal', () => {
@@ -174,7 +163,6 @@ describe('AskTheStarsScreen analysis loading', () => {
         act(() => renderer.update(screen('Walk')))
 
         expect(messages()).toEqual([])
-        expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(1)
         act(() => jest.advanceTimersByTime(700))
         expect(messages()).toHaveLength(1)
         expect(messages()[0]).toContain('with Walk')
@@ -226,7 +214,6 @@ describe('AskTheStarsScreen analysis loading', () => {
         jest.mocked(AnimatedStarMessage).mockClear()
 
         act(() => renderer.update(screen('Read')))
-        expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(1)
         expect(messages()).toEqual([])
         act(() => jest.advanceTimersByTime(700))
         expect(messages()).toHaveLength(1)
@@ -247,8 +234,6 @@ describe('AskTheStarsScreen analysis loading', () => {
         emit('habits', [read, makeHabit('Walk')])
         act(() => previousHistoryObserver?.next([]))
         expect(messages()).toEqual([])
-        expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(1)
-
         emit('completion_records', [])
         expect(messages()).toHaveLength(1)
         expect(LottieView).toHaveBeenCalledTimes(1)
@@ -260,9 +245,7 @@ describe('AskTheStarsScreen analysis loading', () => {
         })
         emit('habits', [])
         emit('events', [])
-        expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(1)
         act(() => jest.advanceTimersByTime(700))
-        expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(0)
         expect(messages()).toHaveLength(1)
         expect(observers.completion_records).toBeUndefined()
     })
@@ -281,9 +264,6 @@ describe('AskTheStarsScreen analysis loading', () => {
             act(() => observers[table]?.error())
             emit('events', [])
 
-            expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(
-                0,
-            )
             expect(messages()).toEqual([])
             expect(
                 renderer.root

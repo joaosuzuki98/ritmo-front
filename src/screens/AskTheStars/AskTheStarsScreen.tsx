@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { ComponentRef } from 'react'
 import { ArrowUp } from 'phosphor-react-native'
 import {
-    ActivityIndicator,
     Platform,
     Pressable,
     ScrollView,
@@ -230,7 +229,6 @@ export const AskTheStarsScreen = ({
                         accessibilityState={{ busy: true }}
                         className="mb-4 items-center gap-2"
                     >
-                        <ActivityIndicator color={colors.onboardingPurple} />
                         <Text
                             style={{
                                 color: colors.onboardingPurple,
