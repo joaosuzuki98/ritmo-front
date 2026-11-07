@@ -53,7 +53,7 @@ export const AskTheStarsScreen = ({
     totalAccessDays,
 }: AskTheStarsScreenProps) => {
     const { bottom } = useSafeAreaInsets()
-    const { height, width } = useWindowDimensions()
+    const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const moonWidth = Math.min(width * 0.38, spacing.touchTarget * 5)
     const {
@@ -196,14 +196,9 @@ export const AskTheStarsScreen = ({
 
             <ScrollView
                 ref={scrollRef}
-                contentContainerStyle={[
-                    styles.scrollContent,
-                    {
-                        minHeight: height - 100 * scale,
-                        paddingBottom: 230 * scale + bottom,
-                    },
-                ]}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                style={styles.scrollView}
             >
                 <Text
                     style={[
@@ -290,7 +285,7 @@ export const AskTheStarsScreen = ({
                 <View
                     style={[
                         styles.analysisActions,
-                        { bottom: spacing.md + bottom },
+                        { marginBottom: spacing.md + bottom },
                     ]}
                 >
                     <Pressable
@@ -422,8 +417,10 @@ const styles = StyleSheet.create({
     scrollContent: {
         alignItems: 'center',
         paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.md,
         paddingTop: spacing.xs,
     },
+    scrollView: { flex: 1 },
     title: {
         color: colors.text,
         fontFamily:
@@ -544,9 +541,7 @@ const styles = StyleSheet.create({
     analysisActions: {
         alignSelf: 'stretch',
         gap: spacing.sm,
-        left: spacing.lg,
-        position: 'absolute',
-        right: spacing.lg,
+        marginHorizontal: spacing.lg,
     },
     acceptButton: {
         alignItems: 'center',
