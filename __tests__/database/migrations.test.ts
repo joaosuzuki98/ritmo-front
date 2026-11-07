@@ -21,7 +21,7 @@ describe('local account database migration', () => {
             item => item.toVersion === 9,
         )
 
-        expect(databaseSchema.version).toBe(16)
+        expect(databaseSchema.version).toBe(17)
         expect(migration?.steps).toContainEqual({
             type: 'add_columns',
             table: 'users',
@@ -170,11 +170,6 @@ describe('local account database migration', () => {
                     type: 'string',
                     isOptional: true,
                 },
-                {
-                    name: 'pending_habit_analysis_id',
-                    type: 'string',
-                    isOptional: true,
-                },
             ],
         })
         expect(
@@ -191,12 +186,32 @@ describe('local account database migration', () => {
                     type: 'string',
                     isOptional: true,
                 }),
-                expect.objectContaining({
+            ]),
+        )
+    })
+
+    it('adds the pending habit-analysis route in version 17', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 17,
+        )
+
+        expect(migration?.steps).toContainEqual({
+            type: 'add_columns',
+            table: 'notification_preferences',
+            columns: [
+                {
                     name: 'pending_habit_analysis_id',
                     type: 'string',
                     isOptional: true,
-                }),
-            ]),
-        )
+                },
+            ],
+        })
+        expect(
+            databaseSchema.tables.notification_preferences.columnArray,
+        ).toContainEqual({
+            name: 'pending_habit_analysis_id',
+            type: 'string',
+            isOptional: true,
+        })
     })
 })

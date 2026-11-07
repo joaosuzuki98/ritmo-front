@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 16,
+    version: 17,
     tables: [
         tableSchema({
             name: 'users',

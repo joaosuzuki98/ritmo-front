@@ -423,6 +423,17 @@ export const databaseMigrations = schemaMigrations({
                             type: 'string',
                             isOptional: true,
                         },
+                    ],
+                },
+            ],
+        },
+        {
+            toVersion: 17,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'notification_preferences',
+                    columns: [
                         {
                             name: 'pending_habit_analysis_id',
                             type: 'string',
