@@ -116,9 +116,9 @@ export const AppDrawerContent = ({
             : mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
 
     const onSelectRoute = (route: MenuRoute) => {
+        navigation.closeDrawer()
         if (route === 'AskTheStars') navigation.navigate('AskTheStars')
         else navigation.navigate('Main', { screen: route })
-        navigation.closeDrawer()
     }
 
     return (
