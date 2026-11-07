@@ -119,14 +119,8 @@ export const AskTheStarsScreen = ({
                   (selectedAnalysis?.successRate ?? 0) * 100,
               )}% success rate across ${
                   selectedAnalysis?.occurrenceCount
-              } scheduled days. Your habits with stronger completion history do best around ${formatTime(
-                  selectedSuggestion.time,
-              )}. This schedule is free and keeps the same weekly frequency.`
-            : `Based on your history, ${formatTime(
-                  selectedSuggestion.time,
-              )} is a promising time for ${
-                  selectedHabit.name
-              }. This schedule is free and keeps the same weekly frequency.`
+              } scheduled days. Your habits with stronger completion history show promising times below. Choose a free option that fits your routine; it keeps the same weekly frequency.`
+            : `Based on your history, the schedules below are promising options for ${selectedHabit.name}. Choose the one that best fits your routine; each is free and keeps the same weekly frequency.`
     }
 
     const starMessage = getStarMessage()
