@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { memo, useCallback, useRef } from 'react'
 import { Animated, Easing, View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
@@ -11,84 +11,100 @@ type AnimatedStarMessageProps = {
 const letterDelay = 45
 const popDuration = 220
 
-export const AnimatedStarMessage = ({ message }: AnimatedStarMessageProps) => {
-    const progress = useRef(new Animated.Value(0)).current
+export const AnimatedStarMessage = memo(
+    ({ message }: AnimatedStarMessageProps) => {
+        const progress = useRef(new Animated.Value(0)).current
 
-    useFocusEffect(
-        useCallback(() => {
-            const duration =
-                Array.from(message).length * letterDelay + popDuration
-            progress.setValue(0)
-            const animation = Animated.timing(progress, {
-                toValue: duration,
-                duration,
-                easing: Easing.linear,
-                useNativeDriver: true,
-            })
-            animation.start()
+        useFocusEffect(
+            useCallback(() => {
+                const duration =
+                    Array.from(message).length * letterDelay + popDuration
+                progress.setValue(0)
+                const animation = Animated.timing(progress, {
+                    toValue: duration,
+                    duration,
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+                animation.start()
 
-            return () => animation.stop()
-        }, [message, progress]),
-    )
+                return () => animation.stop()
+            }, [message, progress]),
+        )
 
-    let characterIndex = 0
+        let characterIndex = 0
 
-    return (
-        <View
-            accessible
-            accessibilityLabel={message}
-            accessibilityRole="text"
-            className="mb-4 self-stretch"
-        >
+        return (
             <View
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-                className="flex-row flex-wrap justify-center"
+                accessible
+                accessibilityLabel={message}
+                accessibilityRole="text"
+                className="mb-4 self-stretch"
             >
-                {message.split(/(\s+)/).map((word, wordIndex) => (
-                    <View key={wordIndex} className="flex-row">
-                        {Array.from(word).map(character => {
-                            const index = characterIndex++
-                            const start = (index + 1) * letterDelay
+                <View
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    className="flex-row flex-wrap justify-center"
+                >
+                    {message.split(/(\s+)/).map((word, wordIndex) => (
+                        <View key={wordIndex} className="flex-row">
+                            {Array.from(word).map(character => {
+                                const index = characterIndex++
+                                const start = (index + 1) * letterDelay
 
-                            return (
-                                <Animated.Text
-                                    key={index}
-                                    accessible={false}
-                                    style={{
-                                        color: theme.colors.onboardingPurple,
-                                        fontFamily: theme.typography.fontFamily,
-                                        fontSize:
-                                            theme.typography.body.fontSize,
-                                        lineHeight:
-                                            theme.typography.body.lineHeight,
-                                        opacity: progress.interpolate({
-                                            inputRange: [start, start + 100],
-                                            outputRange: [0, 1],
-                                            extrapolate: 'clamp',
-                                        }),
-                                        transform: [
-                                            {
-                                                scale: progress.interpolate({
-                                                    inputRange: [
-                                                        start,
-                                                        start + 100,
-                                                        start + popDuration,
-                                                    ],
-                                                    outputRange: [0.8, 1.1, 1],
-                                                    extrapolate: 'clamp',
-                                                }),
-                                            },
-                                        ],
-                                    }}
-                                >
-                                    {character}
-                                </Animated.Text>
-                            )
-                        })}
-                    </View>
-                ))}
+                                return (
+                                    <Animated.Text
+                                        key={index}
+                                        accessible={false}
+                                        style={{
+                                            color: theme.colors
+                                                .onboardingPurple,
+                                            fontFamily:
+                                                theme.typography.fontFamily,
+                                            fontSize:
+                                                theme.typography.body.fontSize,
+                                            lineHeight:
+                                                theme.typography.body
+                                                    .lineHeight,
+                                            opacity: progress.interpolate({
+                                                inputRange: [
+                                                    start,
+                                                    start + 100,
+                                                ],
+                                                outputRange: [0, 1],
+                                                extrapolate: 'clamp',
+                                            }),
+                                            transform: [
+                                                {
+                                                    scale: progress.interpolate(
+                                                        {
+                                                            inputRange: [
+                                                                start,
+                                                                start + 100,
+                                                                start +
+                                                                    popDuration,
+                                                            ],
+                                                            outputRange: [
+                                                                0.8, 1.1, 1,
+                                                            ],
+                                                            extrapolate:
+                                                                'clamp',
+                                                        },
+                                                    ),
+                                                },
+                                            ],
+                                        }}
+                                    >
+                                        {character}
+                                    </Animated.Text>
+                                )
+                            })}
+                        </View>
+                    ))}
+                </View>
             </View>
-        </View>
-    )
-}
+        )
+    },
+)
+
+AnimatedStarMessage.displayName = 'AnimatedStarMessage'

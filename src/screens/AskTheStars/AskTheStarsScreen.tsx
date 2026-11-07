@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
-import LottieView from 'lottie-react-native'
+import { useEffect, useRef, useState } from 'react'
+import type { ComponentRef } from 'react'
 import { ArrowUp } from 'phosphor-react-native'
 import {
+    ActivityIndicator,
     Platform,
     Pressable,
     ScrollView,
@@ -13,6 +14,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { BottomSheetLayout } from '../../components/BottomSheetLayout'
 import type { User } from '../../database'
 import { StarBackground } from '../../components/StarBackground/StarBackground'
 import { TopBar } from '../../components/TopBar/TopBar'
@@ -23,7 +25,9 @@ import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { AnimatedStarMessage } from './components/AnimatedStarMessage'
+import { StarMoonAnimation } from './components/StarMoonAnimation'
 import { useAskTheStarsViewModel } from './useAskTheStarsViewModel'
+import { useAnalysisLoading } from './useAnalysisLoading'
 
 type AskTheStarsScreenProps = {
     currentUser: User
@@ -53,22 +57,42 @@ export const AskTheStarsScreen = ({
     const { height, width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const moonWidth = Math.min(width * 0.38, spacing.touchTarget * 5)
-    const moonHeight = (moonWidth * 120) / 135
     const {
         acceptSuggestion,
         errorMessage,
+        hasLoadError,
+        isLoading,
         isSaving,
         selectableHabits,
         selectHabit,
         selectedAnalysis,
         selectedHabit,
     } = useAskTheStarsViewModel(currentUser.id, initialHabitId)
-    const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0)
+    const [suggestionSelection, setSuggestionSelection] = useState<{
+        habitId: string | undefined
+        index: number
+    }>({ habitId: undefined, index: 0 })
+    const [isHabitPickerVisible, setIsHabitPickerVisible] = useState(false)
     const isAnalysisFlow = Boolean(initialHabitId)
+    const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
+    const shouldShowAnalysisLoading = useAnalysisLoading({
+        habitId: isAnalysisFlow
+            ? selectedHabit?.id ?? initialHabitId
+            : undefined,
+        isLoading,
+        hasLoadError,
+    })
 
     useEffect(() => {
-        setSelectedSuggestionIndex(0)
-    }, [selectedAnalysis?.habitId])
+        if (shouldShowAnalysisLoading)
+            scrollRef.current?.scrollTo({ y: 0, animated: false })
+    }, [shouldShowAnalysisLoading])
+
+    const selectedSuggestionIndex =
+        suggestionSelection.habitId === selectedAnalysis?.habitId &&
+        suggestionSelection.index < (selectedAnalysis?.suggestions.length ?? 0)
+            ? suggestionSelection.index
+            : 0
 
     const selectedSuggestion: HabitScheduleSuggestion | undefined =
         selectedAnalysis?.suggestions[selectedSuggestionIndex]
@@ -109,7 +133,7 @@ export const AskTheStarsScreen = ({
     const starMessage = getStarMessage()
 
     const handleAccept = async () => {
-        if (!selectedSuggestion || isSaving) return
+        if (!selectedSuggestion || isSaving || shouldShowAnalysisLoading) return
         if (await acceptSuggestion(selectedSuggestion)) onClose()
     }
 
@@ -126,7 +150,12 @@ export const AskTheStarsScreen = ({
                 key={`${suggestion.days.join(
                     '-',
                 )}-${suggestion.time.getHours()}`}
-                onPress={() => setSelectedSuggestionIndex(index)}
+                onPress={() =>
+                    setSuggestionSelection({
+                        habitId: selectedAnalysis?.habitId,
+                        index,
+                    })
+                }
                 style={[
                     styles.suggestionCard,
                     isSelected && styles.selectedSuggestionCard,
@@ -167,6 +196,7 @@ export const AskTheStarsScreen = ({
             </Pressable>
 
             <ScrollView
+                ref={scrollRef}
                 contentContainerStyle={[
                     styles.scrollContent,
                     {
@@ -191,63 +221,58 @@ export const AskTheStarsScreen = ({
                             {currentUser.mascotName || currentUser.name}
                         </Text>
                     </View>
-                    <LottieView
-                        autoPlay
-                        loop
-                        resizeMode="contain"
-                        source={require('../../assets/animations/moon_idle.json')}
-                        style={{ height: moonHeight, width: moonWidth }}
-                    />
+                    <StarMoonAnimation width={moonWidth} />
                 </View>
 
-                {isAnalysisFlow ? (
-                    <Text style={styles.messageText}>{starMessage}</Text>
-                ) : (
-                    <AnimatedStarMessage message={starMessage} />
-                )}
-
-                {isAnalysisFlow && selectableHabits.length ? (
-                    <ScrollView
-                        horizontal
-                        contentContainerStyle={styles.habitChoices}
-                        showsHorizontalScrollIndicator={false}
+                {shouldShowAnalysisLoading ? (
+                    <View
+                        accessibilityLabel="Loading habit analysis"
+                        accessibilityState={{ busy: true }}
+                        className="mb-4 items-center gap-2"
                     >
-                        {selectableHabits.map(habit => {
-                            const isSelected = habit.id === selectedHabit?.id
-                            return (
-                                <Pressable
-                                    accessibilityRole="button"
-                                    accessibilityState={{
-                                        selected: isSelected,
-                                    }}
-                                    key={habit.id}
-                                    onPress={() => selectHabit(habit.id)}
-                                    style={[
-                                        styles.habitChip,
-                                        isSelected && styles.selectedHabitChip,
-                                    ]}
-                                >
-                                    <Text
-                                        numberOfLines={1}
-                                        style={[
-                                            styles.habitChipText,
-                                            isSelected &&
-                                                styles.selectedHabitChipText,
-                                        ]}
-                                    >
-                                        {habit.name}
-                                    </Text>
-                                </Pressable>
-                            )
-                        })}
-                    </ScrollView>
-                ) : isAnalysisFlow ? (
-                    <Text style={styles.emptyMessage}>
-                        No active habits are available to analyze yet.
-                    </Text>
+                        <ActivityIndicator color={colors.onboardingPurple} />
+                        <Text
+                            style={{
+                                color: colors.onboardingPurple,
+                                fontFamily: typography.fontFamily,
+                            }}
+                        >
+                            Reading your habit history…
+                        </Text>
+                    </View>
+                ) : null}
+                {!isAnalysisFlow ||
+                (!shouldShowAnalysisLoading && !hasLoadError) ? (
+                    <AnimatedStarMessage
+                        key={starMessage}
+                        message={starMessage}
+                    />
                 ) : null}
 
-                {isAnalysisFlow && selectedAnalysis?.suggestions.length ? (
+                {isAnalysisFlow ? (
+                    <Pressable
+                        accessibilityLabel={
+                            selectedHabit
+                                ? `Selected habit: ${selectedHabit.name}. Choose another habit`
+                                : 'Choose a habit to analyze'
+                        }
+                        accessibilityRole="button"
+                        disabled={shouldShowAnalysisLoading || hasLoadError}
+                        onPress={() => setIsHabitPickerVisible(true)}
+                        style={styles.selectedHabitButton}
+                    >
+                        <Text
+                            numberOfLines={1}
+                            style={styles.selectedHabitText}
+                        >
+                            {selectedHabit?.name ?? 'Choose a habit'}
+                        </Text>
+                    </Pressable>
+                ) : null}
+
+                {isAnalysisFlow &&
+                !shouldShowAnalysisLoading &&
+                selectedAnalysis?.suggestions.length ? (
                     <View style={styles.suggestions}>
                         <Text style={styles.suggestionsHeading}>
                             {selectedAnalysis.suggestions.length > 1
@@ -261,52 +286,118 @@ export const AskTheStarsScreen = ({
                 {isAnalysisFlow && errorMessage ? (
                     <Text style={styles.errorMessage}>{errorMessage}</Text>
                 ) : null}
-
-                {isAnalysisFlow ? (
-                    <View style={styles.actions}>
-                        <Pressable
-                            accessibilityRole="button"
-                            disabled={!selectedSuggestion || isSaving}
-                            onPress={handleAccept}
-                            style={[
-                                styles.acceptButton,
-                                (!selectedSuggestion || isSaving) &&
-                                    styles.disabledButton,
-                            ]}
-                        >
-                            <Text style={styles.acceptButtonText}>
-                                {isSaving ? 'Saving…' : 'Accept schedule'}
-                            </Text>
-                        </Pressable>
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={onClose}
-                            style={styles.cancelButton}
-                        >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
-                        </Pressable>
-                    </View>
-                ) : null}
             </ScrollView>
 
-            <View style={[styles.composer, { bottom: spacing.md + bottom }]}>
-                <TextInput
-                    accessibilityLabel="Ask your star, available in a future update"
-                    accessibilityState={{ disabled: true }}
-                    editable={false}
-                    placeholder="Ask a question about your habits"
-                    placeholderTextColor={colors.onboardingMuted}
-                    style={styles.composerInput}
-                />
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: true }}
-                    disabled
-                    style={styles.composerButton}
+            {isAnalysisFlow ? (
+                <View
+                    style={[
+                        styles.analysisActions,
+                        { bottom: spacing.md + bottom },
+                    ]}
                 >
-                    <ArrowUp color={colors.white} size={32 * scale} />
-                </Pressable>
-            </View>
+                    <Pressable
+                        accessibilityRole="button"
+                        disabled={
+                            !selectedSuggestion ||
+                            isSaving ||
+                            shouldShowAnalysisLoading
+                        }
+                        onPress={handleAccept}
+                        style={[
+                            styles.acceptButton,
+                            (!selectedSuggestion ||
+                                isSaving ||
+                                shouldShowAnalysisLoading) &&
+                                styles.disabledButton,
+                        ]}
+                    >
+                        <Text style={styles.acceptButtonText}>
+                            {isSaving ? 'Saving…' : 'Accept schedule'}
+                        </Text>
+                    </Pressable>
+                    <Pressable
+                        accessibilityRole="button"
+                        onPress={onClose}
+                        style={styles.cancelButton}
+                    >
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </Pressable>
+                </View>
+            ) : (
+                <View
+                    style={[styles.composer, { bottom: spacing.md + bottom }]}
+                >
+                    <TextInput
+                        accessibilityLabel="Ask your star, available in a future update"
+                        accessibilityState={{ disabled: true }}
+                        editable={false}
+                        placeholder="Ask a question about your habits"
+                        placeholderTextColor={colors.onboardingMuted}
+                        style={styles.composerInput}
+                    />
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ disabled: true }}
+                        disabled
+                        style={styles.composerButton}
+                    >
+                        <ArrowUp color={colors.white} size={32 * scale} />
+                    </Pressable>
+                </View>
+            )}
+
+            <BottomSheetLayout
+                closeAccessibilityLabel="Close habit selection"
+                heightMode="max"
+                heightRatio={0.5}
+                isVisible={isAnalysisFlow && isHabitPickerVisible}
+                onClose={() => setIsHabitPickerVisible(false)}
+                title="Choose a habit"
+            >
+                <ScrollView
+                    contentContainerStyle={styles.habitOptions}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {selectableHabits.length ? (
+                        selectableHabits.map(habit => {
+                            const isSelected = habit.id === selectedHabit?.id
+                            return (
+                                <Pressable
+                                    accessibilityRole="radio"
+                                    accessibilityState={{
+                                        selected: isSelected,
+                                    }}
+                                    key={habit.id}
+                                    onPress={() => {
+                                        selectHabit(habit.id)
+                                        setIsHabitPickerVisible(false)
+                                    }}
+                                    style={[
+                                        styles.habitOption,
+                                        isSelected &&
+                                            styles.selectedHabitOption,
+                                    ]}
+                                >
+                                    <Text
+                                        numberOfLines={1}
+                                        style={[
+                                            styles.habitOptionText,
+                                            isSelected &&
+                                                styles.selectedHabitOptionText,
+                                        ]}
+                                    >
+                                        {habit.name}
+                                    </Text>
+                                </Pressable>
+                            )
+                        })
+                    ) : (
+                        <Text style={styles.emptyMessage}>
+                            No active habits are available to analyze yet.
+                        </Text>
+                    )}
+                </ScrollView>
+            </BottomSheetLayout>
         </View>
     )
 }
@@ -367,39 +458,42 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 15,
     },
-    messageText: {
-        alignSelf: 'stretch',
-        color: colors.onboardingPurple,
-        marginBottom: spacing.md,
-        fontFamily: typography.fontFamily,
-        fontSize: typography.body.fontSize,
-        lineHeight: typography.body.lineHeight,
-        textAlign: 'center',
-    },
-    habitChoices: {
+    selectedHabitButton: {
         alignItems: 'center',
-        gap: spacing.sm,
-        paddingVertical: spacing.xs,
+        alignSelf: 'stretch',
+        justifyContent: 'center',
+        marginBottom: spacing.sm,
+        minHeight: spacing.touchTarget,
     },
-    habitChip: {
+    selectedHabitText: {
+        color: colors.onboardingPurple,
+        fontFamily: typography.semiboldFontFamily,
+        fontSize: 18,
+        fontWeight: '600',
+        textDecorationLine: 'underline',
+    },
+    habitOptions: {
+        gap: spacing.sm,
+        paddingBottom: spacing.lg,
+    },
+    habitOption: {
         backgroundColor: colors.onboardingSurface,
         borderColor: colors.border,
-        borderRadius: spacing.lg,
+        borderRadius: spacing.sm,
         borderWidth: 1,
-        maxWidth: 190,
         paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs,
+        paddingVertical: spacing.md,
     },
-    selectedHabitChip: {
+    selectedHabitOption: {
         backgroundColor: colors.onboardingAction,
         borderColor: colors.onboardingAction,
     },
-    habitChipText: {
+    habitOptionText: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
-        fontSize: 14,
+        fontSize: 16,
     },
-    selectedHabitChipText: { color: colors.text },
+    selectedHabitOptionText: { color: colors.text },
     emptyMessage: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
@@ -449,10 +543,12 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         marginVertical: spacing.sm,
     },
-    actions: {
+    analysisActions: {
         alignSelf: 'stretch',
         gap: spacing.sm,
-        marginTop: spacing.md,
+        left: spacing.lg,
+        position: 'absolute',
+        right: spacing.lg,
     },
     acceptButton: {
         alignItems: 'center',
@@ -470,11 +566,13 @@ const styles = StyleSheet.create({
     },
     cancelButton: {
         alignItems: 'center',
+        backgroundColor: colors.dayCount,
+        borderRadius: spacing.sm,
         justifyContent: 'center',
         minHeight: spacing.touchTarget,
     },
     cancelButtonText: {
-        color: colors.textMuted,
+        color: colors.white,
         fontFamily: typography.fontFamily,
         fontSize: 15,
     },
