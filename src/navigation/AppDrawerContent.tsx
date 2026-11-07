@@ -5,6 +5,7 @@ import {
     GearSix,
     SignOut,
     Sparkle,
+    Storefront,
     Trophy,
     UserCircle,
     UsersThree,
@@ -35,6 +36,7 @@ type MenuItem = {
         | 'friends'
         | 'astrology'
         | 'statistics'
+        | 'shop'
         | 'settings'
     isAvailable: boolean
 }
@@ -71,6 +73,12 @@ const menuItems: MenuItem[] = [
         isAvailable: false,
     },
     {
+        label: 'Shop',
+        route: null,
+        icon: 'shop',
+        isAvailable: false,
+    },
+    {
         label: 'Settings',
         route: null,
         icon: 'settings',
@@ -88,6 +96,7 @@ const getMenuIcon = (name: MenuIconName, color: string) => {
     if (name === 'friends') return <UsersThree {...iconProps} />
     if (name === 'astrology') return <Sparkle {...iconProps} />
     if (name === 'statistics') return <ChartBar {...iconProps} />
+    if (name === 'shop') return <Storefront {...iconProps} />
     return <GearSix {...iconProps} />
 }
 
