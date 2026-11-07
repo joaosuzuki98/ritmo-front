@@ -9,6 +9,7 @@ const defaultPreferences: NotificationPreferences = {
     notifyHabitStart: false,
     notifyDailyFocus: false,
     notifyPriorityHabits: false,
+    notifyLowSuccessHabits: false,
     minimumPriority: null,
 }
 
@@ -97,6 +98,7 @@ describe('buildLocalReminderPlan', () => {
             {
                 ...defaultPreferences,
                 notifyPriorityHabits: true,
+                notifyLowSuccessHabits: false,
                 minimumPriority: 'medium',
             },
             mondayMorning,

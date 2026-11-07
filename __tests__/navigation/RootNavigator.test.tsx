@@ -19,6 +19,9 @@ jest.mock('../../src/services/auth', () => ({
     restoreLocalSession: jest.fn(),
     logoutUser: jest.fn(),
 }))
+jest.mock('../../src/notifications/localNotificationEvents', () => ({
+    consumePendingHabitAnalysis: jest.fn(async () => null),
+}))
 jest.mock('../../src/screens/Onboarding/OnboardingScreen', () => ({
     OnboardingScreen: () => null,
 }))

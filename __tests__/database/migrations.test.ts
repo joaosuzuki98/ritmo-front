@@ -21,7 +21,7 @@ describe('local account database migration', () => {
             item => item.toVersion === 9,
         )
 
-        expect(databaseSchema.version).toBe(15)
+        expect(databaseSchema.version).toBe(16)
         expect(migration?.steps).toContainEqual({
             type: 'add_columns',
             table: 'users',
@@ -146,6 +146,55 @@ describe('local account database migration', () => {
                 expect.objectContaining({
                     name: 'notify_priority_habits',
                     type: 'boolean',
+                }),
+            ]),
+        )
+    })
+
+    it('adds low-success notification settings in version 16', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 16,
+        )
+
+        expect(migration?.steps).toContainEqual({
+            type: 'add_columns',
+            table: 'notification_preferences',
+            columns: [
+                {
+                    name: 'notify_low_success_habits',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                {
+                    name: 'low_success_notification_state',
+                    type: 'string',
+                    isOptional: true,
+                },
+                {
+                    name: 'pending_habit_analysis_id',
+                    type: 'string',
+                    isOptional: true,
+                },
+            ],
+        })
+        expect(
+            databaseSchema.tables.notification_preferences.columnArray,
+        ).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    name: 'notify_low_success_habits',
+                    type: 'boolean',
+                    isOptional: true,
+                }),
+                expect.objectContaining({
+                    name: 'low_success_notification_state',
+                    type: 'string',
+                    isOptional: true,
+                }),
+                expect.objectContaining({
+                    name: 'pending_habit_analysis_id',
+                    type: 'string',
+                    isOptional: true,
                 }),
             ]),
         )

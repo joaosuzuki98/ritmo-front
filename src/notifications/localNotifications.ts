@@ -15,9 +15,13 @@ import {
 } from '../database'
 import {
     defaultNotificationPreferences,
+    parseLowSuccessNotificationState,
+    saveLowSuccessNotificationState,
     type NotificationPreferences,
+    type LowSuccessNotificationState,
 } from './notificationPreferences'
 import { buildLocalReminderPlan } from './localReminderPlan'
+import { evaluateLowSuccessNotifications } from './lowSuccessNotifications'
 
 const notificationChannelId = 'habit-reminders'
 const notificationIdPrefix = 'ritmo:'
@@ -79,6 +83,7 @@ const toPreferences = (
         notifyHabitStart: record.notifyHabitStart,
         notifyDailyFocus: record.notifyDailyFocus,
         notifyPriorityHabits: record.notifyPriorityHabits,
+        notifyLowSuccessHabits: record.notifyLowSuccessHabits ?? false,
         minimumPriority,
     }
 }
@@ -100,6 +105,10 @@ const scheduleUserNotifications = async (
     habits: readonly Habit[],
     completions: readonly CompletionRecord[],
     preferences: NotificationPreferences,
+    notificationState: LowSuccessNotificationState,
+    onNotificationStateChange: (
+        state: LowSuccessNotificationState,
+    ) => Promise<void>,
 ) => {
     await cancelUserNotifications(userId)
 
@@ -107,62 +116,122 @@ const scheduleUserNotifications = async (
         preferences.notifyHabitStart ||
         preferences.notifyDailyFocus ||
         preferences.notifyPriorityHabits
-    if (!hasEnabledOption) return
 
-    const reminders = buildLocalReminderPlan(
+    if (hasEnabledOption) {
+        const reminders = buildLocalReminderPlan(
+            habits.map(habit => ({
+                id: habit.id,
+                name: habit.name,
+                priority: habit.priority,
+                isFocusOfDay: habit.isFocusOfDay,
+                status: habit.status,
+                preferredTime: habit.preferredTime,
+                weekDays: habit.weekDays,
+            })),
+            completions.map(completion => ({
+                habitId: completion.habitId,
+                date: completion.date,
+                status: completion.status,
+                updatedAt: completion.updatedAt,
+            })),
+            preferences,
+        )
+
+        if (reminders.length) {
+            const access = await getLocalNotificationPermission()
+            if (access.hasPermission && !access.needsExactAlarmPermission) {
+                await createHabitReminderChannel()
+
+                await Promise.all(
+                    reminders.map(reminder =>
+                        notifee.createTriggerNotification(
+                            {
+                                id: `${notificationIdPrefix}${userId}:${reminder.id.replace(
+                                    'ritmo:',
+                                    '',
+                                )}`,
+                                title: reminder.title,
+                                body: reminder.body,
+                                android: {
+                                    channelId: notificationChannelId,
+                                    pressAction: { id: 'default' },
+                                },
+                            },
+                            {
+                                type: TriggerType.TIMESTAMP,
+                                timestamp: reminder.scheduledAt.getTime(),
+                                alarmManager: { allowWhileIdle: true },
+                            },
+                        ),
+                    ),
+                )
+            }
+        }
+    }
+
+    const lowSuccessEvaluation = evaluateLowSuccessNotifications(
         habits.map(habit => ({
             id: habit.id,
             name: habit.name,
-            priority: habit.priority,
-            isFocusOfDay: habit.isFocusOfDay,
             status: habit.status,
-            preferredTime: habit.preferredTime,
             weekDays: habit.weekDays,
+            preferredTime: habit.preferredTime,
+            estimatedDurationMinutes: habit.estimatedDurationMinutes,
+            createdAt: habit.createdAt,
+            seasonalStart: habit.seasonalStart,
+            seasonalEnd: habit.seasonalEnd,
         })),
         completions.map(completion => ({
             habitId: completion.habitId,
             date: completion.date,
             status: completion.status,
+            completionTime: completion.completionTime,
             updatedAt: completion.updatedAt,
         })),
-        preferences,
+        notificationState,
+        {
+            enabled: preferences.notifyLowSuccessHabits,
+            hasPermission: (await getLocalNotificationPermission())
+                .hasPermission,
+        },
     )
-    if (!reminders.length) return
 
-    const access = await getLocalNotificationPermission()
-    if (!access.hasPermission || access.needsExactAlarmPermission) return
-
-    await createHabitReminderChannel()
-
-    await Promise.all(
-        reminders.map(reminder =>
-            notifee.createTriggerNotification(
-                {
-                    id: `${notificationIdPrefix}${userId}:${reminder.id.replace(
-                        'ritmo:',
-                        '',
-                    )}`,
-                    title: reminder.title,
-                    body: reminder.body,
+    if (lowSuccessEvaluation.notifications.length) {
+        await createHabitReminderChannel()
+        await Promise.all(
+            lowSuccessEvaluation.notifications.map(notification =>
+                notifee.displayNotification({
+                    id: `${notificationIdPrefix}${userId}:low-success:${notification.habitId}:${notification.notifiedAt}`,
+                    title: 'A habit could use a new schedule',
+                    body: `${notification.habitName} has a ${Math.round(
+                        notification.successRate * 100,
+                    )}% success rate. Ask the Stars for a suggestion.`,
+                    data: {
+                        type: 'low_success_habit',
+                        habitId: notification.habitId,
+                        userId,
+                    },
                     android: {
                         channelId: notificationChannelId,
                         pressAction: { id: 'default' },
                     },
-                },
-                {
-                    type: TriggerType.TIMESTAMP,
-                    timestamp: reminder.scheduledAt.getTime(),
-                    alarmManager: { allowWhileIdle: true },
-                },
+                }),
             ),
-        ),
+        )
+    }
+
+    if (
+        JSON.stringify(lowSuccessEvaluation.state) !==
+        JSON.stringify(notificationState)
     )
+        await onNotificationStateChange(lowSuccessEvaluation.state)
 }
 
 export const startLocalReminderManager = (userId: string) => {
     let habits: Habit[] = []
     let completions: CompletionRecord[] = []
     let preferences = defaultNotificationPreferences
+    let notificationState: LowSuccessNotificationState = {}
     let isStopped = false
     let scheduleQueue = Promise.resolve()
     let completionSubscription: { unsubscribe: () => void } | undefined
@@ -177,6 +246,11 @@ export const startLocalReminderManager = (userId: string) => {
                     habits,
                     completions,
                     preferences,
+                    notificationState,
+                    async state => {
+                        notificationState = state
+                        await saveLowSuccessNotificationState(userId, state)
+                    },
                 )
             })
     }
@@ -191,6 +265,10 @@ export const startLocalReminderManager = (userId: string) => {
             'status',
             'preferred_time',
             'week_days',
+            'estimated_duration_minutes',
+            'created_at',
+            'seasonal_start',
+            'seasonal_end',
         ])
         .subscribe(records => {
             habits = records
@@ -206,7 +284,12 @@ export const startLocalReminderManager = (userId: string) => {
                             Q.oneOf(habits.map(habit => habit.id)),
                         ),
                     )
-                    .observeWithColumns(['date', 'status', 'updated_at'])
+                    .observeWithColumns([
+                        'date',
+                        'status',
+                        'completion_time',
+                        'updated_at',
+                    ])
                     .subscribe(completionRecords => {
                         completions = completionRecords
                         schedule()
@@ -225,10 +308,14 @@ export const startLocalReminderManager = (userId: string) => {
             'notify_habit_start',
             'notify_daily_focus',
             'notify_priority_habits',
+            'notify_low_success_habits',
             'minimum_priority',
         ])
         .subscribe(records => {
             preferences = toPreferences(records[0])
+            notificationState = parseLowSuccessNotificationState(
+                records[0]?.lowSuccessNotificationState,
+            )
             schedule()
         })
 

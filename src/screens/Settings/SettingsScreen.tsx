@@ -118,6 +118,13 @@ export const SettingsScreen = ({
                                 togglePreference('notifyPriorityHabits')
                             }
                         />
+                        <SettingsCheckbox
+                            checked={preferences.notifyLowSuccessHabits}
+                            label="Notify me when a habit's success rate is low"
+                            onPress={() =>
+                                togglePreference('notifyLowSuccessHabits')
+                            }
+                        />
                     </View>
 
                     <SettingsSelect

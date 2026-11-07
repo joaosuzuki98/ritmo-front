@@ -406,5 +406,31 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 16,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'notification_preferences',
+                    columns: [
+                        {
+                            name: 'notify_low_success_habits',
+                            type: 'boolean',
+                            isOptional: true,
+                        },
+                        {
+                            name: 'low_success_notification_state',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                        {
+                            name: 'pending_habit_analysis_id',
+                            type: 'string',
+                            isOptional: true,
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 })

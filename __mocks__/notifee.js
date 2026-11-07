@@ -7,14 +7,18 @@ const notifee = {
     cancelNotification: jest.fn(async () => undefined),
     createChannel: jest.fn(async ({ id }) => id),
     createTriggerNotification: jest.fn(async ({ id }) => id),
+    displayNotification: jest.fn(async ({ id }) => id),
+    getInitialNotification: jest.fn(async () => null),
     getNotificationSettings: jest.fn(async () => notificationSettings),
     getTriggerNotifications: jest.fn(async () => []),
     openAlarmPermissionSettings: jest.fn(async () => undefined),
     openNotificationSettings: jest.fn(async () => undefined),
+    onForegroundEvent: jest.fn(() => jest.fn()),
     requestPermission: jest.fn(async () => notificationSettings),
 }
 
 module.exports = {
+    __esModule: true,
     AndroidImportance: { DEFAULT: 3 },
     AndroidNotificationSetting: {
         DISABLED: 0,
@@ -28,5 +32,6 @@ module.exports = {
         PROVISIONAL: 2,
     },
     TriggerType: { TIMESTAMP: 0 },
+    EventType: { PRESS: 1 },
     default: notifee,
 }
