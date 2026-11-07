@@ -103,17 +103,17 @@ export const SettingsScreen = ({
                     <View style={styles.checkboxList}>
                         <SettingsCheckbox
                             checked={preferences.notifyHabitStart}
-                            label="Receber um aviso de quando a data de início de um hábito estiver próxima"
+                            label="Notify me when a habit is about to start (15 minutes beforehand)"
                             onPress={() => togglePreference('notifyHabitStart')}
                         />
                         <SettingsCheckbox
                             checked={preferences.notifyDailyFocus}
-                            label="Receber lembretes dos hábitos que são o foco do dia e que ainda não foram completados"
+                            label="Remind me about focus habits I haven't completed today"
                             onPress={() => togglePreference('notifyDailyFocus')}
                         />
                         <SettingsCheckbox
                             checked={preferences.notifyPriorityHabits}
-                            label="Receber um lembrete dos hábitos ainda não completados por prioridade"
+                            label="Remind me about priority habits I haven't completed"
                             onPress={() =>
                                 togglePreference('notifyPriorityHabits')
                             }
