@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../constants/api'
 import { createSyncManager } from '../database/sync'
 import type { User } from '../database'
 import { StartYourDayScreen } from '../screens/StartYourDay/StartYourDayScreen'
+import { AskTheStarsScreen } from '../screens/AskTheStars/AskTheStarsScreen'
 import { colors } from '../styles/colors'
 import { AppDrawerContent } from './AppDrawerContent'
 import { AppDrawerLogoutContext } from './AppDrawerLogoutContext'
@@ -115,6 +116,17 @@ export const AppDrawerNavigator = ({
                         )}
                     </Drawer.Screen>
                 ) : null}
+                <Drawer.Screen name="AskTheStars">
+                    {({ navigation, route }) => (
+                        <AskTheStarsScreen
+                            currentUser={currentUser}
+                            initialHabitId={route.params?.habitId}
+                            onClose={() => navigation.goBack()}
+                            onMenuPress={() => navigation.openDrawer()}
+                            totalAccessDays={access.totalAccessDays}
+                        />
+                    )}
+                </Drawer.Screen>
             </Drawer.Navigator>
         </AppDrawerLogoutContext.Provider>
     )

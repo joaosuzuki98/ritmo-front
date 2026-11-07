@@ -26,7 +26,7 @@ type AppDrawerContentProps = DrawerContentComponentProps & {
     currentUser: User
 }
 
-type MenuRoute = keyof AppTabParamList
+type MenuRoute = keyof AppTabParamList | 'AskTheStars'
 type MenuItem = {
     label: string
     route: MenuRoute | null
@@ -62,9 +62,9 @@ const menuItems: MenuItem[] = [
     },
     {
         label: 'Ask the Stars',
-        route: null,
+        route: 'AskTheStars',
         icon: 'astrology',
-        isAvailable: false,
+        isAvailable: true,
     },
     {
         label: 'Statistics',
@@ -111,12 +111,13 @@ export const AppDrawerContent = ({
     const mainState = mainRoute?.state
     const drawerRouteName = state.routes[state.index]?.name
     const activeRouteName =
-        drawerRouteName === 'StartYourDay'
+        drawerRouteName === 'StartYourDay' || drawerRouteName === 'AskTheStars'
             ? drawerRouteName
             : mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
 
     const onSelectRoute = (route: MenuRoute) => {
-        navigation.navigate('Main', { screen: route })
+        if (route === 'AskTheStars') navigation.navigate('AskTheStars')
+        else navigation.navigate('Main', { screen: route })
         navigation.closeDrawer()
     }
 

@@ -34,6 +34,7 @@ type HabitDetailsModalProps = {
     onEdit: () => void
     onDelete: () => void
     onLogProgress: () => void
+    onAnalyzeSchedule: () => void
 }
 
 const formatDate = (date?: Date) =>
@@ -75,6 +76,7 @@ export const HabitDetailsModal = ({
     onEdit,
     onDelete,
     onLogProgress,
+    onAnalyzeSchedule,
 }: HabitDetailsModalProps) => {
     const { height, width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
@@ -230,6 +232,12 @@ export const HabitDetailsModal = ({
                             ? 'Complete requirements first'
                             : 'Record today’s progress'
                     }
+                    containerStyle={styles.logProgressButton}
+                />
+                <FormActionButton
+                    accessibilityLabel={`Analyze the schedule for ${habit.title} with Ask the Stars`}
+                    onPress={onAnalyzeSchedule}
+                    title="Ask the Stars to analyze this habit"
                     containerStyle={styles.logProgressButton}
                 />
 

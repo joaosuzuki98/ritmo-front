@@ -82,6 +82,9 @@ export const AppNavigator = ({
                         onMenuPress={() => navigation.openDrawer()}
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}
+                        onAnalyzeSchedule={habitId =>
+                            navigation.navigate('AskTheStars', { habitId })
+                        }
                     />
                 )}
             </Tab.Screen>

@@ -44,6 +44,7 @@ export const HabitsDashboardScreen = ({
     initialWeekDay,
     isAddHabitModalVisible = false,
     onMenuPress = () => undefined,
+    onAnalyzeSchedule,
     onOpenAddHabitModal = () => undefined,
     onCloseAddHabitModal = () => undefined,
 }: HabitsDashboardScreenProps) => {
@@ -439,6 +440,12 @@ export const HabitsDashboardScreen = ({
                 onLogProgress={() => {
                     setHabitToLog(selectedHabit)
                     setSelectedHabit(null)
+                }}
+                onAnalyzeSchedule={() => {
+                    if (!selectedHabit) return
+                    const habitId = selectedHabit.id
+                    setSelectedHabit(null)
+                    onAnalyzeSchedule?.(habitId)
                 }}
             />
             <LogHabitProgressModal
