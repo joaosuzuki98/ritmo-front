@@ -154,6 +154,9 @@ const scheduleUserNotifications = async (
                                 body: reminder.body,
                                 android: {
                                     channelId: notificationChannelId,
+                                    smallIcon: 'ic_notification',
+                                    largeIcon: require('../assets/images/mascot/default-mascot.png'),
+                                    circularLargeIcon: true,
                                     pressAction: { id: 'default' },
                                 },
                             },
@@ -213,6 +216,9 @@ const scheduleUserNotifications = async (
                     },
                     android: {
                         channelId: notificationChannelId,
+                        smallIcon: 'ic_notification',
+                        largeIcon: require('../assets/images/mascot/default-mascot.png'),
+                        circularLargeIcon: true,
                         pressAction: { id: 'default' },
                     },
                 }),
