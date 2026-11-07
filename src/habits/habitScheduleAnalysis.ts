@@ -207,37 +207,31 @@ const isHabitSlotAvailable = (
     const start = hour * 60
     const end = start + duration
 
+    // Historical reference habits still occupy their recurring weekday slot.
+    const hasHabitConflict = habits.some(otherHabit => {
+        if (
+            otherHabit.id === habit.id ||
+            otherHabit.status === 'paused' ||
+            !otherHabit.weekDays.includes(weekDay) ||
+            !otherHabit.preferredTime
+        )
+            return false
+
+        const otherStart =
+            otherHabit.preferredTime.getHours() * 60 +
+            otherHabit.preferredTime.getMinutes()
+        const otherEnd =
+            otherStart + Math.max(1, otherHabit.estimatedDurationMinutes ?? 60)
+
+        return overlaps(start, end, otherStart, otherEnd)
+    })
+    if (hasHabitConflict) return false
+
     const horizonDays = 28
     for (let daysAhead = 0; daysAhead < horizonDays; daysAhead += 1) {
         const date = normalizeLocalDate(now)
         date.setDate(date.getDate() + daysAhead)
         if (getWeekDay(date) !== weekDay) continue
-
-        const hasHabitConflict = habits.some(otherHabit => {
-            if (
-                otherHabit.id === habit.id ||
-                otherHabit.status === 'paused' ||
-                !otherHabit.weekDays.includes(weekDay) ||
-                !otherHabit.preferredTime ||
-                (otherHabit.createdAt &&
-                    date < normalizeLocalDate(otherHabit.createdAt)) ||
-                (otherHabit.seasonalStart &&
-                    date < normalizeLocalDate(otherHabit.seasonalStart)) ||
-                (otherHabit.seasonalEnd &&
-                    date > normalizeLocalDate(otherHabit.seasonalEnd))
-            )
-                return false
-
-            const otherStart =
-                otherHabit.preferredTime.getHours() * 60 +
-                otherHabit.preferredTime.getMinutes()
-            const otherEnd =
-                otherStart +
-                Math.max(1, otherHabit.estimatedDurationMinutes ?? 60)
-
-            return overlaps(start, end, otherStart, otherEnd)
-        })
-        if (hasHabitConflict) return false
 
         const hasEventConflict = events.some(event => {
             if (localDateKey(event.dateTime) !== localDateKey(date))

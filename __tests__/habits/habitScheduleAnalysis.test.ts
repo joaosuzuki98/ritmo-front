@@ -33,7 +33,12 @@ const makeHistory = (
         if (!habit.weekDays.includes(weekDay)) continue
         const status = statusForDate(date)
         const completionTime = new Date(date)
-        completionTime.setHours(19, 0, 0, 0)
+        completionTime.setHours(
+            habit.preferredTime?.getHours() ?? 19,
+            habit.preferredTime?.getMinutes() ?? 0,
+            0,
+            0,
+        )
         completions.push({
             habitId: habit.id,
             date,
@@ -151,5 +156,56 @@ describe('analyzeHabitSchedules', () => {
         ).find(item => item.habitId === lowHabit.id)
 
         expect(analysis?.suggestions[0]?.days).toEqual([4])
+    })
+
+    it('recommends free alternate weekdays for seasonal reference habits', () => {
+        const morningHabit = makeHabit('morning', [1], {
+            preferredTime: new Date(2026, 10, 7, 8),
+            seasonalEnd: new Date(2026, 10, 6),
+        })
+        const eveningHabit = makeHabit('evening', [1], {
+            preferredTime: new Date(2026, 10, 7, 17),
+            seasonalEnd: new Date(2026, 10, 6),
+        })
+        const lowHabit = makeHabit('low', [1], {
+            preferredTime: new Date(2026, 10, 7, 19),
+        })
+        const makeStrongHistory = (
+            habit: ScheduleAnalysisHabit,
+            successes: number,
+        ) => {
+            let completed = 0
+            return makeHistory(habit, () => {
+                completed += 1
+                return completed <= successes ? 'completed' : 'skipped'
+            })
+        }
+        const morningHistory = makeStrongHistory(morningHabit, 11)
+        const eveningHistory = makeStrongHistory(eveningHabit, 12)
+        let lowCompleted = false
+        const lowHistory = makeHistory(lowHabit, () => {
+            if (!lowCompleted) {
+                lowCompleted = true
+                return 'completed'
+            }
+            return 'skipped'
+        })
+
+        const analysis = analyzeHabitSchedules(
+            [morningHabit, eveningHabit, lowHabit],
+            [...morningHistory, ...eveningHistory, ...lowHistory],
+            [],
+            now,
+        ).find(item => item.habitId === lowHabit.id)
+
+        expect(
+            analysis?.suggestions.map(suggestion => ({
+                days: suggestion.days,
+                hour: suggestion.time.getHours(),
+            })),
+        ).toEqual([
+            { days: [2], hour: 17 },
+            { days: [2], hour: 8 },
+        ])
     })
 })
