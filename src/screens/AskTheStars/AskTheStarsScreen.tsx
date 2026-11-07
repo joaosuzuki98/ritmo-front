@@ -97,6 +97,7 @@ export const AskTheStarsScreen = ({
         selectedAnalysis?.suggestions[selectedSuggestionIndex]
     const isLowSuccess = selectedAnalysis?.isLowSuccess ?? false
     const hasEnoughHistory = selectedAnalysis?.hasEnoughHistory ?? false
+    const successRate = selectedAnalysis?.successRate ?? 0
 
     const getStarMessage = () => {
         if (!isAnalysisFlow)
@@ -105,22 +106,26 @@ export const AskTheStarsScreen = ({
             return 'Choose a habit and I will look for a time that fits your routine.'
         if (!hasEnoughHistory)
             return `I need a little more history with ${selectedHabit.name} before I can find a reliable pattern. Keep tracking it and ask me again soon.`
-        if (!selectedSuggestion)
-            return isLowSuccess
-                ? `I found that ${
-                      selectedHabit.name
-                  } is completed about ${Math.round(
-                      (selectedAnalysis?.successRate ?? 0) * 100,
-                  )}% of the time, but there is no conflict-free high-success slot that preserves its current weekly frequency.`
-                : `I couldn't find a conflict-free time with enough history to recommend for ${selectedHabit.name}.`
+        if (isLowSuccess)
+            return selectedSuggestion
+                ? `${selectedHabit.name} has a ${Math.round(
+                      successRate * 100,
+                  )}% success rate. Your stronger habits point to free alternative times below; choose one to keep the same weekly frequency.`
+                : `${selectedHabit.name} has a ${Math.round(
+                      successRate * 100,
+                  )}% success rate, but I couldn't find a free alternative time that keeps the same weekly frequency.`
+        if (successRate < 0.5)
+            return `${selectedHabit.name} is completed ${Math.round(
+                successRate * 100,
+            )}% of the time. There is room to build a steadier routine; keep tracking your progress.`
+        if (successRate < 0.75)
+            return `${selectedHabit.name} is completed ${Math.round(
+                successRate * 100,
+            )}% of the time. You're making progress—small, consistent steps can help strengthen this habit.`
 
-        return isLowSuccess
-            ? `${selectedHabit.name} has a ${Math.round(
-                  (selectedAnalysis?.successRate ?? 0) * 100,
-              )}% success rate across ${
-                  selectedAnalysis?.occurrenceCount
-              } scheduled days. Your habits with stronger completion history show promising times below. Choose a free option that fits your routine; it keeps the same weekly frequency.`
-            : `Based on your history, the schedules below are promising options for ${selectedHabit.name}. Choose the one that best fits your routine; each is free and keeps the same weekly frequency.`
+        return `${selectedHabit.name} is completed ${Math.round(
+            successRate * 100,
+        )}% of the time. That's strong consistency; keep up the great work!`
     }
 
     const starMessage = getStarMessage()
@@ -259,6 +264,7 @@ export const AskTheStarsScreen = ({
 
                 {isAnalysisFlow &&
                 !shouldShowAnalysisLoading &&
+                isLowSuccess &&
                 selectedAnalysis?.suggestions.length ? (
                     <View style={styles.suggestions}>
                         <Text style={styles.suggestionsHeading}>
@@ -282,26 +288,28 @@ export const AskTheStarsScreen = ({
                         { marginBottom: spacing.md + bottom },
                     ]}
                 >
-                    <Pressable
-                        accessibilityRole="button"
-                        disabled={
-                            !selectedSuggestion ||
-                            isSaving ||
-                            shouldShowAnalysisLoading
-                        }
-                        onPress={handleAccept}
-                        style={[
-                            styles.acceptButton,
-                            (!selectedSuggestion ||
+                    {isLowSuccess ? (
+                        <Pressable
+                            accessibilityRole="button"
+                            disabled={
+                                !selectedSuggestion ||
                                 isSaving ||
-                                shouldShowAnalysisLoading) &&
-                                styles.disabledButton,
-                        ]}
-                    >
-                        <Text style={styles.acceptButtonText}>
-                            {isSaving ? 'Saving…' : 'Accept schedule'}
-                        </Text>
-                    </Pressable>
+                                shouldShowAnalysisLoading
+                            }
+                            onPress={handleAccept}
+                            style={[
+                                styles.acceptButton,
+                                (!selectedSuggestion ||
+                                    isSaving ||
+                                    shouldShowAnalysisLoading) &&
+                                    styles.disabledButton,
+                            ]}
+                        >
+                            <Text style={styles.acceptButtonText}>
+                                {isSaving ? 'Saving…' : 'Accept schedule'}
+                            </Text>
+                        </Pressable>
+                    ) : null}
                     <Pressable
                         accessibilityRole="button"
                         onPress={onClose}
