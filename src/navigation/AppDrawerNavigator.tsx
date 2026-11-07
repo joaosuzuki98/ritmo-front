@@ -121,7 +121,16 @@ export const AppDrawerNavigator = ({
                         <AskTheStarsScreen
                             currentUser={currentUser}
                             initialHabitId={route.params?.habitId}
-                            onClose={() => navigation.goBack()}
+                            onClose={() => {
+                                if (navigation.canGoBack()) {
+                                    navigation.goBack()
+                                    return
+                                }
+
+                                navigation.navigate('Main', {
+                                    screen: 'Habits',
+                                })
+                            }}
                             onMenuPress={() => navigation.openDrawer()}
                             totalAccessDays={access.totalAccessDays}
                         />

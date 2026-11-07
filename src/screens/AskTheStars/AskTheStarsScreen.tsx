@@ -63,6 +63,8 @@ export const AskTheStarsScreen = ({
         selectedHabit,
     } = useAskTheStarsViewModel(currentUser.id, initialHabitId)
     const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0)
+    const [displayedStarMessage, setDisplayedStarMessage] = useState('')
+    const isAnalysisFlow = Boolean(initialHabitId)
 
     useEffect(() => {
         setSelectedSuggestionIndex(0)
@@ -74,6 +76,8 @@ export const AskTheStarsScreen = ({
     const hasEnoughHistory = selectedAnalysis?.hasEnoughHistory ?? false
 
     const getStarMessage = () => {
+        if (!isAnalysisFlow)
+            return 'Coming soon! Ask the stars for guidance with your habits.'
         if (!selectedHabit)
             return 'Choose a habit and I will look for a time that fits your routine.'
         if (!hasEnoughHistory)
@@ -101,6 +105,27 @@ export const AskTheStarsScreen = ({
                   selectedHabit.name
               }. This schedule is free and keeps the same weekly frequency.`
     }
+
+    const starMessage = getStarMessage()
+
+    useEffect(() => {
+        if (isAnalysisFlow) return
+
+        setDisplayedStarMessage('')
+        const characters = Array.from(starMessage)
+        let characterIndex = 0
+        const typingInterval = setInterval(() => {
+            characterIndex += 1
+            setDisplayedStarMessage(
+                characters.slice(0, characterIndex).join(''),
+            )
+
+            if (characterIndex >= characters.length)
+                clearInterval(typingInterval)
+        }, 45)
+
+        return () => clearInterval(typingInterval)
+    }, [isAnalysisFlow, starMessage])
 
     const handleAccept = async () => {
         if (!selectedSuggestion || isSaving) return
@@ -150,6 +175,15 @@ export const AskTheStarsScreen = ({
                 totalPoints={currentUser.totalPoints}
                 userName={currentUser.name}
             />
+            <Pressable
+                accessibilityLabel="Back to previous screen"
+                accessibilityRole="button"
+                hitSlop={spacing.sm}
+                onPress={onClose}
+                style={styles.backButton}
+            >
+                <Text style={styles.backText}>Back</Text>
+            </Pressable>
 
             <ScrollView
                 contentContainerStyle={[
@@ -185,9 +219,11 @@ export const AskTheStarsScreen = ({
                     />
                 </View>
 
-                <Text style={styles.messageText}>{getStarMessage()}</Text>
+                <Text style={styles.messageText}>
+                    {isAnalysisFlow ? starMessage : displayedStarMessage}
+                </Text>
 
-                {selectableHabits.length ? (
+                {isAnalysisFlow && selectableHabits.length ? (
                     <ScrollView
                         horizontal
                         contentContainerStyle={styles.habitChoices}
@@ -222,13 +258,13 @@ export const AskTheStarsScreen = ({
                             )
                         })}
                     </ScrollView>
-                ) : (
+                ) : isAnalysisFlow ? (
                     <Text style={styles.emptyMessage}>
                         No active habits are available to analyze yet.
                     </Text>
-                )}
+                ) : null}
 
-                {selectedAnalysis?.suggestions.length ? (
+                {isAnalysisFlow && selectedAnalysis?.suggestions.length ? (
                     <View style={styles.suggestions}>
                         <Text style={styles.suggestionsHeading}>
                             {selectedAnalysis.suggestions.length > 1
@@ -239,33 +275,35 @@ export const AskTheStarsScreen = ({
                     </View>
                 ) : null}
 
-                {errorMessage ? (
+                {isAnalysisFlow && errorMessage ? (
                     <Text style={styles.errorMessage}>{errorMessage}</Text>
                 ) : null}
 
-                <View style={styles.actions}>
-                    <Pressable
-                        accessibilityRole="button"
-                        disabled={!selectedSuggestion || isSaving}
-                        onPress={handleAccept}
-                        style={[
-                            styles.acceptButton,
-                            (!selectedSuggestion || isSaving) &&
-                                styles.disabledButton,
-                        ]}
-                    >
-                        <Text style={styles.acceptButtonText}>
-                            {isSaving ? 'Saving…' : 'Accept schedule'}
-                        </Text>
-                    </Pressable>
-                    <Pressable
-                        accessibilityRole="button"
-                        onPress={onClose}
-                        style={styles.cancelButton}
-                    >
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </Pressable>
-                </View>
+                {isAnalysisFlow ? (
+                    <View style={styles.actions}>
+                        <Pressable
+                            accessibilityRole="button"
+                            disabled={!selectedSuggestion || isSaving}
+                            onPress={handleAccept}
+                            style={[
+                                styles.acceptButton,
+                                (!selectedSuggestion || isSaving) &&
+                                    styles.disabledButton,
+                            ]}
+                        >
+                            <Text style={styles.acceptButtonText}>
+                                {isSaving ? 'Saving…' : 'Accept schedule'}
+                            </Text>
+                        </Pressable>
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={onClose}
+                            style={styles.cancelButton}
+                        >
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </Pressable>
+                    </View>
+                ) : null}
             </ScrollView>
 
             <View style={[styles.composer, { bottom: spacing.md + bottom }]}>
@@ -295,10 +333,24 @@ const styles = StyleSheet.create({
         backgroundColor: colors.onboardingBackground,
         flex: 1,
     },
+    backButton: {
+        justifyContent: 'center',
+        minHeight: spacing.touchTarget,
+        paddingHorizontal: spacing.lg,
+    },
+    backText: {
+        color: colors.onboardingMuted,
+        fontFamily:
+            Platform.OS === 'android'
+                ? typography.semiboldFontFamily
+                : typography.fontFamily,
+        fontSize: typography.caption.fontSize,
+        fontWeight: '600',
+    },
     scrollContent: {
         alignItems: 'center',
         paddingHorizontal: spacing.lg,
-        paddingTop: spacing.lg,
+        paddingTop: spacing.xs,
     },
     title: {
         color: colors.text,
