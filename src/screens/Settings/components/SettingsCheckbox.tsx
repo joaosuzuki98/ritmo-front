@@ -52,14 +52,7 @@ export const SettingsCheckbox = ({
                     />
                 ) : null}
             </View>
-            <Text
-                style={[
-                    styles.label,
-                    { fontSize: typography.body.fontSize * scale },
-                ]}
-            >
-                {label}
-            </Text>
+            <Text style={styles.label}>{label}</Text>
         </Pressable>
     )
 }
@@ -87,6 +80,7 @@ const styles = StyleSheet.create({
         color: colors.text,
         flex: 1,
         fontFamily: typography.fontFamily,
+        fontSize: 13,
         lineHeight: 24,
     },
 })
