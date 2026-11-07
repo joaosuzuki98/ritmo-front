@@ -22,6 +22,7 @@ import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
+import { AnimatedStarMessage } from './components/AnimatedStarMessage'
 import { useAskTheStarsViewModel } from './useAskTheStarsViewModel'
 
 type AskTheStarsScreenProps = {
@@ -63,7 +64,6 @@ export const AskTheStarsScreen = ({
         selectedHabit,
     } = useAskTheStarsViewModel(currentUser.id, initialHabitId)
     const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0)
-    const [displayedStarMessage, setDisplayedStarMessage] = useState('')
     const isAnalysisFlow = Boolean(initialHabitId)
 
     useEffect(() => {
@@ -107,25 +107,6 @@ export const AskTheStarsScreen = ({
     }
 
     const starMessage = getStarMessage()
-
-    useEffect(() => {
-        if (isAnalysisFlow) return
-
-        setDisplayedStarMessage('')
-        const characters = Array.from(starMessage)
-        let characterIndex = 0
-        const typingInterval = setInterval(() => {
-            characterIndex += 1
-            setDisplayedStarMessage(
-                characters.slice(0, characterIndex).join(''),
-            )
-
-            if (characterIndex >= characters.length)
-                clearInterval(typingInterval)
-        }, 45)
-
-        return () => clearInterval(typingInterval)
-    }, [isAnalysisFlow, starMessage])
 
     const handleAccept = async () => {
         if (!selectedSuggestion || isSaving) return
@@ -219,9 +200,11 @@ export const AskTheStarsScreen = ({
                     />
                 </View>
 
-                <Text style={styles.messageText}>
-                    {isAnalysisFlow ? starMessage : displayedStarMessage}
-                </Text>
+                {isAnalysisFlow ? (
+                    <Text style={styles.messageText}>{starMessage}</Text>
+                ) : (
+                    <AnimatedStarMessage message={starMessage} />
+                )}
 
                 {isAnalysisFlow && selectableHabits.length ? (
                     <ScrollView
