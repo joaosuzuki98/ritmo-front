@@ -564,13 +564,11 @@ const styles = StyleSheet.create({
     },
     cancelButton: {
         alignItems: 'center',
-        backgroundColor: colors.dayCount,
-        borderRadius: spacing.sm,
         justifyContent: 'center',
         minHeight: spacing.touchTarget,
     },
     cancelButtonText: {
-        color: colors.white,
+        color: colors.dayCount,
         fontFamily: typography.fontFamily,
         fontSize: 15,
     },
