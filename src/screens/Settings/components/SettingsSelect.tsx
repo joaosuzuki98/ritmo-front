@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     label: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 16,
+        fontSize: 13,
         marginBottom: spacing.sm,
     },
     pickerContainer: {

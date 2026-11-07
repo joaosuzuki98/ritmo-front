@@ -65,7 +65,7 @@ export const SettingsScreen = ({
             >
                 <View>
                     <Text
-                        style={[styles.sectionTitle, { fontSize: 23 * scale }]}
+                        style={[styles.sectionTitle, { fontSize: 30 * scale }]}
                     >
                         General
                     </Text>
@@ -96,7 +96,7 @@ export const SettingsScreen = ({
 
                 <View style={styles.notificationsSection}>
                     <Text
-                        style={[styles.sectionTitle, { fontSize: 23 * scale }]}
+                        style={[styles.sectionTitle, { fontSize: 30 * scale }]}
                     >
                         Notifications
                     </Text>
@@ -158,7 +158,7 @@ export const SettingsScreen = ({
 
                 <View style={styles.dangerSection}>
                     <Text
-                        style={[styles.dangerTitle, { fontSize: 23 * scale }]}
+                        style={[styles.dangerTitle, { fontSize: 30 * scale }]}
                     >
                         Danger Zone
                     </Text>

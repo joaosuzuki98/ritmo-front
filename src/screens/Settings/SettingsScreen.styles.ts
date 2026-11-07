@@ -17,7 +17,7 @@ export const settingsScreenStyles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 23,
         fontWeight: '500',
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
     },
     field: { marginBottom: spacing.lg },
     notificationsSection: { marginTop: spacing.lg },
@@ -47,9 +47,8 @@ export const settingsScreenStyles = StyleSheet.create({
     dangerTitle: {
         color: colors.dayCount,
         fontFamily: typography.fontFamily,
-        fontSize: 23,
         fontWeight: '500',
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
     },
     deleteButton: {
         alignItems: 'center',
