@@ -1,4 +1,7 @@
-import { schemaMigrations } from '@nozbe/watermelondb/Schema/migrations'
+import {
+    schemaMigrations,
+    unsafeExecuteSql,
+} from '@nozbe/watermelondb/Schema/migrations'
 
 export const databaseMigrations = schemaMigrations({
     migrations: [
@@ -316,6 +319,18 @@ export const databaseMigrations = schemaMigrations({
                         },
                     ],
                 },
+            ],
+        },
+        {
+            toVersion: 14,
+            steps: [
+                unsafeExecuteSql('ALTER TABLE "users" DROP COLUMN "password";'),
+                unsafeExecuteSql(
+                    'ALTER TABLE "users" DROP COLUMN "password_hash";',
+                ),
+                unsafeExecuteSql(
+                    'ALTER TABLE "users" DROP COLUMN "password_salt";',
+                ),
             ],
         },
     ],

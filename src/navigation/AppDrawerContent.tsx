@@ -8,12 +8,12 @@ import {
     GearSix,
     SignOut,
     Stack,
-    UserCircle,
 } from 'phosphor-react-native'
 import { useContext } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import UserMascot from '../assets/images/mascot/default-mascot.svg'
 import type { User } from '../database'
 import { colors } from '../styles/colors'
 import { spacing } from '../styles/spacing'
@@ -113,11 +113,7 @@ export const AppDrawerContent = ({
             >
                 <View style={styles.profile}>
                     <View style={styles.profileIcon}>
-                        <UserCircle
-                            color={colors.textMuted}
-                            size={42}
-                            weight="regular"
-                        />
+                        <UserMascot height={42} width={42} />
                     </View>
                     <View style={styles.profileIdentity}>
                         <Text numberOfLines={1} style={styles.profileName}>
@@ -227,7 +223,6 @@ const styles = StyleSheet.create({
     },
     profileIcon: {
         alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
         borderRadius: 24,
         height: 48,
         justifyContent: 'center',

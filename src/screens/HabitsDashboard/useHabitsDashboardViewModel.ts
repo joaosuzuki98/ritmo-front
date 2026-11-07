@@ -7,7 +7,10 @@ import {
     habitRequirementStatuses,
     type HabitRequirementStatus,
 } from '../../constants/habitRequirementStatuses'
-import { getIncompletionReasonLabel } from '../../constants/incompletionReasons'
+import {
+    findIncompletionReasonId,
+    getIncompletionReasonLabel,
+} from '../../constants/incompletionReasons'
 import { getPriorityPresentation } from '../../constants/priorities'
 import {
     clampWeekDay,
@@ -1373,21 +1376,20 @@ export const useHabitsDashboardViewModel = (
                       .query()
                       .fetch()
                 : []
-            const existingReason = reasons.find(
-                reason => reason.description === reasonDescription,
+            const syncedReasons = reasons.filter(
+                reason => reason.syncStatus === 'synced',
             )
-            let incompletionReasonId = existingReason?.id
+            const incompletionReasonId = findIncompletionReasonId(
+                syncedReasons,
+                formData.reason,
+            )
+            if (reasonDescription && !incompletionReasonId) {
+                throw new Error(
+                    'This reason is not available yet. Sync the app and try again.',
+                )
+            }
 
             await database.write(async () => {
-                if (reasonDescription && !incompletionReasonId) {
-                    const reason = await database
-                        .get<IncompletionReason>('incompletion_reasons')
-                        .create(record => {
-                            record.description = reasonDescription
-                        })
-                    incompletionReasonId = reason.id
-                }
-
                 if (currentRecord) {
                     await currentRecord.update(record => {
                         record.date = date

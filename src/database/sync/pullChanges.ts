@@ -24,20 +24,17 @@ type PullChangesOptions = {
 
 export const createPullChanges =
     ({ api, path, getAuthToken }: PullChangesOptions) =>
-    async ({
-        lastPulledAt,
-        schemaVersion,
-        migration,
-    }: SyncPullArgs): Promise<SyncPullResult> => {
+    async ({ lastPulledAt }: SyncPullArgs): Promise<SyncPullResult> => {
         const token = await getAuthToken?.()
-        const response = await api.get(path, {
-            params: {
-                last_pulled_at: lastPulledAt ?? null,
-                schema_version: schemaVersion,
-                migration: JSON.stringify(migration),
+        const response = await api.post(
+            path,
+            { lastPulledAt: lastPulledAt ?? null },
+            {
+                headers: token
+                    ? { Authorization: `Bearer ${token}` }
+                    : undefined,
             },
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        })
+        )
 
         return pullResponseSchema.parse(response.data)
     }

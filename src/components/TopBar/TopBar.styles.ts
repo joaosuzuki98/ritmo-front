@@ -21,7 +21,6 @@ export const topBarStyles = StyleSheet.create({
     },
     profile: {
         alignItems: 'center',
-        backgroundColor: '#D9D9D9',
         borderRadius: 38,
         height: 76,
         justifyContent: 'center',

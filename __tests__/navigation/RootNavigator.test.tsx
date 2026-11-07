@@ -3,7 +3,7 @@ import type { ReactTestRenderer } from 'react-test-renderer'
 import { Platform, View } from 'react-native'
 import BootSplash from 'react-native-bootsplash'
 
-import { restoreLocalSession } from '../../src/database/localAuth'
+import { restoreLocalSession } from '../../src/services/auth'
 import type { User } from '../../src/database'
 import { OnboardingScreen } from '../../src/screens/Onboarding/OnboardingScreen'
 import { AuthNavigator } from '../../src/navigation/AuthNavigator'
@@ -15,9 +15,9 @@ jest.mock('@react-navigation/native', () => ({
         children,
     createNavigationContainerRef: () => ({}),
 }))
-jest.mock('../../src/database/localAuth', () => ({
+jest.mock('../../src/services/auth', () => ({
     restoreLocalSession: jest.fn(),
-    logoutLocalUser: jest.fn(),
+    logoutUser: jest.fn(),
 }))
 jest.mock('../../src/screens/Onboarding/OnboardingScreen', () => ({
     OnboardingScreen: () => null,

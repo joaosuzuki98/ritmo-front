@@ -111,8 +111,12 @@ export const LogHabitProgressModal = ({
         try {
             const saved = await onSave(habit.id, data)
             if (saved !== false) onClose()
-        } catch {
-            setSubmitError('Unable to save progress. Please try again.')
+        } catch (error) {
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to save progress. Please try again.',
+            )
         } finally {
             setIsSubmitting(false)
         }

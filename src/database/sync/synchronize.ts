@@ -2,6 +2,7 @@ import { synchronize } from '@nozbe/watermelondb/sync'
 
 import { database } from '../index'
 import { createApi } from '../../services/api'
+import { getValidAccessToken } from '../../services/authSession'
 import { createPullChanges } from './pullChanges'
 import { createPushChanges } from './pushChanges'
 import { preserveLocalAccess } from './preserveLocalAccess'
@@ -15,7 +16,7 @@ export type SynchronizeOptions = {
 
 export const synchronizeDatabase = async ({
     baseUrl,
-    getAuthToken,
+    getAuthToken = getValidAccessToken,
     pullPath = '/sync/pull',
     pushPath = '/sync/push',
 }: SynchronizeOptions): Promise<void> => {

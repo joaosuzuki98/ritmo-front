@@ -8,7 +8,7 @@ import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLa
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
 import { FormActionButton } from '../../components/FormActionButton'
 import type { User } from '../../database'
-import { authenticateLocalUser } from '../../database/localAuth'
+import { authenticateUser } from '../../services/auth'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
@@ -42,7 +42,7 @@ export const LoginScreen = ({
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            const user = await authenticateLocalUser(email, password)
+            const user = await authenticateUser(email, password)
             onLoginSuccess(user)
         } catch (error) {
             setSubmitError(
