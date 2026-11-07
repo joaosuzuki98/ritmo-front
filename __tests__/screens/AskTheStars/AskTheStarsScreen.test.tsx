@@ -73,6 +73,7 @@ describe('AskTheStarsScreen analysis loading', () => {
             initialHabitId={habitId}
             onClose={jest.fn()}
             onMenuPress={jest.fn()}
+            onScheduleAccepted={jest.fn()}
             totalAccessDays={1}
         />
     )

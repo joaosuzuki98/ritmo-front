@@ -17,7 +17,11 @@ import { BottomSheetLayout } from '../../components/BottomSheetLayout'
 import type { User } from '../../database'
 import { StarBackground } from '../../components/StarBackground/StarBackground'
 import { TopBar } from '../../components/TopBar/TopBar'
-import { weekDayLabels } from '../../constants/weekDays'
+import {
+    clampWeekDay,
+    weekDayLabels,
+    type WeekDay,
+} from '../../constants/weekDays'
 import type { HabitScheduleSuggestion } from '../../habits/habitScheduleAnalysis'
 import { colors } from '../../styles/colors'
 import { getResponsiveScale } from '../../styles/responsive'
@@ -33,6 +37,7 @@ type AskTheStarsScreenProps = {
     initialHabitId?: string
     onClose: () => void
     onMenuPress: () => void
+    onScheduleAccepted: (weekDay: WeekDay) => void
     totalAccessDays: number
 }
 
@@ -50,6 +55,7 @@ export const AskTheStarsScreen = ({
     initialHabitId,
     onClose,
     onMenuPress,
+    onScheduleAccepted,
     totalAccessDays,
 }: AskTheStarsScreenProps) => {
     const { bottom } = useSafeAreaInsets()
@@ -132,7 +138,8 @@ export const AskTheStarsScreen = ({
 
     const handleAccept = async () => {
         if (!selectedSuggestion || isSaving || shouldShowAnalysisLoading) return
-        if (await acceptSuggestion(selectedSuggestion)) onClose()
+        if (await acceptSuggestion(selectedSuggestion))
+            onScheduleAccepted(clampWeekDay(selectedSuggestion.days[0] ?? 1))
     }
 
     const renderSuggestion = (

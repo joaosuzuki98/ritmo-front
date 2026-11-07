@@ -132,6 +132,12 @@ export const AppDrawerNavigator = ({
                                 })
                             }}
                             onMenuPress={() => navigation.openDrawer()}
+                            onScheduleAccepted={weekDay =>
+                                navigation.navigate('Main', {
+                                    screen: 'Habits',
+                                    params: { weekDay },
+                                })
+                            }
                             totalAccessDays={access.totalAccessDays}
                         />
                     )}

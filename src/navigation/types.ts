@@ -1,7 +1,8 @@
 import type { NavigatorScreenParams } from '@react-navigation/native'
+import type { WeekDay } from '../constants/weekDays'
 
 export type AppTabParamList = {
-    Habits: undefined
+    Habits: { weekDay?: WeekDay } | undefined
     Schedule: undefined
     Reminders: undefined
     Todo: undefined

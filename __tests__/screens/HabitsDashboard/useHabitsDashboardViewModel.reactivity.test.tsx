@@ -3,6 +3,7 @@ import { AccessibilityInfo } from 'react-native'
 import { act, create } from 'react-test-renderer'
 
 import { database, type Habit } from '../../../src/database'
+import type { WeekDay } from '../../../src/constants/weekDays'
 import { useHabitsDashboardViewModel } from '../../../src/screens/HabitsDashboard/useHabitsDashboardViewModel'
 
 jest.mock('../../../src/database', () => ({
@@ -13,22 +14,24 @@ type FocusObserver = { next: (habits: Habit[]) => void }
 
 const mockedGet = database.get as jest.Mock
 
-describe('useHabitsDashboardViewModel focus reactivity', () => {
+describe('useHabitsDashboardViewModel reactivity', () => {
     let viewModel: ReturnType<typeof useHabitsDashboardViewModel>
     let habit: Habit
     let focusObserver: FocusObserver | undefined
+    let scheduleObserver: FocusObserver | undefined
     let observedColumns: string[]
     let unsubscribe: jest.Mock
     let renderer: ReturnType<typeof create> | undefined
 
-    const Harness = () => {
-        viewModel = useHabitsDashboardViewModel('local-user')
+    const Harness = ({ initialWeekDay }: { initialWeekDay?: WeekDay }) => {
+        viewModel = useHabitsDashboardViewModel('local-user', initialWeekDay)
         return null
     }
 
     beforeEach(() => {
         jest.clearAllMocks()
         focusObserver = undefined
+        scheduleObserver = undefined
         observedColumns = []
         unsubscribe = jest.fn()
         habit = {
@@ -55,10 +58,17 @@ describe('useHabitsDashboardViewModel focus reactivity', () => {
             query: () => ({
                 fetch: async () => (tableName === 'habits' ? [habit] : []),
                 observeWithColumns: (columns: string[]) => {
-                    observedColumns = columns
+                    if (columns.includes('is_focus_of_day'))
+                        observedColumns = columns
                     return {
                         subscribe: (observer: FocusObserver) => {
-                            focusObserver = observer
+                            if (columns.includes('is_focus_of_day'))
+                                focusObserver = observer
+                            if (
+                                columns.includes('week_days') &&
+                                columns.includes('preferred_time')
+                            )
+                                scheduleObserver = observer
                             observer.next([habit])
                             return { unsubscribe }
                         },
@@ -87,5 +97,61 @@ describe('useHabitsDashboardViewModel focus reactivity', () => {
         act(() => focusObserver?.next([habit]))
 
         expect(viewModel.cards[0].isFocusOfDay).toBe(true)
+    })
+
+    it('selects a newly requested weekday when returning to the dashboard', async () => {
+        await act(async () => {
+            renderer = create(<Harness initialWeekDay={1} />)
+        })
+
+        expect(viewModel.weekDay).toBe(1)
+        await act(async () => {
+            renderer?.update(<Harness initialWeekDay={2} />)
+        })
+
+        expect(viewModel.weekDay).toBe(2)
+        expect(viewModel.selectedDate.getDay()).toBe(2)
+    })
+
+    it('updates the preferred time without changing the selected weekday', async () => {
+        habit.preferredTime = new Date(2026, 10, 7, 8)
+        await act(async () => {
+            renderer = create(<Harness initialWeekDay={2} />)
+        })
+        expect(viewModel.cards[0].preferredTime?.getHours()).toBe(8)
+
+        await act(async () => {
+            // WatermelonDB mutates existing model instances in place.
+            habit.preferredTime = new Date(2026, 10, 7, 17)
+            scheduleObserver?.next([habit])
+        })
+
+        expect(viewModel.weekDay).toBe(2)
+        expect(viewModel.cards[0].preferredTime?.getHours()).toBe(17)
+        expect(viewModel.visibleCards[0].preferredTime?.getHours()).toBe(17)
+    })
+
+    it('removes and restores a rescheduled habit on the current day', async () => {
+        habit.weekDays = [1]
+        await act(async () => {
+            renderer = create(<Harness initialWeekDay={1} />)
+        })
+        expect(viewModel.visibleCards).toHaveLength(1)
+
+        await act(async () => {
+            habit.weekDays = [2]
+            scheduleObserver?.next([habit])
+        })
+        expect(viewModel.weekDay).toBe(1)
+        expect(viewModel.visibleCards).toHaveLength(0)
+        expect(viewModel.state).toBe('empty')
+
+        await act(async () => {
+            habit.weekDays = [1]
+            habit.preferredTime = new Date(2026, 10, 7, 17)
+            scheduleObserver?.next([habit])
+        })
+        expect(viewModel.state).toBe('success')
+        expect(viewModel.visibleCards[0].preferredTime?.getHours()).toBe(17)
     })
 })

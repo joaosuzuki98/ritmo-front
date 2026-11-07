@@ -74,10 +74,11 @@ export const AppNavigator = ({
             screenOptions={{ headerShown: false }}
         >
             <Tab.Screen name="Habits">
-                {() => (
+                {({ route }) => (
                     <HabitsDashboardScreen
                         currentUser={currentUser}
                         totalAccessDays={totalAccessDays}
+                        initialWeekDay={route.params?.weekDay}
                         isAddHabitModalVisible={isAddHabitModalVisible}
                         onMenuPress={() => navigation.openDrawer()}
                         onOpenAddHabitModal={openAddHabitModal}

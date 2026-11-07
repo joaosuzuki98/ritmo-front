@@ -750,6 +750,9 @@ export const useHabitsDashboardViewModel = (
     const [weekDay, setWeekDay] = useState<WeekDay>(
         initialWeekDay ?? clampWeekDay(new Date().getDay() || 7),
     )
+    useEffect(() => {
+        if (initialWeekDay) setWeekDay(initialWeekDay)
+    }, [initialWeekDay])
     const [query, setQuery] = useState('')
     const [sort, setSort] = useState<SortCriterion | null>(null)
     const [data, setData] = useState<DashboardData>({
@@ -807,7 +810,9 @@ export const useHabitsDashboardViewModel = (
 
     useEffect(() => {
         let active = true
+        let loadVersion = 0
         const load = async () => {
+            const version = ++loadVersion
             try {
                 const [
                     user,
@@ -850,7 +855,7 @@ export const useHabitsDashboardViewModel = (
                         .query()
                         .fetch(),
                 ])
-                if (!active) return
+                if (!active || version !== loadVersion) return
                 const preference =
                     preferences.find(
                         item =>
@@ -901,15 +906,30 @@ export const useHabitsDashboardViewModel = (
                 setState(cards.length === 0 ? 'empty' : 'success')
                 setResolvedDataKey(dataKey)
             } catch {
-                if (active) {
+                if (active && version === loadVersion) {
                     setState('error')
                     setResolvedDataKey(dataKey)
                 }
             }
         }
-        load()
+        const subscription = database
+            .get<Habit>('habits')
+            .query(Q.where('user_id', currentUserId))
+            .observeWithColumns(['week_days', 'preferred_time'])
+            .subscribe({
+                next: () => {
+                    load()
+                },
+                error: () => {
+                    loadVersion += 1
+                    if (!active) return
+                    setState('error')
+                    setResolvedDataKey(dataKey)
+                },
+            })
         return () => {
             active = false
+            subscription.unsubscribe()
         }
     }, [currentUserId, dataKey, reloadToken, weekDay])
 
