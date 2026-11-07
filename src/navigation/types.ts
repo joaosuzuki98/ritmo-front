@@ -5,6 +5,7 @@ export type AppTabParamList = {
     Schedule: undefined
     Reminders: undefined
     Todo: undefined
+    Settings: undefined
 }
 
 export type RootParamList = {

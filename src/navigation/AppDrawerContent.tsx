@@ -80,9 +80,9 @@ const menuItems: MenuItem[] = [
     },
     {
         label: 'Settings',
-        route: null,
+        route: 'Settings',
         icon: 'settings',
-        isAvailable: false,
+        isAvailable: true,
     },
 ]
 
@@ -117,6 +117,7 @@ export const AppDrawerContent = ({
 
     const onSelectRoute = (route: MenuRoute) => {
         navigation.navigate('Main', { screen: route })
+        navigation.closeDrawer()
     }
 
     return (

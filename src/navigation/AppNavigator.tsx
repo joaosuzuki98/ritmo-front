@@ -9,6 +9,7 @@ import { BottomBar } from '../components/BottomBar'
 import { HabitsDashboardScreen } from '../screens/HabitsDashboard/HabitsDashboardScreen'
 import { RemindersScreen } from '../screens/Reminders/RemindersScreen'
 import { ScheduleScreen } from '../screens/Schedule/ScheduleScreen'
+import { SettingsScreen } from '../screens/Settings/SettingsScreen'
 import { TodoScreen } from '../screens/Todo/TodoScreen'
 import type { AppTabParamList, RootParamList } from './types'
 
@@ -33,24 +34,33 @@ export const AppNavigator = ({
         useState(false)
     const openAddHabitModal = () => setIsAddHabitModalVisible(true)
     const closeAddHabitModal = () => setIsAddHabitModalVisible(false)
-    const openAddItem = useCallback((routeName: string) => {
-        if (routeName === 'Schedule') {
-            setIsAddScheduleItemModalVisible(true)
-            return
-        }
+    const openAddItem = useCallback(
+        (routeName: string) => {
+            if (routeName === 'Settings') {
+                setIsAddHabitModalVisible(true)
+                navigation.navigate('Main', { screen: 'Habits' })
+                return
+            }
 
-        if (routeName === 'Reminders') {
-            setIsAddReminderEventModalVisible(true)
-            return
-        }
+            if (routeName === 'Schedule') {
+                setIsAddScheduleItemModalVisible(true)
+                return
+            }
 
-        if (routeName === 'Todo') {
-            setIsAddTodoTaskModalVisible(true)
-            return
-        }
+            if (routeName === 'Reminders') {
+                setIsAddReminderEventModalVisible(true)
+                return
+            }
 
-        setIsAddHabitModalVisible(true)
-    }, [])
+            if (routeName === 'Todo') {
+                setIsAddTodoTaskModalVisible(true)
+                return
+            }
+
+            setIsAddHabitModalVisible(true)
+        },
+        [navigation],
+    )
     const renderBottomBar = useCallback(
         (props: BottomTabBarProps) => (
             <BottomBar {...props} onAddItem={openAddItem} />
@@ -111,6 +121,15 @@ export const AppNavigator = ({
                         onCloseAddTaskModal={() =>
                             setIsAddTodoTaskModalVisible(false)
                         }
+                    />
+                )}
+            </Tab.Screen>
+            <Tab.Screen name="Settings">
+                {() => (
+                    <SettingsScreen
+                        currentUser={currentUser}
+                        onMenuPress={() => navigation.openDrawer()}
+                        totalAccessDays={totalAccessDays}
                     />
                 )}
             </Tab.Screen>

@@ -13,6 +13,7 @@ import { AppDrawerLogoutContext } from './AppDrawerLogoutContext'
 import { AppNavigator } from './AppNavigator'
 import type { RootParamList } from './types'
 import { useDailyAccess } from './useDailyAccess'
+import { startLocalReminderManager } from '../notifications/localNotifications'
 
 type AppDrawerNavigatorProps = {
     currentUser: User
@@ -38,6 +39,8 @@ export const AppDrawerNavigator = ({
 
         return syncManager.stop
     }, [currentUser.id])
+
+    useEffect(() => startLocalReminderManager(currentUser.id), [currentUser.id])
 
     const { access, hasError, finishStart, retry } = useDailyAccess(
         currentUser.id,

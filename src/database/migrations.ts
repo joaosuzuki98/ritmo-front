@@ -333,5 +333,78 @@ export const databaseMigrations = schemaMigrations({
                 ),
             ],
         },
+        {
+            toVersion: 15,
+            steps: [
+                {
+                    type: 'create_table',
+                    schema: {
+                        name: 'notification_preferences',
+                        columns: {
+                            user_id: {
+                                name: 'user_id',
+                                type: 'string',
+                                isIndexed: true,
+                            },
+                            notify_habit_start: {
+                                name: 'notify_habit_start',
+                                type: 'boolean',
+                            },
+                            notify_daily_focus: {
+                                name: 'notify_daily_focus',
+                                type: 'boolean',
+                            },
+                            notify_priority_habits: {
+                                name: 'notify_priority_habits',
+                                type: 'boolean',
+                            },
+                            minimum_priority: {
+                                name: 'minimum_priority',
+                                type: 'string',
+                                isOptional: true,
+                            },
+                            created_at: {
+                                name: 'created_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                            updated_at: {
+                                name: 'updated_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                        },
+                        columnArray: [
+                            {
+                                name: 'user_id',
+                                type: 'string',
+                                isIndexed: true,
+                            },
+                            { name: 'notify_habit_start', type: 'boolean' },
+                            { name: 'notify_daily_focus', type: 'boolean' },
+                            {
+                                name: 'notify_priority_habits',
+                                type: 'boolean',
+                            },
+                            {
+                                name: 'minimum_priority',
+                                type: 'string',
+                                isOptional: true,
+                            },
+                            {
+                                name: 'created_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                            {
+                                name: 'updated_at',
+                                type: 'number',
+                                isOptional: true,
+                            },
+                        ],
+                    },
+                },
+            ],
+        },
     ],
 })

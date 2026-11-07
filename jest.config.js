@@ -5,6 +5,7 @@ module.exports = {
         '\\.(css)$': '<rootDir>/__mocks__/styleMock.js',
         '^@react-native/new-app-screen$':
             '<rootDir>/__mocks__/newAppScreenMock.js',
+        '^@notifee/react-native$': '<rootDir>/__mocks__/notifee.js',
         '^react-native-safe-area-context$':
             '<rootDir>/__mocks__/safeAreaContextMock.js',
         '^react-native-config$': '<rootDir>/__mocks__/react-native-config.js',

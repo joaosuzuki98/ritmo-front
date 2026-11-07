@@ -21,7 +21,7 @@ describe('local account database migration', () => {
             item => item.toVersion === 9,
         )
 
-        expect(databaseSchema.version).toBe(14)
+        expect(databaseSchema.version).toBe(15)
         expect(migration?.steps).toContainEqual({
             type: 'add_columns',
             table: 'users',
@@ -115,5 +115,39 @@ describe('local account database migration', () => {
                 },
             ],
         })
+    })
+
+    it('creates local notification preferences in version 15', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 15,
+        )
+
+        expect(migration?.steps).toContainEqual(
+            expect.objectContaining({
+                type: 'create_table',
+                schema: expect.objectContaining({
+                    name: 'notification_preferences',
+                }),
+            }),
+        )
+        expect(
+            databaseSchema.tables.notification_preferences.columnArray,
+        ).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ name: 'user_id', type: 'string' }),
+                expect.objectContaining({
+                    name: 'notify_habit_start',
+                    type: 'boolean',
+                }),
+                expect.objectContaining({
+                    name: 'notify_daily_focus',
+                    type: 'boolean',
+                }),
+                expect.objectContaining({
+                    name: 'notify_priority_habits',
+                    type: 'boolean',
+                }),
+            ]),
+        )
     })
 })

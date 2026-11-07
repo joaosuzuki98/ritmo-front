@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 14,
+    version: 15,
     tables: [
         tableSchema({
             name: 'users',
@@ -285,6 +285,18 @@ export const databaseSchema = appSchema({
             columns: [
                 { name: 'user_id', type: 'string', isIndexed: true },
                 { name: 'name', type: 'string' },
+                { name: 'created_at', type: 'number', isOptional: true },
+                { name: 'updated_at', type: 'number', isOptional: true },
+            ],
+        }),
+        tableSchema({
+            name: 'notification_preferences',
+            columns: [
+                { name: 'user_id', type: 'string', isIndexed: true },
+                { name: 'notify_habit_start', type: 'boolean' },
+                { name: 'notify_daily_focus', type: 'boolean' },
+                { name: 'notify_priority_habits', type: 'boolean' },
+                { name: 'minimum_priority', type: 'string', isOptional: true },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],
