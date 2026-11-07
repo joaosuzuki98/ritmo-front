@@ -36,7 +36,7 @@ export const topBarStyles = StyleSheet.create({
         fontWeight: '400',
     },
     lightning: { color: '#3048C0' },
-    fire: { color: '#E21E2A' },
+    fire: { color: colors.dayCount },
     menu: { marginLeft: spacing.lg, padding: spacing.xs },
     menuText: { color: colors.text },
 })

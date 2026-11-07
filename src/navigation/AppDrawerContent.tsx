@@ -1,13 +1,13 @@
 import { DrawerContentScrollView } from '@react-navigation/drawer'
 import type { DrawerContentComponentProps } from '@react-navigation/drawer'
 import {
-    Bell,
-    CalendarBlank,
     ChartBar,
-    CheckSquare,
     GearSix,
     SignOut,
-    Stack,
+    Sparkle,
+    Trophy,
+    UserCircle,
+    UsersThree,
 } from 'phosphor-react-native'
 import { useContext } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
@@ -30,34 +30,39 @@ type MenuItem = {
     label: string
     route: MenuRoute | null
     icon:
-        | 'habits'
-        | 'schedule'
-        | 'reminders'
-        | 'todo'
+        | 'profile'
+        | 'ranking'
+        | 'friends'
+        | 'astrology'
         | 'statistics'
         | 'settings'
     isAvailable: boolean
 }
 
 const menuItems: MenuItem[] = [
-    { label: 'Habits', route: 'Habits', icon: 'habits', isAvailable: true },
     {
-        label: 'Schedule',
-        route: 'Schedule',
-        icon: 'schedule',
-        isAvailable: true,
+        label: 'Profile',
+        route: null,
+        icon: 'profile',
+        isAvailable: false,
     },
     {
-        label: 'Reminders',
-        route: 'Reminders',
-        icon: 'reminders',
-        isAvailable: true,
+        label: 'Leaderboard',
+        route: null,
+        icon: 'ranking',
+        isAvailable: false,
     },
     {
-        label: 'Todo',
-        route: 'Todo',
-        icon: 'todo',
-        isAvailable: true,
+        label: 'Friends',
+        route: null,
+        icon: 'friends',
+        isAvailable: false,
+    },
+    {
+        label: 'Ask the Stars',
+        route: null,
+        icon: 'astrology',
+        isAvailable: false,
     },
     {
         label: 'Statistics',
@@ -78,10 +83,10 @@ type MenuIconName = MenuItem['icon']
 const getMenuIcon = (name: MenuIconName, color: string) => {
     const iconProps = { color, size: 22, weight: 'regular' as const }
 
-    if (name === 'habits') return <Stack {...iconProps} />
-    if (name === 'schedule') return <CalendarBlank {...iconProps} />
-    if (name === 'reminders') return <Bell {...iconProps} />
-    if (name === 'todo') return <CheckSquare {...iconProps} />
+    if (name === 'profile') return <UserCircle {...iconProps} />
+    if (name === 'ranking') return <Trophy {...iconProps} />
+    if (name === 'friends') return <UsersThree {...iconProps} />
+    if (name === 'astrology') return <Sparkle {...iconProps} />
     if (name === 'statistics') return <ChartBar {...iconProps} />
     return <GearSix {...iconProps} />
 }
@@ -125,15 +130,12 @@ export const AppDrawerContent = ({
                     </View>
                 </View>
 
-                <Text style={styles.sectionLabel}>MENU PRINCIPAL</Text>
                 <View style={styles.items}>
                     {menuItems.map(item => {
                         const isActive = item.route === activeRouteName
-                        const itemColor = item.isAvailable
-                            ? isActive
-                                ? colors.text
-                                : colors.textMuted
-                            : colors.priorityFallback
+                        const itemColor = isActive
+                            ? colors.text
+                            : colors.textMuted
 
                         return (
                             <Pressable
@@ -150,9 +152,6 @@ export const AppDrawerContent = ({
                                 style={[
                                     styles.item,
                                     isActive ? styles.activeItem : null,
-                                    !item.isAvailable
-                                        ? styles.disabledItem
-                                        : null,
                                 ]}
                             >
                                 {getMenuIcon(item.icon, itemColor)}
@@ -164,11 +163,6 @@ export const AppDrawerContent = ({
                                 >
                                     {item.label}
                                 </Text>
-                                {!item.isAvailable ? (
-                                    <Text style={styles.comingSoon}>
-                                        EM BREVE
-                                    </Text>
-                                ) : null}
                             </Pressable>
                         )
                     })}
@@ -191,7 +185,7 @@ export const AppDrawerContent = ({
                 >
                     <View style={styles.logoutContent}>
                         <SignOut
-                            color={colors.danger}
+                            color={colors.dayCount}
                             size={22}
                             weight="regular"
                         />
@@ -247,15 +241,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: spacing.xxs,
     },
-    sectionLabel: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1,
-        marginBottom: spacing.sm,
-        marginLeft: spacing.xs,
-    },
     items: { gap: spacing.xxs },
     item: {
         alignItems: 'center',
@@ -265,20 +250,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
     },
     activeItem: { backgroundColor: colors.surfaceMuted },
-    disabledItem: { opacity: 0.7 },
     itemLabel: {
         flex: 1,
         fontFamily: typography.fontFamily,
         fontSize: 15,
         fontWeight: '600',
         marginLeft: spacing.md,
-    },
-    comingSoon: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 8,
-        fontWeight: '700',
-        letterSpacing: 0.5,
     },
     bottom: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
     separator: {
@@ -300,7 +277,7 @@ const styles = StyleSheet.create({
     },
     logoutPressed: { backgroundColor: colors.surfaceMuted },
     logoutLabel: {
-        color: colors.danger,
+        color: colors.dayCount,
         fontFamily: typography.fontFamily,
         fontSize: 15,
         fontWeight: '700',
