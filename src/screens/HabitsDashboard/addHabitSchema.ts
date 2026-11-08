@@ -2,6 +2,11 @@ import { z } from 'zod'
 
 import { habitRequirementStatuses } from '../../constants/habitRequirementStatuses'
 
+const allowedDurationMinutes = [
+    10, 20, 30, 40, 50, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660,
+    720,
+]
+
 export const addHabitSchema = z
     .object({
         name: z.string().trim().min(1, 'Give your habit a name.'),
@@ -15,15 +20,14 @@ export const addHabitSchema = z
             .refine(value => value.trim() === '' || /^\d+$/.test(value), {
                 message: 'Use minutes as a whole number.',
             })
-            .refine(value => value.trim() === '' || Number(value) > 0, {
-                message: 'Duration must be greater than zero.',
-            })
-            .refine(value => value.trim() === '' || Number(value) % 5 === 0, {
-                message: 'Choose duration in 5-minute increments.',
-            })
-            .refine(value => value.trim() === '' || Number(value) <= 1440, {
-                message: 'Duration cannot be more than 24 hours.',
-            }),
+            .refine(
+                value =>
+                    value.trim() === '' ||
+                    allowedDurationMinutes.includes(Number(value)),
+                {
+                    message: 'Choose one of the available duration options.',
+                },
+            ),
         preferredTime: z
             .string()
             .refine(

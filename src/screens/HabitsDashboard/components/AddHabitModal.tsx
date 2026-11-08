@@ -4,8 +4,9 @@ import DateTimePicker, {
     DateTimePickerAndroid,
 } from '@react-native-community/datetimepicker'
 import { Picker } from '@react-native-picker/picker'
-import { CaretDown } from 'phosphor-react-native'
+import { X } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
+import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated'
 import {
     Pressable,
     ScrollView,
@@ -31,10 +32,7 @@ import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
 import { formatPreferredTime, parsePreferredTime } from '../preferredTime'
-import {
-    habitRequirementStatuses,
-    habitRequirementStatusLabels,
-} from '../../../constants/habitRequirementStatuses'
+import { habitRequirementStatuses } from '../../../constants/habitRequirementStatuses'
 import type { HabitCardViewData, HabitOption } from '../habitDashboard.types'
 import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
 import { theme } from '../../../styles/theme'
@@ -73,6 +71,24 @@ const getInitialValues = (
         (habit?.conditionStatus as AddHabitFormData['conditionStatus']) ?? '',
 })
 
+const durationOptions = [
+    { label: 'Not set', value: '' },
+    ...[10, 20, 30, 40, 50].map(value => ({
+        label: `${value} min`,
+        value: String(value),
+    })),
+    ...Array.from({ length: 12 }, (_, index) => {
+        const hours = index + 1
+        return { label: `${hours} hr`, value: String(hours * 60) }
+    }),
+]
+
+const conditionStatusLabels = {
+    completed: 'Completed',
+    partial: 'Partially',
+    skipped: 'Unfinished',
+} as const
+
 export const AddHabitModal = ({
     isVisible,
     initialWeekDay,
@@ -85,13 +101,9 @@ export const AddHabitModal = ({
 }: AddHabitModalProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
-    const daySize = Math.min(
-        42 * scale,
-        (width - spacing.lg * scale * 2 - 6 * 7) / 7,
-    )
+    const daySize = Math.min(42 * scale, (width - spacing.lg * scale * 2) / 7)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
-    const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false)
     const [isPreferredTimePickerVisible, setIsPreferredTimePickerVisible] =
         useState(false)
     const [isEnteringNewCategory, setIsEnteringNewCategory] = useState(false)
@@ -115,20 +127,10 @@ export const AddHabitModal = ({
     const categoryName = watch('categoryName')
     const preferredTime = watch('preferredTime')
     const estimatedDurationMinutes = watch('estimatedDurationMinutes')
-    const parsedDurationMinutes = estimatedDurationMinutes
-        ? Number(estimatedDurationMinutes)
-        : null
-    const selectedDurationHours =
-        parsedDurationMinutes === null
-            ? -1
-            : Math.floor(parsedDurationMinutes / 60)
-    const selectedDurationMinutePart =
-        parsedDurationMinutes === null ? 0 : parsedDurationMinutes % 60
 
     useEffect(() => {
         if (isVisible) {
             reset(getInitialValues(initialWeekDay, habit))
-            setIsCategoryMenuOpen(false)
             setIsPreferredTimePickerVisible(false)
             setIsEnteringNewCategory(false)
         }
@@ -138,7 +140,6 @@ export const AddHabitModal = ({
         if (isSubmitting) return
         reset(getInitialValues(initialWeekDay))
         setSubmitError('')
-        setIsCategoryMenuOpen(false)
         setIsPreferredTimePickerVisible(false)
         setIsEnteringNewCategory(false)
         onClose()
@@ -261,65 +262,49 @@ export const AddHabitModal = ({
                     Category
                 </Text>
                 {categoryOptions.length > 0 && !isEnteringNewCategory ? (
-                    <>
-                        <Pressable
+                    <View style={styles.settingsPickerContainer}>
+                        <Picker
                             accessibilityLabel="Choose habit category"
-                            accessibilityRole="button"
-                            accessibilityState={{
-                                expanded: isCategoryMenuOpen,
+                            dropdownIconColor={colors.textMuted}
+                            dropdownIconRippleColor="transparent"
+                            mode="dropdown"
+                            onValueChange={itemValue => {
+                                const value = String(itemValue)
+                                if (value === '__create_new_category__') {
+                                    setValue('categoryName', '')
+                                    setIsEnteringNewCategory(true)
+                                    return
+                                }
+                                setValue('categoryName', value)
                             }}
-                            onPress={() => setIsCategoryMenuOpen(open => !open)}
-                            style={styles.selectPicker}
+                            selectedValue={categoryName}
+                            style={styles.settingsPicker}
                         >
-                            <Text
-                                style={[
-                                    styles.optionText,
-                                    categoryName &&
-                                        styles.selectPickerSelectedText,
-                                ]}
-                            >
-                                {categoryName || 'Choose a category'}
-                            </Text>
-                            <CaretDown color={colors.textMuted} size={18} />
-                        </Pressable>
-                        {isCategoryMenuOpen ? (
-                            <View style={styles.selectMenu}>
-                                {categoryOptions.map(option => (
-                                    <Pressable
-                                        accessibilityRole="radio"
-                                        accessibilityState={{
-                                            selected: categoryName === option,
-                                        }}
-                                        key={option}
-                                        onPress={() => {
-                                            setValue('categoryName', option)
-                                            setIsCategoryMenuOpen(false)
-                                        }}
-                                        style={styles.selectMenuOption}
-                                    >
-                                        <Text style={styles.optionText}>
-                                            {option}
-                                        </Text>
-                                    </Pressable>
-                                ))}
-                                <Pressable
-                                    accessibilityRole="button"
-                                    onPress={() => {
-                                        setValue('categoryName', '')
-                                        setIsEnteringNewCategory(true)
-                                        setIsCategoryMenuOpen(false)
-                                    }}
-                                    style={styles.selectMenuOption}
-                                >
-                                    <Text style={styles.newCategoryText}>
-                                        Add a new category
-                                    </Text>
-                                </Pressable>
-                            </View>
-                        ) : null}
-                    </>
+                            <Picker.Item
+                                label="Choose a category"
+                                style={styles.settingsPickerItem}
+                                value=""
+                            />
+                            {categoryOptions.map(option => (
+                                <Picker.Item
+                                    key={option}
+                                    label={option}
+                                    style={styles.settingsPickerItem}
+                                    value={option}
+                                />
+                            ))}
+                            <Picker.Item
+                                label="Add a new category"
+                                style={styles.addCategoryPickerItem}
+                                value="__create_new_category__"
+                            />
+                        </Picker>
+                    </View>
                 ) : (
-                    <>
+                    <Animated.View
+                        entering={FadeInDown.duration(180)}
+                        exiting={FadeOutUp.duration(140)}
+                    >
                         <Controller
                             control={control}
                             name="categoryName"
@@ -345,7 +330,7 @@ export const AddHabitModal = ({
                                 </Text>
                             </Pressable>
                         ) : null}
-                    </>
+                    </Animated.View>
                 )}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
@@ -392,7 +377,11 @@ export const AddHabitModal = ({
                     )}
                 />
                 {frequencyType === 'weekly' ? (
-                    <View style={styles.daysRow}>
+                    <Animated.View
+                        entering={FadeInDown.duration(180)}
+                        exiting={FadeOutUp.duration(140)}
+                        style={styles.daysRow}
+                    >
                         {weekDays.map(day => {
                             const isSelected = selectedWeekDays.includes(day)
                             return (
@@ -426,7 +415,7 @@ export const AddHabitModal = ({
                                 </Pressable>
                             )
                         })}
-                    </View>
+                    </Animated.View>
                 ) : null}
                 {errors.weekDays ? (
                     <Text
@@ -436,7 +425,6 @@ export const AddHabitModal = ({
                     </Text>
                 ) : null}
 
-                <Text style={styles.sectionTitle}>Habit requirements</Text>
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
                     Complete after
                 </Text>
@@ -520,7 +508,10 @@ export const AddHabitModal = ({
                     </Picker>
                 </View>
                 {conditionHabitId ? (
-                    <>
+                    <Animated.View
+                        entering={FadeInDown.duration(180)}
+                        exiting={FadeOutUp.duration(140)}
+                    >
                         <Text
                             style={[globalStyles.formFieldLabel, styles.label]}
                         >
@@ -557,17 +548,13 @@ export const AddHabitModal = ({
                                                     styles.optionTextSelected,
                                             ]}
                                         >
-                                            {
-                                                habitRequirementStatusLabels[
-                                                    status
-                                                ]
-                                            }
+                                            {conditionStatusLabels[status]}
                                         </Text>
                                     </Pressable>
                                 )
                             })}
                         </View>
-                    </>
+                    </Animated.View>
                 ) : null}
                 {errors.conditionHabitId ? (
                     <Text
@@ -640,107 +627,31 @@ export const AddHabitModal = ({
                         >
                             Duration
                         </Text>
-                        <View style={styles.durationPickerRow}>
-                            <View style={styles.durationPickerContainer}>
-                                <Picker
-                                    accessibilityLabel="Duration hours"
-                                    dropdownIconColor={colors.textMuted}
-                                    dropdownIconRippleColor="transparent"
-                                    mode="dropdown"
-                                    onValueChange={itemValue => {
-                                        const hours = Number(itemValue)
-                                        if (hours < 0) {
-                                            setValue(
-                                                'estimatedDurationMinutes',
-                                                '',
-                                                { shouldValidate: true },
-                                            )
-                                            return
-                                        }
-
-                                        const minutes =
-                                            parsedDurationMinutes === null
-                                                ? 0
-                                                : selectedDurationMinutePart
-                                        const totalMinutes =
-                                            hours * 60 +
-                                            (hours === 24 ? 0 : minutes)
-                                        setValue(
-                                            'estimatedDurationMinutes',
-                                            totalMinutes
-                                                ? String(totalMinutes)
-                                                : '',
-                                            { shouldValidate: true },
-                                        )
-                                    }}
-                                    selectedValue={selectedDurationHours}
-                                    style={styles.settingsPicker}
-                                >
+                        <View style={styles.settingsPickerContainer}>
+                            <Picker
+                                accessibilityLabel="Estimated duration"
+                                dropdownIconColor={colors.textMuted}
+                                dropdownIconRippleColor="transparent"
+                                mode="dropdown"
+                                onValueChange={itemValue =>
+                                    setValue(
+                                        'estimatedDurationMinutes',
+                                        String(itemValue),
+                                        { shouldValidate: true },
+                                    )
+                                }
+                                selectedValue={estimatedDurationMinutes}
+                                style={styles.settingsPicker}
+                            >
+                                {durationOptions.map(option => (
                                     <Picker.Item
-                                        label="Not set"
+                                        key={option.value || 'not-set'}
+                                        label={option.label}
                                         style={styles.settingsPickerItem}
-                                        value={-1}
+                                        value={option.value}
                                     />
-                                    {Array.from({ length: 25 }, (_, hour) => (
-                                        <Picker.Item
-                                            key={hour}
-                                            label={`${hour} hr`}
-                                            style={styles.settingsPickerItem}
-                                            value={hour}
-                                        />
-                                    ))}
-                                </Picker>
-                            </View>
-                            <View style={styles.durationPickerContainer}>
-                                <Picker
-                                    accessibilityLabel="Duration minutes"
-                                    dropdownIconColor={colors.textMuted}
-                                    dropdownIconRippleColor="transparent"
-                                    mode="dropdown"
-                                    onValueChange={itemValue => {
-                                        const minutes = Number(itemValue)
-                                        const hours =
-                                            parsedDurationMinutes === null
-                                                ? 0
-                                                : selectedDurationHours
-                                        const totalMinutes =
-                                            hours * 60 + minutes
-                                        setValue(
-                                            'estimatedDurationMinutes',
-                                            totalMinutes
-                                                ? String(totalMinutes)
-                                                : '',
-                                            { shouldValidate: true },
-                                        )
-                                    }}
-                                    selectedValue={selectedDurationMinutePart}
-                                    style={styles.settingsPicker}
-                                >
-                                    {Array.from(
-                                        {
-                                            length:
-                                                selectedDurationHours === 24
-                                                    ? 1
-                                                    : 12,
-                                        },
-                                        (_, minuteIndex) => {
-                                            const minute = minuteIndex * 5
-                                            return (
-                                                <Picker.Item
-                                                    key={minute}
-                                                    label={`${String(
-                                                        minute,
-                                                    ).padStart(2, '0')} min`}
-                                                    style={
-                                                        styles.settingsPickerItem
-                                                    }
-                                                    value={minute}
-                                                />
-                                            )
-                                        },
-                                    )}
-                                </Picker>
-                            </View>
+                                ))}
+                            </Picker>
                         </View>
                         {errors.estimatedDurationMinutes ? (
                             <Text
@@ -767,7 +678,14 @@ export const AddHabitModal = ({
                                     onPress={handleOpenPreferredTimePicker}
                                     style={styles.preferredTimeButton}
                                 >
-                                    <Text style={styles.optionText}>
+                                    <Text
+                                        numberOfLines={1}
+                                        style={[
+                                            styles.optionText,
+                                            Boolean(preferredTime) &&
+                                                styles.optionTextSelected,
+                                        ]}
+                                    >
                                         {preferredTime
                                             ? parsePreferredTime(
                                                   preferredTime,
@@ -789,9 +707,11 @@ export const AddHabitModal = ({
                                         }
                                         style={styles.clearTimeButton}
                                     >
-                                        <Text style={styles.newCategoryText}>
-                                            Clear
-                                        </Text>
+                                        <X
+                                            color={colors.dayCount}
+                                            size={theme.spacing.md}
+                                            weight="regular"
+                                        />
                                     </Pressable>
                                 ) : null}
                             </View>
@@ -843,13 +763,6 @@ export const AddHabitModal = ({
 }
 
 const styles = StyleSheet.create({
-    sectionTitle: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 22,
-        fontWeight: '400',
-        marginTop: 40,
-    },
     label: {
         marginTop: 18,
     },
@@ -865,11 +778,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
-        borderRadius: 8,
+        borderRadius: 4,
         borderWidth: 1,
         flex: 1,
         justifyContent: 'center',
-        minHeight: 48,
+        minHeight: 40,
         paddingHorizontal: 8,
     },
     optionSelected: {
@@ -882,41 +795,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     optionTextSelected: { color: colors.text },
-    selectPicker: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 8,
-        borderWidth: 1,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        minHeight: 48,
-        paddingHorizontal: 12,
-    },
-    selectPickerSelectedText: { color: colors.text },
-    selectMenu: {
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 8,
-        borderWidth: 1,
-        marginTop: spacing.xs,
-        overflow: 'hidden',
-    },
-    selectMenuOption: {
-        minHeight: 44,
-        justifyContent: 'center',
-        paddingHorizontal: 12,
-    },
     settingsPickerContainer: {
         backgroundColor: colors.surfaceInput,
         borderRadius: 4,
-        justifyContent: 'center',
+        height: Platform.OS === 'android' ? 40 : undefined,
         minHeight: 40,
+        justifyContent: 'center',
+        overflow: 'hidden',
     },
     settingsPicker: {
         backgroundColor: colors.surfaceInput,
         color: colors.text,
         fontFamily: typography.fontFamily,
+        // Keep the native item's vertical padding outside the compact field.
+        flexShrink: 0,
     },
     settingsPickerItem: {
         backgroundColor: colors.surfaceInput,
@@ -924,14 +816,11 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 14,
     },
-    durationPickerRow: { flexDirection: 'row', gap: 4 },
-    durationPickerContainer: {
+    addCategoryPickerItem: {
         backgroundColor: colors.surfaceInput,
-        borderRadius: 4,
-        flex: 1,
-        justifyContent: 'center',
-        minHeight: 40,
-        overflow: 'hidden',
+        color: colors.accent,
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
     },
     newCategoryText: {
         color: colors.accent,
@@ -939,7 +828,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     backToCategories: { alignSelf: 'flex-start', marginTop: spacing.xs },
-    daysRow: { flexDirection: 'row', gap: 7, marginTop: 10 },
+    daysRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
+    },
     helperText: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,
@@ -967,10 +860,10 @@ const styles = StyleSheet.create({
     dayTextSelected: { color: colors.text },
     priorityOption: {
         alignItems: 'center',
-        borderRadius: 8,
+        borderRadius: 4,
         flex: 1,
         justifyContent: 'center',
-        minHeight: 46,
+        minHeight: 40,
     },
     priorityOptionUnselected: { opacity: 0.42 },
     priorityText: {
@@ -983,18 +876,22 @@ const styles = StyleSheet.create({
     column: { flex: 1 },
     preferredTimeRow: {
         alignItems: 'center',
-        flexDirection: 'row',
-        gap: 6,
-    },
-    preferredTimeButton: {
         backgroundColor: colors.surfaceInput,
         borderRadius: 4,
+        flexDirection: 'row',
+    },
+    preferredTimeButton: {
         flex: 1,
         justifyContent: 'center',
         minHeight: 40,
         paddingHorizontal: 10,
     },
-    clearTimeButton: { minHeight: 40, justifyContent: 'center' },
+    clearTimeButton: {
+        alignItems: 'center',
+        minHeight: 40,
+        justifyContent: 'center',
+        paddingHorizontal: spacing.sm,
+    },
     submitError: {
         color: colors.danger,
         fontFamily: typography.fontFamily,

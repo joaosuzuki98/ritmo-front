@@ -63,7 +63,7 @@ describe('addHabitSchema preferred time', () => {
 })
 
 describe('addHabitSchema duration', () => {
-    it.each(['5', '60', '1440'])('accepts %s minutes', duration => {
+    it.each(['10', '50', '60', '720'])('accepts %s minutes', duration => {
         expect(
             addHabitSchema.safeParse({
                 ...habitForm,
@@ -72,7 +72,7 @@ describe('addHabitSchema duration', () => {
         ).toBe(true)
     })
 
-    it.each(['1', '1445'])('rejects %s minutes', duration => {
+    it.each(['5', '55', '725', '1440'])('rejects %s minutes', duration => {
         expect(
             addHabitSchema.safeParse({
                 ...habitForm,
