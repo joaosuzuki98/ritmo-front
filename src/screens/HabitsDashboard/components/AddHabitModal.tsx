@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Picker } from '@react-native-picker/picker'
 import { CaretDown } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import {
@@ -227,13 +228,13 @@ export const AddHabitModal = ({
                                 expanded: isCategoryMenuOpen,
                             }}
                             onPress={() => setIsCategoryMenuOpen(open => !open)}
-                            style={styles.categoryPicker}
+                            style={styles.selectPicker}
                         >
                             <Text
                                 style={[
                                     styles.optionText,
                                     categoryName &&
-                                        styles.categoryPickerSelectedText,
+                                        styles.selectPickerSelectedText,
                                 ]}
                             >
                                 {categoryName || 'Choose a category'}
@@ -241,7 +242,7 @@ export const AddHabitModal = ({
                             <CaretDown color={colors.textMuted} size={18} />
                         </Pressable>
                         {isCategoryMenuOpen ? (
-                            <View style={styles.categoryMenu}>
+                            <View style={styles.selectMenu}>
                                 {categoryOptions.map(option => (
                                     <Pressable
                                         accessibilityRole="radio"
@@ -253,7 +254,7 @@ export const AddHabitModal = ({
                                             setValue('categoryName', option)
                                             setIsCategoryMenuOpen(false)
                                         }}
-                                        style={styles.categoryMenuOption}
+                                        style={styles.selectMenuOption}
                                     >
                                         <Text style={styles.optionText}>
                                             {option}
@@ -267,7 +268,7 @@ export const AddHabitModal = ({
                                         setIsEnteringNewCategory(true)
                                         setIsCategoryMenuOpen(false)
                                     }}
-                                    style={styles.categoryMenuOption}
+                                    style={styles.selectMenuOption}
                                 >
                                     <Text style={styles.newCategoryText}>
                                         Add a new category
@@ -398,95 +399,84 @@ export const AddHabitModal = ({
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
                     Complete after
                 </Text>
-                <View style={styles.requirementOptions}>
-                    {[
-                        { id: '', title: 'No prerequisite' },
-                        ...habitOptions.filter(
-                            option => option.id !== conditionHabitId,
-                        ),
-                    ].map(option => {
-                        const isSelected = dependencyHabitId === option.id
-                        return (
-                            <Pressable
-                                accessibilityRole="radio"
-                                accessibilityState={{
-                                    selected: isSelected,
-                                }}
-                                key={option.id || 'no-prerequisite'}
-                                onPress={() =>
-                                    setValue('dependencyHabitId', option.id, {
-                                        shouldValidate: true,
-                                    })
-                                }
-                                style={[
-                                    styles.requirementOption,
-                                    isSelected && styles.optionSelected,
-                                ]}
-                            >
-                                <Text
-                                    style={[
-                                        styles.optionText,
-                                        isSelected && styles.optionTextSelected,
-                                    ]}
-                                >
-                                    {option.title}
-                                </Text>
-                            </Pressable>
-                        )
-                    })}
-                    {habitOptions.length === 0 ? (
-                        <Text style={styles.helperText}>
-                            Create another habit first to add a prerequisite.
-                        </Text>
-                    ) : null}
+                <View style={styles.settingsPickerContainer}>
+                    <Picker
+                        accessibilityLabel="Choose prerequisite habit"
+                        dropdownIconColor={colors.textMuted}
+                        dropdownIconRippleColor="transparent"
+                        mode="dropdown"
+                        onValueChange={itemValue =>
+                            setValue('dependencyHabitId', String(itemValue), {
+                                shouldValidate: true,
+                            })
+                        }
+                        selectedValue={dependencyHabitId}
+                        style={styles.settingsPicker}
+                    >
+                        <Picker.Item
+                            label="No prerequisite"
+                            style={styles.settingsPickerItem}
+                            value=""
+                        />
+                        {habitOptions
+                            .filter(option => option.id !== conditionHabitId)
+                            .map(option => (
+                                <Picker.Item
+                                    key={option.id}
+                                    label={option.title}
+                                    style={styles.settingsPickerItem}
+                                    value={option.id}
+                                />
+                            ))}
+                    </Picker>
                 </View>
+                {habitOptions.length === 0 ? (
+                    <Text style={styles.helperText}>
+                        Create another habit first to add a prerequisite.
+                    </Text>
+                ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
                     Only when another habit is
                 </Text>
-                <View style={styles.requirementOptions}>
-                    {[
-                        { id: '', title: 'No condition' },
-                        ...habitOptions.filter(
-                            option => option.id !== dependencyHabitId,
-                        ),
-                    ].map(option => {
-                        const isSelected = conditionHabitId === option.id
-                        return (
-                            <Pressable
-                                accessibilityRole="radio"
-                                accessibilityState={{
-                                    selected: isSelected,
-                                }}
-                                key={option.id || 'no-condition'}
-                                onPress={() => {
-                                    setValue('conditionHabitId', option.id, {
-                                        shouldValidate: true,
-                                    })
-                                    setValue(
-                                        'conditionStatus',
-                                        option.id
-                                            ? conditionStatus || 'completed'
-                                            : '',
-                                        { shouldValidate: true },
-                                    )
-                                }}
-                                style={[
-                                    styles.requirementOption,
-                                    isSelected && styles.optionSelected,
-                                ]}
-                            >
-                                <Text
-                                    style={[
-                                        styles.optionText,
-                                        isSelected && styles.optionTextSelected,
-                                    ]}
-                                >
-                                    {option.title}
-                                </Text>
-                            </Pressable>
-                        )
-                    })}
+                <View style={styles.settingsPickerContainer}>
+                    <Picker
+                        accessibilityLabel="Choose condition habit"
+                        dropdownIconColor={colors.textMuted}
+                        dropdownIconRippleColor="transparent"
+                        mode="dropdown"
+                        onValueChange={itemValue => {
+                            const selectedHabitId = String(itemValue)
+                            setValue('conditionHabitId', selectedHabitId, {
+                                shouldValidate: true,
+                            })
+                            setValue(
+                                'conditionStatus',
+                                selectedHabitId
+                                    ? conditionStatus || 'completed'
+                                    : '',
+                                { shouldValidate: true },
+                            )
+                        }}
+                        selectedValue={conditionHabitId}
+                        style={styles.settingsPicker}
+                    >
+                        <Picker.Item
+                            label="No condition"
+                            style={styles.settingsPickerItem}
+                            value=""
+                        />
+                        {habitOptions
+                            .filter(option => option.id !== dependencyHabitId)
+                            .map(option => (
+                                <Picker.Item
+                                    key={option.id}
+                                    label={option.title}
+                                    style={styles.settingsPickerItem}
+                                    value={option.id}
+                                />
+                            ))}
+                    </Picker>
                 </View>
                 {conditionHabitId ? (
                     <>
@@ -812,7 +802,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     optionTextSelected: { color: colors.text },
-    categoryPicker: {
+    selectPicker: {
         alignItems: 'center',
         backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
@@ -823,8 +813,8 @@ const styles = StyleSheet.create({
         minHeight: 48,
         paddingHorizontal: 12,
     },
-    categoryPickerSelectedText: { color: colors.text },
-    categoryMenu: {
+    selectPickerSelectedText: { color: colors.text },
+    selectMenu: {
         backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
         borderRadius: 8,
@@ -832,10 +822,27 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
         overflow: 'hidden',
     },
-    categoryMenuOption: {
+    selectMenuOption: {
         minHeight: 44,
         justifyContent: 'center',
         paddingHorizontal: 12,
+    },
+    settingsPickerContainer: {
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 4,
+        justifyContent: 'center',
+        minHeight: 40,
+    },
+    settingsPicker: {
+        backgroundColor: colors.surfaceInput,
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+    },
+    settingsPickerItem: {
+        backgroundColor: colors.surfaceInput,
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
     },
     newCategoryText: {
         color: colors.accent,
@@ -844,21 +851,6 @@ const styles = StyleSheet.create({
     },
     backToCategories: { alignSelf: 'flex-start', marginTop: spacing.xs },
     daysRow: { flexDirection: 'row', gap: 7, marginTop: 10 },
-    requirementOptions: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    requirementOption: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 8,
-        borderWidth: 1,
-        justifyContent: 'center',
-        minHeight: 44,
-        paddingHorizontal: 12,
-    },
     helperText: {
         color: colors.textMuted,
         fontFamily: typography.fontFamily,

@@ -39,7 +39,7 @@ export const HabitToolbar = ({
             >
                 <MagnifyingGlass
                     color={colors.text}
-                    size={42 * scale}
+                    size={36 * scale}
                     weight="regular"
                 />
             </Pressable>
@@ -57,7 +57,7 @@ export const HabitToolbar = ({
             >
                 <SlidersHorizontal
                     color={colors.text}
-                    size={39 * scale}
+                    size={36 * scale}
                     weight="regular"
                 />
             </Pressable>
