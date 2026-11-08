@@ -703,10 +703,7 @@ const assertNoHabitScheduleConflict = async (
     userId: string,
     habitId?: string,
 ): Promise<void> => {
-    const preferredTime = parsePreferredTime(
-        formData.preferredTime,
-        formData.preferredTimePeriod,
-    )
+    const preferredTime = parsePreferredTime(formData.preferredTime)
     if (!preferredTime) return
 
     const [habits, events] = await Promise.all([
@@ -1014,7 +1011,6 @@ export const useHabitsDashboardViewModel = (
                         : undefined
                 record.preferredTime = parsePreferredTime(
                     formData.preferredTime,
-                    formData.preferredTimePeriod,
                 )
                 record.priority = formData.priority
                 record.isFocusOfDay = false
@@ -1065,7 +1061,6 @@ export const useHabitsDashboardViewModel = (
                                       : undefined,
                               preferredTime: parsePreferredTime(
                                   formData.preferredTime,
-                                  formData.preferredTimePeriod,
                               ),
                           }
                         : card,
@@ -1117,7 +1112,6 @@ export const useHabitsDashboardViewModel = (
                         : undefined
                 record.preferredTime = parsePreferredTime(
                     formData.preferredTime,
-                    formData.preferredTimePeriod,
                 )
                 record.priority = formData.priority
             })

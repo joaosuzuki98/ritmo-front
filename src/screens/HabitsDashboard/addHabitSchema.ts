@@ -17,17 +17,22 @@ export const addHabitSchema = z
             })
             .refine(value => value.trim() === '' || Number(value) > 0, {
                 message: 'Duration must be greater than zero.',
+            })
+            .refine(value => value.trim() === '' || Number(value) % 5 === 0, {
+                message: 'Choose duration in 5-minute increments.',
+            })
+            .refine(value => value.trim() === '' || Number(value) <= 1440, {
+                message: 'Duration cannot be more than 24 hours.',
             }),
         preferredTime: z
             .string()
             .refine(
                 value =>
-                    value === '' || /^(?:[0-9]|0[0-9]|1[0-2])$/.test(value),
+                    value === '' || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value),
                 {
-                    message: 'Enter an hour from 00 to 12.',
+                    message: 'Choose a valid time.',
                 },
             ),
-        preferredTimePeriod: z.enum(['AM', 'PM']),
         dependencyHabitId: z.string(),
         conditionHabitId: z.string(),
         conditionStatus: z.enum(habitRequirementStatuses).or(z.literal('')),

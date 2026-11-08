@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import DateTimePicker, {
+    DateTimePickerAndroid,
+} from '@react-native-community/datetimepicker'
 import { Picker } from '@react-native-picker/picker'
 import { CaretDown } from 'phosphor-react-native'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Pressable,
     ScrollView,
+    Platform,
     StyleSheet,
     Text,
     View,
@@ -26,7 +30,7 @@ import { typography } from '../../../styles/typography'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
 import { addHabitSchema, type AddHabitFormData } from '../addHabitSchema'
-import { formatPreferredTime } from '../preferredTime'
+import { formatPreferredTime, parsePreferredTime } from '../preferredTime'
 import {
     habitRequirementStatuses,
     habitRequirementStatusLabels,
@@ -62,8 +66,7 @@ const getInitialValues = (
     estimatedDurationMinutes: habit?.estimatedDurationMinutes
         ? String(habit.estimatedDurationMinutes)
         : '',
-    preferredTime: formatPreferredTime(habit?.preferredTime).hour,
-    preferredTimePeriod: formatPreferredTime(habit?.preferredTime).period,
+    preferredTime: formatPreferredTime(habit?.preferredTime),
     dependencyHabitId: habit?.dependencyHabitId ?? '',
     conditionHabitId: habit?.conditionHabitId ?? '',
     conditionStatus:
@@ -89,6 +92,8 @@ export const AddHabitModal = ({
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false)
+    const [isPreferredTimePickerVisible, setIsPreferredTimePickerVisible] =
+        useState(false)
     const [isEnteringNewCategory, setIsEnteringNewCategory] = useState(false)
     const {
         control,
@@ -108,11 +113,23 @@ export const AddHabitModal = ({
     const conditionHabitId = watch('conditionHabitId')
     const conditionStatus = watch('conditionStatus')
     const categoryName = watch('categoryName')
+    const preferredTime = watch('preferredTime')
+    const estimatedDurationMinutes = watch('estimatedDurationMinutes')
+    const parsedDurationMinutes = estimatedDurationMinutes
+        ? Number(estimatedDurationMinutes)
+        : null
+    const selectedDurationHours =
+        parsedDurationMinutes === null
+            ? -1
+            : Math.floor(parsedDurationMinutes / 60)
+    const selectedDurationMinutePart =
+        parsedDurationMinutes === null ? 0 : parsedDurationMinutes % 60
 
     useEffect(() => {
         if (isVisible) {
             reset(getInitialValues(initialWeekDay, habit))
             setIsCategoryMenuOpen(false)
+            setIsPreferredTimePickerVisible(false)
             setIsEnteringNewCategory(false)
         }
     }, [habit, initialWeekDay, isVisible, reset])
@@ -122,8 +139,32 @@ export const AddHabitModal = ({
         reset(getInitialValues(initialWeekDay))
         setSubmitError('')
         setIsCategoryMenuOpen(false)
+        setIsPreferredTimePickerVisible(false)
         setIsEnteringNewCategory(false)
         onClose()
+    }
+
+    const handlePreferredTimeChange = (date: Date) => {
+        setValue('preferredTime', formatPreferredTime(date), {
+            shouldValidate: true,
+        })
+    }
+
+    const handleOpenPreferredTimePicker = () => {
+        if (Platform.OS === 'android') {
+            DateTimePickerAndroid.open({
+                display: 'clock',
+                is24Hour: false,
+                minuteInterval: 5,
+                mode: 'time',
+                onValueChange: (_event, date) =>
+                    handlePreferredTimeChange(date),
+                value: parsePreferredTime(preferredTime) ?? new Date(),
+            })
+            return
+        }
+
+        setIsPreferredTimePickerVisible(visible => !visible)
     }
 
     const toggleWeekDay = (day: WeekDay) => {
@@ -599,20 +640,108 @@ export const AddHabitModal = ({
                         >
                             Duration
                         </Text>
-                        <Controller
-                            control={control}
-                            name="estimatedDurationMinutes"
-                            render={({ field }) => (
-                                <FormTextInput
-                                    accessibilityLabel="Estimated duration in minutes"
-                                    keyboardType="number-pad"
-                                    onChangeText={field.onChange}
-                                    onBlur={field.onBlur}
-                                    placeholder="Minutes"
-                                    value={field.value}
-                                />
-                            )}
-                        />
+                        <View style={styles.durationPickerRow}>
+                            <View style={styles.durationPickerContainer}>
+                                <Picker
+                                    accessibilityLabel="Duration hours"
+                                    dropdownIconColor={colors.textMuted}
+                                    dropdownIconRippleColor="transparent"
+                                    mode="dropdown"
+                                    onValueChange={itemValue => {
+                                        const hours = Number(itemValue)
+                                        if (hours < 0) {
+                                            setValue(
+                                                'estimatedDurationMinutes',
+                                                '',
+                                                { shouldValidate: true },
+                                            )
+                                            return
+                                        }
+
+                                        const minutes =
+                                            parsedDurationMinutes === null
+                                                ? 0
+                                                : selectedDurationMinutePart
+                                        const totalMinutes =
+                                            hours * 60 +
+                                            (hours === 24 ? 0 : minutes)
+                                        setValue(
+                                            'estimatedDurationMinutes',
+                                            totalMinutes
+                                                ? String(totalMinutes)
+                                                : '',
+                                            { shouldValidate: true },
+                                        )
+                                    }}
+                                    selectedValue={selectedDurationHours}
+                                    style={styles.settingsPicker}
+                                >
+                                    <Picker.Item
+                                        label="Not set"
+                                        style={styles.settingsPickerItem}
+                                        value={-1}
+                                    />
+                                    {Array.from({ length: 25 }, (_, hour) => (
+                                        <Picker.Item
+                                            key={hour}
+                                            label={`${hour} hr`}
+                                            style={styles.settingsPickerItem}
+                                            value={hour}
+                                        />
+                                    ))}
+                                </Picker>
+                            </View>
+                            <View style={styles.durationPickerContainer}>
+                                <Picker
+                                    accessibilityLabel="Duration minutes"
+                                    dropdownIconColor={colors.textMuted}
+                                    dropdownIconRippleColor="transparent"
+                                    mode="dropdown"
+                                    onValueChange={itemValue => {
+                                        const minutes = Number(itemValue)
+                                        const hours =
+                                            parsedDurationMinutes === null
+                                                ? 0
+                                                : selectedDurationHours
+                                        const totalMinutes =
+                                            hours * 60 + minutes
+                                        setValue(
+                                            'estimatedDurationMinutes',
+                                            totalMinutes
+                                                ? String(totalMinutes)
+                                                : '',
+                                            { shouldValidate: true },
+                                        )
+                                    }}
+                                    selectedValue={selectedDurationMinutePart}
+                                    style={styles.settingsPicker}
+                                >
+                                    {Array.from(
+                                        {
+                                            length:
+                                                selectedDurationHours === 24
+                                                    ? 1
+                                                    : 12,
+                                        },
+                                        (_, minuteIndex) => {
+                                            const minute = minuteIndex * 5
+                                            return (
+                                                <Picker.Item
+                                                    key={minute}
+                                                    label={`${String(
+                                                        minute,
+                                                    ).padStart(2, '0')} min`}
+                                                    style={
+                                                        styles.settingsPickerItem
+                                                    }
+                                                    value={minute}
+                                                />
+                                            )
+                                        },
+                                    )}
+                                </Picker>
+                            </View>
+                        </View>
                         {errors.estimatedDurationMinutes ? (
                             <Text
                                 style={[
@@ -630,107 +759,58 @@ export const AddHabitModal = ({
                         >
                             Preferred time
                         </Text>
-                        <Controller
-                            control={control}
-                            name="preferredTime"
-                            render={({ field }) => (
-                                <View>
-                                    <View style={styles.timeInputRow}>
-                                        <FormTextInput
-                                            accessibilityLabel="Preferred habit hour"
-                                            keyboardType="number-pad"
-                                            maxLength={2}
-                                            onChangeText={value => {
-                                                const digits = value.replace(
-                                                    /\D/g,
-                                                    '',
-                                                )
-                                                if (
-                                                    digits &&
-                                                    Number(digits) > 12
-                                                )
-                                                    return
-                                                field.onChange(digits)
-                                            }}
-                                            onBlur={() => {
-                                                field.onBlur()
-                                                if (field.value)
-                                                    setValue(
-                                                        'preferredTime',
-                                                        field.value.padStart(
-                                                            2,
-                                                            '0',
-                                                        ),
-                                                        {
-                                                            shouldValidate:
-                                                                true,
-                                                        },
-                                                    )
-                                            }}
-                                            placeholder="00"
-                                            containerStyle={
-                                                styles.hourInputContainer
-                                            }
-                                            style={styles.hourInput}
-                                            value={field.value}
-                                        />
-                                        <Text style={styles.minuteText}>
-                                            :00
+                        <View>
+                            <View style={styles.preferredTimeRow}>
+                                <Pressable
+                                    accessibilityLabel="Choose preferred time"
+                                    accessibilityRole="button"
+                                    onPress={handleOpenPreferredTimePicker}
+                                    style={styles.preferredTimeButton}
+                                >
+                                    <Text style={styles.optionText}>
+                                        {preferredTime
+                                            ? parsePreferredTime(
+                                                  preferredTime,
+                                              )?.toLocaleTimeString([], {
+                                                  hour: 'numeric',
+                                                  minute: '2-digit',
+                                              })
+                                            : 'Choose a time'}
+                                    </Text>
+                                </Pressable>
+                                {preferredTime ? (
+                                    <Pressable
+                                        accessibilityLabel="Clear preferred time"
+                                        accessibilityRole="button"
+                                        onPress={() =>
+                                            setValue('preferredTime', '', {
+                                                shouldValidate: true,
+                                            })
+                                        }
+                                        style={styles.clearTimeButton}
+                                    >
+                                        <Text style={styles.newCategoryText}>
+                                            Clear
                                         </Text>
-                                        <Controller
-                                            control={control}
-                                            name="preferredTimePeriod"
-                                            render={({
-                                                field: periodField,
-                                            }) => (
-                                                <View
-                                                    style={styles.periodOptions}
-                                                >
-                                                    {(
-                                                        ['AM', 'PM'] as const
-                                                    ).map(period => {
-                                                        const isSelected =
-                                                            periodField.value ===
-                                                            period
-                                                        return (
-                                                            <Pressable
-                                                                accessibilityLabel={`Select ${period}`}
-                                                                accessibilityRole="radio"
-                                                                accessibilityState={{
-                                                                    selected:
-                                                                        isSelected,
-                                                                }}
-                                                                key={period}
-                                                                onPress={() =>
-                                                                    periodField.onChange(
-                                                                        period,
-                                                                    )
-                                                                }
-                                                                style={[
-                                                                    styles.periodOption,
-                                                                    isSelected &&
-                                                                        styles.optionSelected,
-                                                                ]}
-                                                            >
-                                                                <Text
-                                                                    style={[
-                                                                        styles.periodOptionText,
-                                                                        isSelected &&
-                                                                            styles.optionTextSelected,
-                                                                    ]}
-                                                                >
-                                                                    {period}
-                                                                </Text>
-                                                            </Pressable>
-                                                        )
-                                                    })}
-                                                </View>
-                                            )}
-                                        />
-                                    </View>
-                                </View>
-                            )}
-                        />
+                                    </Pressable>
+                                ) : null}
+                            </View>
+                            {Platform.OS === 'ios' &&
+                            isPreferredTimePickerVisible ? (
+                                <DateTimePicker
+                                    display="spinner"
+                                    minuteInterval={5}
+                                    mode="time"
+                                    onValueChange={(_event, date) =>
+                                        handlePreferredTimeChange(date)
+                                    }
+                                    value={
+                                        parsePreferredTime(preferredTime) ??
+                                        new Date()
+                                    }
+                                />
+                            ) : null}
+                        </View>
                         {errors.preferredTime ? (
                             <Text
                                 style={[
@@ -844,6 +924,15 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 14,
     },
+    durationPickerRow: { flexDirection: 'row', gap: 4 },
+    durationPickerContainer: {
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 4,
+        flex: 1,
+        justifyContent: 'center',
+        minHeight: 40,
+        overflow: 'hidden',
+    },
     newCategoryText: {
         color: colors.accent,
         fontFamily: typography.fontFamily,
@@ -892,35 +981,20 @@ const styles = StyleSheet.create({
     },
     twoColumnRow: { flexDirection: 'row', gap: 12 },
     column: { flex: 1 },
-    timeInputRow: {
+    preferredTimeRow: {
         alignItems: 'center',
         flexDirection: 'row',
-        gap: 4,
+        gap: 6,
     },
-    hourInputContainer: { flex: 1, minWidth: 36, paddingHorizontal: 0 },
-    hourInput: { textAlign: 'center' },
-    minuteText: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 14,
-    },
-    periodOptions: { flexDirection: 'row', gap: 4 },
-    periodOption: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 6,
-        borderWidth: 1,
+    preferredTimeButton: {
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 4,
+        flex: 1,
         justifyContent: 'center',
         minHeight: 40,
-        minWidth: 39,
-        paddingHorizontal: 4,
+        paddingHorizontal: 10,
     },
-    periodOptionText: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 12,
-    },
+    clearTimeButton: { minHeight: 40, justifyContent: 'center' },
     submitError: {
         color: colors.danger,
         fontFamily: typography.fontFamily,
