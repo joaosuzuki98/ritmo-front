@@ -3,6 +3,7 @@ import {
     CheckCircle,
     Flame,
     PencilSimple,
+    Sparkle,
     Trash,
     Warning,
 } from 'phosphor-react-native'
@@ -65,7 +66,7 @@ const formatDuration = (minutes?: number) => {
 
 const getStatusColor = (status: string) => {
     if (status === 'completed') return colors.success
-    if (status === 'skipped') return colors.danger
+    if (status === 'skipped') return colors.dayCount
     if (status === 'partial') return colors.priorityMedium
     return colors.textMuted
 }
@@ -146,12 +147,7 @@ export const HabitDetailsModal = ({
                 contentContainerStyle={{ paddingBottom: 24 * scale }}
                 showsVerticalScrollIndicator={false}
             >
-                <View
-                    style={[
-                        styles.titleBlock,
-                        { borderLeftColor: habit.priorityColor },
-                    ]}
-                >
+                <View style={styles.titleBlock}>
                     <View style={styles.titleHeader}>
                         {habit.status === 'completed' ? (
                             <View style={styles.statusIcon}>
@@ -172,7 +168,7 @@ export const HabitDetailsModal = ({
                         ) : null}
                         <View style={styles.titleCopy}>
                             <Text
-                                style={[styles.title, { fontSize: 34 * scale }]}
+                                style={[styles.title, { fontSize: 22 * scale }]}
                             >
                                 {habit.title}
                             </Text>
@@ -184,6 +180,21 @@ export const HabitDetailsModal = ({
                         </View>
                         <View style={styles.titleActions}>
                             <Pressable
+                                accessibilityLabel={t(
+                                    'Analyze the schedule for {{habitTitle}} with Ask the Stars',
+                                    { habitTitle: habit.title },
+                                )}
+                                accessibilityRole="button"
+                                onPress={onAnalyzeSchedule}
+                                style={styles.titleActionButton}
+                            >
+                                <Sparkle
+                                    color={colors.onboardingPurple}
+                                    size={38 * scale}
+                                    weight="regular"
+                                />
+                            </Pressable>
+                            <Pressable
                                 accessibilityLabel={t('Edit {{habitTitle}}', {
                                     habitTitle: habit.title,
                                 })}
@@ -193,7 +204,7 @@ export const HabitDetailsModal = ({
                             >
                                 <PencilSimple
                                     color={colors.text}
-                                    size={24 * scale}
+                                    size={38 * scale}
                                 />
                             </Pressable>
                             <Pressable
@@ -205,8 +216,8 @@ export const HabitDetailsModal = ({
                                 style={styles.titleActionButton}
                             >
                                 <Trash
-                                    color={colors.danger}
-                                    size={24 * scale}
+                                    color={colors.dayCount}
+                                    size={38 * scale}
                                 />
                             </Pressable>
                         </View>
@@ -232,6 +243,23 @@ export const HabitDetailsModal = ({
                     </View>
                 ) : null}
 
+                {habit.description ? (
+                    <Text
+                        style={[styles.description, { fontSize: 22 * scale }]}
+                    >
+                        {habit.description}
+                    </Text>
+                ) : null}
+
+                <Text
+                    style={[
+                        styles.priorityText,
+                        { color: habit.priorityColor },
+                    ]}
+                >
+                    {t('Priority')}: {t(habit.priorityLabel)}
+                </Text>
+
                 <FormActionButton
                     accessibilityLabel={t(
                         "Record today's progress for {{habitTitle}}",
@@ -246,19 +274,6 @@ export const HabitDetailsModal = ({
                     }
                     containerStyle={styles.logProgressButton}
                 />
-                <FormActionButton
-                    accessibilityLabel={t(
-                        'Analyze the schedule for {{habitTitle}} with Ask the Stars',
-                        { habitTitle: habit.title },
-                    )}
-                    onPress={onAnalyzeSchedule}
-                    title={t('Ask the Stars to analyze this habit')}
-                    containerStyle={styles.logProgressButton}
-                />
-
-                {habit.description ? (
-                    <Text style={styles.description}>{habit.description}</Text>
-                ) : null}
 
                 {habit.dependencyHabitTitle || habit.conditionHabitTitle ? (
                     <>
@@ -301,7 +316,6 @@ export const HabitDetailsModal = ({
 
                 <Text style={styles.sectionTitle}>{t('Schedule')}</Text>
                 <View style={styles.scheduleDaysSection}>
-                    <Text style={styles.detailLabel}>{t('Days')}</Text>
                     <View style={styles.scheduleDaysRow}>
                         {weekDays.map(day => {
                             const isSelected = habit.weekDays.includes(day)
@@ -402,9 +416,9 @@ export const HabitDetailsModal = ({
                                 style={[
                                     styles.historyItem,
                                     {
-                                        borderColor: getStatusColor(
+                                        backgroundColor: `${getStatusColor(
                                             record.status,
-                                        ),
+                                        )}1A`,
                                     },
                                 ]}
                             >
@@ -486,9 +500,7 @@ const styles = StyleSheet.create({
         paddingTop: 18,
     },
     titleBlock: {
-        borderLeftWidth: 5,
         marginBottom: 10,
-        paddingLeft: 14,
     },
     titleHeader: {
         alignItems: 'center',
@@ -526,7 +538,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         marginTop: 16,
     },
-    logProgressButton: { marginTop: 24 },
+    logProgressButton: { marginTop: 12 },
     focusBadge: {
         backgroundColor: colors.accent,
         borderRadius: 8,
@@ -554,7 +566,13 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 18,
         lineHeight: 27,
-        marginTop: 22,
+        marginTop: 10,
+    },
+    priorityText: {
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
+        fontWeight: '600',
+        marginTop: 8,
     },
     requirementsBox: {
         backgroundColor: colors.surfaceMuted,
@@ -674,8 +692,6 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     historyItem: {
-        backgroundColor: colors.surfaceMuted,
-        borderLeftWidth: 4,
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 10,
