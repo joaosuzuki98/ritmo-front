@@ -73,6 +73,11 @@ export type HabitCardViewData = {
     isTemporarilySorted: boolean
 }
 
+export type HabitCategoryViewData = Pick<
+    HabitCardViewData,
+    'id' | 'title' | 'categoryLabel'
+>
+
 export type HabitsDashboardScreenProps = {
     currentUser: User
     totalAccessDays: number

@@ -27,6 +27,7 @@ import { DaySelector } from './components/DaySelector'
 import { AddHabitModal } from './components/AddHabitModal'
 import { HabitCard } from './components/HabitCard'
 import { HabitToolbar } from './components/HabitToolbar'
+import { HabitCategoryDistributionSheet } from './components/HabitCategoryDistributionSheet'
 import { HabitDetailsModal } from './components/HabitDetailsModal'
 import { LogHabitProgressModal } from './components/LogHabitProgressModal'
 import { SearchInput } from './components/SearchInput'
@@ -54,6 +55,8 @@ export const HabitsDashboardScreen = ({
         initialWeekDay,
     )
     const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const [isCategoryDistributionVisible, setIsCategoryDistributionVisible] =
+        useState(false)
     const [selectedHabit, setSelectedHabit] =
         useState<HabitCardViewData | null>(null)
     const [habitBeingEdited, setHabitBeingEdited] =
@@ -237,6 +240,9 @@ export const HabitsDashboardScreen = ({
                 <HabitToolbar
                     isSearchOpen={isSearchOpen}
                     sort={viewModel.sort}
+                    onCategoriesPress={() =>
+                        setIsCategoryDistributionVisible(true)
+                    }
                     onWeeklyLoadPress={onWeeklyLoadAnalysis}
                     onSearch={() => setIsSearchOpen(true)}
                     onSort={viewModel.setSort}
@@ -415,6 +421,11 @@ export const HabitsDashboardScreen = ({
                     </Animated.View>
                 </PanGestureHandler>
             </ScrollView>
+            <HabitCategoryDistributionSheet
+                habits={viewModel.categoryHabits}
+                isVisible={isCategoryDistributionVisible}
+                onClose={() => setIsCategoryDistributionVisible(false)}
+            />
             <AddHabitModal
                 habitOptions={viewModel.habitOptions}
                 categoryOptions={viewModel.categoryOptions}

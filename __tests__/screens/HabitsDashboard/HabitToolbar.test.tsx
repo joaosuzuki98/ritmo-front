@@ -13,6 +13,7 @@ describe('HabitToolbar', () => {
             fontScale: 1,
         })
         const onWeeklyLoadPress = jest.fn()
+        const onCategoriesPress = jest.fn()
         const onSearch = jest.fn()
         const onSort = jest.fn()
         const rendererRef: { current: ReactTestRenderer | null } = {
@@ -23,6 +24,7 @@ describe('HabitToolbar', () => {
                 <HabitToolbar
                     isSearchOpen={false}
                     sort={null}
+                    onCategoriesPress={onCategoriesPress}
                     onWeeklyLoadPress={onWeeklyLoadPress}
                     onSearch={onSearch}
                     onSort={onSort}
@@ -38,12 +40,15 @@ describe('HabitToolbar', () => {
 
         expect(buttons.map(button => button.props.accessibilityLabel)).toEqual([
             'Open weekly habit load recommendations',
+            'Open category distribution',
             'Open search',
             'Sort by priority',
         ])
 
         act(() => buttons[0].props.onPress())
         expect(onWeeklyLoadPress).toHaveBeenCalledTimes(1)
+        act(() => buttons[1].props.onPress())
+        expect(onCategoriesPress).toHaveBeenCalledTimes(1)
         expect(onSearch).not.toHaveBeenCalled()
         expect(onSort).not.toHaveBeenCalled()
         act(() => renderer.unmount())

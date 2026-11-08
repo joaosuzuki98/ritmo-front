@@ -34,11 +34,13 @@ import { localDateKey } from '../../utils/normalizeLocalDate'
 import type {
     DashboardRenderState,
     HabitCardViewData,
+    HabitCategoryViewData,
     HabitOption,
     SortCriterion,
 } from './habitDashboard.types'
 import type { AddHabitFormData } from './addHabitSchema'
 import { parsePreferredTime } from './preferredTime'
+import { buildHabitCategoryItems } from './habitCategoryDistribution'
 import { findHabitScheduleConflict } from '../../utils/scheduleConflict'
 import type { LogHabitProgressFormData } from './logHabitProgressSchema'
 import { wouldCreateHabitRequirementCycle } from './habitRequirementUtils'
@@ -734,6 +736,7 @@ const assertNoHabitScheduleConflict = async (
 type DashboardData = {
     user: User | null
     cards: HabitCardViewData[]
+    categoryHabits: HabitCategoryViewData[]
     habitOptions: HabitOption[]
     categoryOptions: string[]
     preference: HabitDisplayPreference | null
@@ -755,6 +758,7 @@ export const useHabitsDashboardViewModel = (
     const [data, setData] = useState<DashboardData>({
         user: null,
         cards: [],
+        categoryHabits: [],
         habitOptions: [],
         categoryOptions: [],
         preference: null,
@@ -875,6 +879,11 @@ export const useHabitsDashboardViewModel = (
                 setData({
                     user,
                     cards,
+                    categoryHabits: buildHabitCategoryItems(
+                        habits,
+                        categories,
+                        currentUserId,
+                    ),
                     habitOptions: habits
                         .filter(
                             habit =>

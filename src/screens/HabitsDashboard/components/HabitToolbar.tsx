@@ -1,6 +1,7 @@
 import { Pressable, View, useWindowDimensions } from 'react-native'
 import {
     MagnifyingGlass,
+    SquaresFour,
     SlidersHorizontal,
     Sparkle,
 } from 'phosphor-react-native'
@@ -14,6 +15,7 @@ type HabitToolbarProps = {
     isSearchOpen: boolean
     sort: SortCriterion | null
     onWeeklyLoadPress: () => void
+    onCategoriesPress: () => void
     onSearch: () => void
     onSort: (sort: SortCriterion | null) => void
 }
@@ -22,6 +24,7 @@ export const HabitToolbar = ({
     isSearchOpen,
     sort,
     onWeeklyLoadPress,
+    onCategoriesPress,
     onSearch,
     onSort,
 }: HabitToolbarProps) => {
@@ -50,6 +53,18 @@ export const HabitToolbar = ({
                 />
             </Pressable>
             <View className="flex-row items-center">
+                <Pressable
+                    accessibilityLabel="Open category distribution"
+                    accessibilityRole="button"
+                    onPress={onCategoriesPress}
+                    style={{ padding: 10 * scale }}
+                >
+                    <SquaresFour
+                        color={colors.text}
+                        size={36 * scale}
+                        weight="regular"
+                    />
+                </Pressable>
                 <Pressable
                     accessibilityLabel={
                         isSearchOpen ? 'Search open' : 'Open search'
