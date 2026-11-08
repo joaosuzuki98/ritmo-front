@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 17,
+    version: 18,
     tables: [
         tableSchema({
             name: 'users',
@@ -298,6 +298,16 @@ export const databaseSchema = appSchema({
                 { name: 'notify_priority_habits', type: 'boolean' },
                 {
                     name: 'notify_low_success_habits',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                {
+                    name: 'notify_weekly_habit_load',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                {
+                    name: 'pending_weekly_habit_load',
                     type: 'boolean',
                     isOptional: true,
                 },

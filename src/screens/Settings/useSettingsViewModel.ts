@@ -41,6 +41,8 @@ export const useSettingsViewModel = (userId: string) => {
                               notifyPriorityHabits: record.notifyPriorityHabits,
                               notifyLowSuccessHabits:
                                   record.notifyLowSuccessHabits ?? false,
+                              notifyWeeklyHabitLoad:
+                                  record.notifyWeeklyHabitLoad ?? false,
                               minimumPriority:
                                   record.minimumPriority === 'low' ||
                                   record.minimumPriority === 'medium' ||
@@ -99,7 +101,8 @@ export const useSettingsViewModel = (userId: string) => {
             changes.notifyHabitStart === true ||
             changes.notifyDailyFocus === true ||
             changes.notifyPriorityHabits === true ||
-            changes.notifyLowSuccessHabits === true
+            changes.notifyLowSuccessHabits === true ||
+            changes.notifyWeeklyHabitLoad === true
 
         if (
             isEnablingNotification &&
@@ -139,7 +142,8 @@ export const useSettingsViewModel = (userId: string) => {
             | 'notifyHabitStart'
             | 'notifyDailyFocus'
             | 'notifyPriorityHabits'
-            | 'notifyLowSuccessHabits',
+            | 'notifyLowSuccessHabits'
+            | 'notifyWeeklyHabitLoad',
     ) => {
         await updatePreference({
             [preference]: !preferencesRef.current[preference],

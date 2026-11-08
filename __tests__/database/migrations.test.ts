@@ -21,7 +21,7 @@ describe('local account database migration', () => {
             item => item.toVersion === 9,
         )
 
-        expect(databaseSchema.version).toBe(17)
+        expect(databaseSchema.version).toBe(18)
         expect(migration?.steps).toContainEqual({
             type: 'add_columns',
             table: 'users',
@@ -213,5 +213,42 @@ describe('local account database migration', () => {
             type: 'string',
             isOptional: true,
         })
+    })
+
+    it('adds weekly habit-load notification fields in version 18', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 18,
+        )
+
+        expect(migration?.steps).toContainEqual({
+            type: 'add_columns',
+            table: 'notification_preferences',
+            columns: [
+                {
+                    name: 'notify_weekly_habit_load',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                {
+                    name: 'pending_weekly_habit_load',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+            ],
+        })
+        expect(
+            databaseSchema.tables.notification_preferences.columnArray,
+        ).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    name: 'notify_weekly_habit_load',
+                    type: 'boolean',
+                }),
+                expect.objectContaining({
+                    name: 'pending_weekly_habit_load',
+                    type: 'boolean',
+                }),
+            ]),
+        )
     })
 })

@@ -8,6 +8,7 @@ export type NotificationPreferences = {
     notifyDailyFocus: boolean
     notifyPriorityHabits: boolean
     notifyLowSuccessHabits: boolean
+    notifyWeeklyHabitLoad: boolean
     minimumPriority: PriorityCode | null
 }
 
@@ -28,6 +29,7 @@ export const defaultNotificationPreferences: NotificationPreferences = {
     notifyDailyFocus: false,
     notifyPriorityHabits: false,
     notifyLowSuccessHabits: false,
+    notifyWeeklyHabitLoad: false,
     minimumPriority: null,
 }
 
@@ -40,6 +42,7 @@ export const observeNotificationPreferences = (userId: string) =>
             'notify_daily_focus',
             'notify_priority_habits',
             'notify_low_success_habits',
+            'notify_weekly_habit_load',
             'minimum_priority',
         ])
 
@@ -68,6 +71,8 @@ export const saveNotificationPreferences = async (
                 if (changes.notifyLowSuccessHabits !== undefined)
                     record.notifyLowSuccessHabits =
                         changes.notifyLowSuccessHabits
+                if (changes.notifyWeeklyHabitLoad !== undefined)
+                    record.notifyWeeklyHabitLoad = changes.notifyWeeklyHabitLoad
                 if (changes.minimumPriority !== undefined)
                     record.minimumPriority =
                         changes.minimumPriority ?? undefined
@@ -90,6 +95,9 @@ export const saveNotificationPreferences = async (
             record.notifyLowSuccessHabits =
                 changes.notifyLowSuccessHabits ??
                 defaultNotificationPreferences.notifyLowSuccessHabits
+            record.notifyWeeklyHabitLoad =
+                changes.notifyWeeklyHabitLoad ??
+                defaultNotificationPreferences.notifyWeeklyHabitLoad
             record.minimumPriority =
                 changes.minimumPriority ??
                 defaultNotificationPreferences.minimumPriority ??
@@ -173,6 +181,8 @@ export const saveLowSuccessNotificationState = async (
                 defaultNotificationPreferences.notifyPriorityHabits
             record.notifyLowSuccessHabits =
                 defaultNotificationPreferences.notifyLowSuccessHabits
+            record.notifyWeeklyHabitLoad =
+                defaultNotificationPreferences.notifyWeeklyHabitLoad
             record.lowSuccessNotificationState = JSON.stringify(state)
             record.createdAt = now
             record.updatedAt = now

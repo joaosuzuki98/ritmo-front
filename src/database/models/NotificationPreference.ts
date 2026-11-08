@@ -9,6 +9,8 @@ export class NotificationPreference extends Model {
     @field('notify_daily_focus') notifyDailyFocus!: boolean
     @field('notify_priority_habits') notifyPriorityHabits!: boolean
     @field('notify_low_success_habits') notifyLowSuccessHabits?: boolean
+    @field('notify_weekly_habit_load') notifyWeeklyHabitLoad?: boolean
+    @field('pending_weekly_habit_load') pendingWeeklyHabitLoad?: boolean
     @field('minimum_priority') minimumPriority?: string
     @field('low_success_notification_state')
     lowSuccessNotificationState?: string

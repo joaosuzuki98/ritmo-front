@@ -10,6 +10,7 @@ const defaultPreferences: NotificationPreferences = {
     notifyDailyFocus: false,
     notifyPriorityHabits: false,
     notifyLowSuccessHabits: false,
+    notifyWeeklyHabitLoad: false,
     minimumPriority: null,
 }
 

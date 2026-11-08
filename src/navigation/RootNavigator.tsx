@@ -17,7 +17,10 @@ import type { User } from '../database'
 import { logoutUser, restoreLocalSession } from '../services/auth'
 import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen'
 import { colors } from '../styles/colors'
-import { consumePendingHabitAnalysis } from '../notifications/localNotificationEvents'
+import {
+    consumePendingHabitAnalysis,
+    consumePendingWeeklyLoadAnalysis,
+} from '../notifications/localNotificationEvents'
 import type { OnboardingIdentity } from '../types/onboarding'
 import type { RootParamList } from './types'
 
@@ -41,6 +44,7 @@ export const RootNavigator = () => {
         habitId: string
         userId?: string
     } | null>(null)
+    const pendingWeeklyLoadAnalysis = useRef<{ userId?: string } | null>(null)
 
     const dispatchPendingHabitAnalysis = useCallback(() => {
         const pending = pendingHabitAnalysis.current
@@ -51,7 +55,10 @@ export const RootNavigator = () => {
         if (pending.userId && pending.userId !== currentUserIdRef.current)
             return
 
-        navigationRef.navigate('AskTheStars', { habitId: pending.habitId })
+        navigationRef.navigate('AskTheStars', {
+            habitId: pending.habitId,
+            mode: undefined,
+        })
     }, [])
 
     const openHabitAnalysis = useCallback(
@@ -84,14 +91,60 @@ export const RootNavigator = () => {
             )
                 return
 
-            navigationRef.navigate('AskTheStars', { habitId })
+            navigationRef.navigate('AskTheStars', {
+                habitId,
+                mode: undefined,
+            })
         },
         [],
     )
 
+    const openWeeklyLoadAnalysis = useCallback(
+        (notificationUserId?: string) => {
+            const activeUserId = currentUserIdRef.current
+            if (
+                activeUserId &&
+                notificationUserId &&
+                notificationUserId !== activeUserId
+            )
+                return
+
+            if (!activeUserId || !navigationRef.isReady()) {
+                pendingWeeklyLoadAnalysis.current = notificationUserId
+                    ? { userId: notificationUserId }
+                    : {}
+                return
+            }
+
+            navigationRef.navigate('AskTheStars', {
+                habitId: undefined,
+                mode: 'weeklyLoad',
+            })
+        },
+        [],
+    )
+
+    const dispatchPendingWeeklyLoadAnalysis = useCallback(() => {
+        const pending = pendingWeeklyLoadAnalysis.current
+        if (!pending || !currentUserIdRef.current || !navigationRef.isReady())
+            return
+
+        pendingWeeklyLoadAnalysis.current = null
+        if (pending.userId && pending.userId !== currentUserIdRef.current)
+            return
+        navigationRef.navigate('AskTheStars', {
+            habitId: undefined,
+            mode: 'weeklyLoad',
+        })
+    }, [])
+
     useEffect(() => {
         dispatchPendingHabitAnalysis()
     }, [currentUserId, dispatchPendingHabitAnalysis])
+
+    useEffect(() => {
+        dispatchPendingWeeklyLoadAnalysis()
+    }, [currentUserId, dispatchPendingWeeklyLoadAnalysis])
 
     useEffect(() => {
         const unsubscribe = notifee.onForegroundEvent(({ type, detail }) => {
@@ -103,6 +156,10 @@ export const RootNavigator = () => {
             )
                 openHabitAnalysis(
                     data.habitId,
+                    typeof data.userId === 'string' ? data.userId : undefined,
+                )
+            if (data?.type === 'weekly_habit_load')
+                openWeeklyLoadAnalysis(
                     typeof data.userId === 'string' ? data.userId : undefined,
                 )
         })
@@ -121,11 +178,17 @@ export const RootNavigator = () => {
                             ? data.userId
                             : undefined,
                     )
+                if (data?.type === 'weekly_habit_load')
+                    openWeeklyLoadAnalysis(
+                        typeof data.userId === 'string'
+                            ? data.userId
+                            : undefined,
+                    )
             })
             .catch(() => undefined)
 
         return unsubscribe
-    }, [openHabitAnalysis])
+    }, [openHabitAnalysis, openWeeklyLoadAnalysis])
 
     useEffect(() => {
         const userId = currentUser?.id
@@ -133,8 +196,13 @@ export const RootNavigator = () => {
         let isActive = true
 
         const openPendingHabitAnalysis = async () => {
-            const habitId = await consumePendingHabitAnalysis(userId)
-            if (isActive && habitId) openHabitAnalysis(habitId, userId)
+            const [habitId, hasPendingWeeklyLoadAnalysis] = await Promise.all([
+                consumePendingHabitAnalysis(userId),
+                consumePendingWeeklyLoadAnalysis(userId),
+            ])
+            if (!isActive) return
+            if (hasPendingWeeklyLoadAnalysis) openWeeklyLoadAnalysis(userId)
+            else if (habitId) openHabitAnalysis(habitId, userId)
         }
 
         openPendingHabitAnalysis().catch(() => undefined)
@@ -150,7 +218,7 @@ export const RootNavigator = () => {
             isActive = false
             appStateSubscription.remove()
         }
-    }, [currentUser?.id, openHabitAnalysis])
+    }, [currentUser?.id, openHabitAnalysis, openWeeklyLoadAnalysis])
 
     useEffect(() => {
         restoreLocalSession()
@@ -198,6 +266,7 @@ export const RootNavigator = () => {
             <NavigationContainer
                 onReady={() => {
                     dispatchPendingHabitAnalysis()
+                    dispatchPendingWeeklyLoadAnalysis()
                 }}
                 ref={navigationRef}
             >

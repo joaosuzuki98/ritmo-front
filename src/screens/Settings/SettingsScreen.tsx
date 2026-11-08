@@ -119,6 +119,13 @@ export const SettingsScreen = ({
                             }
                         />
                         <SettingsCheckbox
+                            checked={preferences.notifyWeeklyHabitLoad}
+                            label="Send me weekly habit load recommendations"
+                            onPress={() =>
+                                togglePreference('notifyWeeklyHabitLoad')
+                            }
+                        />
+                        <SettingsCheckbox
                             checked={preferences.notifyPriorityHabits}
                             label="Remind me about priority habits I haven't completed"
                             onPress={() =>

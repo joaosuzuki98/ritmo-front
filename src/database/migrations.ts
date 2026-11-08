@@ -443,5 +443,26 @@ export const databaseMigrations = schemaMigrations({
                 },
             ],
         },
+        {
+            toVersion: 18,
+            steps: [
+                {
+                    type: 'add_columns',
+                    table: 'notification_preferences',
+                    columns: [
+                        {
+                            name: 'notify_weekly_habit_load',
+                            type: 'boolean',
+                            isOptional: true,
+                        },
+                        {
+                            name: 'pending_weekly_habit_load',
+                            type: 'boolean',
+                            isOptional: true,
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 })
