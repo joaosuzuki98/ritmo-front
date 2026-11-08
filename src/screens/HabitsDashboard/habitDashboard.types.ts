@@ -82,5 +82,6 @@ export type HabitsDashboardScreenProps = {
     onOpenAddHabitModal?: () => void
     onCloseAddHabitModal?: () => void
     onAnalyzeSchedule?: (habitId: string) => void
+    onWeeklyLoadAnalysis?: () => void
     onMenuPress?: () => void
 }

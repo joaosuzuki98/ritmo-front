@@ -1,6 +1,6 @@
 import { act, create } from 'react-test-renderer'
 import type { ReactTestRenderer } from 'react-test-renderer'
-import { Text } from 'react-native'
+import { Text, TextInput } from 'react-native'
 import LottieView from 'lottie-react-native'
 import { useIsFocused } from '@react-navigation/native'
 
@@ -67,10 +67,11 @@ describe('AskTheStarsScreen analysis loading', () => {
     let observers: Partial<Record<TableName, Observer>>
     let subscriptions: jest.Mock[]
 
-    const screen = (habitId?: string) => (
+    const screen = (habitId?: string, isWeeklyLoadAnalysis = false) => (
         <AskTheStarsScreen
             currentUser={currentUser}
             initialHabitId={habitId}
+            isWeeklyLoadAnalysis={isWeeklyLoadAnalysis}
             onClose={jest.fn()}
             onMenuPress={jest.fn()}
             onScheduleAccepted={jest.fn()}
@@ -142,13 +143,40 @@ describe('AskTheStarsScreen analysis loading', () => {
         },
     )
 
-    it('shows the menu message immediately without waiting for analysis data', () => {
+    it('keeps the menu flow on the coming soon message', () => {
         act(() => {
             renderer = create(screen())
         })
-        expect([...new Set(messages())]).toEqual([
-            'Coming soon! Ask the stars for guidance with your habits.',
-        ])
+        expect(renderer.root.findAllByType(TextInput)).toHaveLength(1)
+        expect(new Set(messages())).toEqual(
+            new Set([
+                'Coming soon! Ask the stars for guidance with your habits.',
+            ]),
+        )
+        emit('habits', [])
+        emit('events', [])
+        emit('completion_records', [])
+
+        expect(new Set(messages())).toEqual(
+            new Set([
+                'Coming soon! Ask the stars for guidance with your habits.',
+            ]),
+        )
+    })
+
+    it('shows weekly load guidance only in the weekly analysis flow', () => {
+        act(() => {
+            renderer = create(screen(undefined, true))
+        })
+        expect(renderer.root.findAllByType(TextInput)).toHaveLength(0)
+        expect(messages()).toEqual([])
+        emit('habits', [])
+        emit('events', [])
+        emit('completion_records', [])
+
+        expect(messages()).toHaveLength(1)
+        expect(messages()[0]).toContain('at least 5 active habits')
+        expect(renderer.root.findAllByType(TextInput)).toHaveLength(0)
     })
 
     it('uses the requested habit immediately when returning from another modal', () => {

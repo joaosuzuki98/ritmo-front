@@ -35,6 +35,7 @@ import { useAnalysisLoading } from './useAnalysisLoading'
 type AskTheStarsScreenProps = {
     currentUser: User
     initialHabitId?: string
+    isWeeklyLoadAnalysis?: boolean
     onClose: () => void
     onMenuPress: () => void
     onScheduleAccepted: (weekDay: WeekDay) => void
@@ -53,6 +54,7 @@ const formatDays = (days: readonly number[]) =>
 export const AskTheStarsScreen = ({
     currentUser,
     initialHabitId,
+    isWeeklyLoadAnalysis = false,
     onClose,
     onMenuPress,
     onScheduleAccepted,
@@ -72,6 +74,7 @@ export const AskTheStarsScreen = ({
         selectHabit,
         selectedAnalysis,
         selectedHabit,
+        weeklyLoadAnalysis,
     } = useAskTheStarsViewModel(currentUser.id, initialHabitId)
     const [suggestionSelection, setSuggestionSelection] = useState<{
         habitId: string | undefined
@@ -79,6 +82,7 @@ export const AskTheStarsScreen = ({
     }>({ habitId: undefined, index: 0 })
     const [isHabitPickerVisible, setIsHabitPickerVisible] = useState(false)
     const isAnalysisFlow = Boolean(initialHabitId)
+    const isWeeklyLoadFlow = isWeeklyLoadAnalysis && !isAnalysisFlow
     const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
     const shouldShowAnalysisLoading = useAnalysisLoading({
         habitId: isAnalysisFlow
@@ -104,10 +108,33 @@ export const AskTheStarsScreen = ({
     const isLowSuccess = selectedAnalysis?.isLowSuccess ?? false
     const hasEnoughHistory = selectedAnalysis?.hasEnoughHistory ?? false
     const successRate = selectedAnalysis?.successRate ?? 0
+    const isWaitingForData = isAnalysisFlow
+        ? shouldShowAnalysisLoading
+        : isWeeklyLoadFlow && isLoading
+    const canShowStarMessage = isAnalysisFlow
+        ? !shouldShowAnalysisLoading && !hasLoadError
+        : isWeeklyLoadFlow
+        ? !isLoading && !hasLoadError
+        : true
 
     const getStarMessage = () => {
-        if (!isAnalysisFlow)
-            return 'Coming soon! Ask the stars for guidance with your habits.'
+        if (!isAnalysisFlow) {
+            if (!isWeeklyLoadFlow)
+                return 'Coming soon! Ask the stars for guidance with your habits.'
+            if (!weeklyLoadAnalysis)
+                return 'I’m reviewing your weekly routine and completion history.'
+            if (weeklyLoadAnalysis.kind === 'insufficient')
+                return `I need at least 5 active habits and 10 planned sessions per week, with enough history across three full weeks, before I can recommend changing your total load. You currently have ${weeklyLoadAnalysis.activeHabitCount} active habits and ${weeklyLoadAnalysis.occurrenceCount} planned sessions in the last full week.`
+            if (weeklyLoadAnalysis.kind === 'balanced')
+                return 'Your weekly completion is mixed, so I recommend keeping your current routine steady and checking again after a little more tracking.'
+            if (weeklyLoadAnalysis.kind === 'reduce')
+                return `Your completion rate across the last weeks is ${Math.round(
+                    weeklyLoadAnalysis.completionRate * 100,
+                )}%. A lighter routine may be more sustainable. Here are up to three habits with the lowest completion for you to review; nothing will change unless you decide to change it.`
+            return `You completed about ${Math.round(
+                weeklyLoadAnalysis.completionRate * 100,
+            )}% of planned sessions across the last weeks. Your consistency is high; these are the three lightest weekdays to consider if you decide to add a habit.`
+        }
         if (!selectedHabit)
             return 'Choose a habit and I will look for a time that fits your routine.'
         if (!hasEnoughHistory)
@@ -224,7 +251,7 @@ export const AskTheStarsScreen = ({
                     <StarMoonAnimation width={moonWidth} />
                 </View>
 
-                {shouldShowAnalysisLoading ? (
+                {isWaitingForData ? (
                     <View
                         accessibilityLabel="Loading habit analysis"
                         accessibilityState={{ busy: true }}
@@ -240,8 +267,7 @@ export const AskTheStarsScreen = ({
                         </Text>
                     </View>
                 ) : null}
-                {!isAnalysisFlow ||
-                (!shouldShowAnalysisLoading && !hasLoadError) ? (
+                {canShowStarMessage ? (
                     <AnimatedStarMessage
                         key={starMessage}
                         message={starMessage}
@@ -283,12 +309,74 @@ export const AskTheStarsScreen = ({
                     </View>
                 ) : null}
 
+                {isWeeklyLoadFlow &&
+                !isLoading &&
+                !hasLoadError &&
+                weeklyLoadAnalysis?.kind === 'reduce' ? (
+                    <View style={styles.suggestions}>
+                        <Text style={styles.suggestionsHeading}>
+                            Habits to review
+                        </Text>
+                        {weeklyLoadAnalysis.leastCompletedHabits.map(habit => (
+                            <View key={habit.id} style={styles.suggestionCard}>
+                                <Text style={styles.suggestionTitle}>
+                                    {habit.name}
+                                </Text>
+                                <Text style={styles.suggestionEvidence}>
+                                    {Math.round(habit.rate * 100)}% completed
+                                    across {habit.occurrenceCount} planned
+                                    sessions
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
+                ) : null}
+
+                {isWeeklyLoadFlow &&
+                !isLoading &&
+                !hasLoadError &&
+                weeklyLoadAnalysis?.kind === 'increase' ? (
+                    <View style={styles.suggestions}>
+                        <Text style={styles.suggestionsHeading}>
+                            Lighter days to consider
+                        </Text>
+                        {weeklyLoadAnalysis.lighterDays.map(day => (
+                            <View
+                                key={day.weekDay}
+                                style={styles.suggestionCard}
+                            >
+                                <Text style={styles.suggestionTitle}>
+                                    {
+                                        weekDayLabels[
+                                            day.weekDay as keyof typeof weekDayLabels
+                                        ]
+                                    }
+                                </Text>
+                                <Text style={styles.suggestionEvidence}>
+                                    {day.scheduledHabitCount} scheduled habits
+                                    {day.estimatedMinutes
+                                        ? ` · ${day.estimatedMinutes} estimated minutes`
+                                        : ''}
+                                    {day.eventCount
+                                        ? ` · ${day.eventCount} calendar events`
+                                        : ''}
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
+                ) : null}
+
                 {isAnalysisFlow && errorMessage ? (
                     <Text style={styles.errorMessage}>{errorMessage}</Text>
                 ) : null}
+                {isWeeklyLoadFlow && hasLoadError ? (
+                    <Text style={styles.errorMessage}>
+                        Unable to load your weekly habit history.
+                    </Text>
+                ) : null}
             </ScrollView>
 
-            {isAnalysisFlow ? (
+            {isWeeklyLoadFlow ? null : isAnalysisFlow ? (
                 <View
                     style={[
                         styles.analysisActions,

@@ -117,7 +117,11 @@ export const AppDrawerContent = ({
 
     const onSelectRoute = (route: MenuRoute) => {
         navigation.closeDrawer()
-        if (route === 'AskTheStars') navigation.navigate('AskTheStars')
+        if (route === 'AskTheStars')
+            navigation.navigate('AskTheStars', {
+                habitId: undefined,
+                mode: undefined,
+            })
         else navigation.navigate('Main', { screen: route })
     }
 

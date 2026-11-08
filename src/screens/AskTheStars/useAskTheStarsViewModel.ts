@@ -9,6 +9,7 @@ import {
 } from '../../database'
 import { analyzeHabitSchedules } from '../../habits/habitScheduleAnalysis'
 import type { HabitScheduleSuggestion } from '../../habits/habitScheduleAnalysis'
+import { analyzeWeeklyHabitLoad } from '../../habits/habitLoadAnalysis'
 
 type AnalysisData = {
     userId: string
@@ -193,6 +194,32 @@ export const useAskTheStarsViewModel = (
         )
     }, [data, isReady])
 
+    const weeklyLoadAnalysis = useMemo(() => {
+        if (!isReady) return null
+        return analyzeWeeklyHabitLoad(
+            habits.map(habit => ({
+                id: habit.id,
+                name: habit.name,
+                status: habit.status,
+                weekDays: habit.weekDays,
+                estimatedDurationMinutes: habit.estimatedDurationMinutes,
+                createdAt: habit.createdAt,
+                seasonalStart: habit.seasonalStart,
+                seasonalEnd: habit.seasonalEnd,
+            })),
+            data.completions.map(completion => ({
+                habitId: completion.habitId,
+                date: completion.date,
+                status: completion.status,
+                updatedAt: completion.updatedAt,
+            })),
+            data.events.map(event => ({
+                dateTime: event.dateTime,
+                endTime: event.endTime,
+            })),
+        )
+    }, [data, habits, isReady])
+
     const selectedHabit =
         data.userId === userId
             ? habits.find(habit => habit.id === selectedHabitId) ?? null
@@ -254,5 +281,6 @@ export const useAskTheStarsViewModel = (
         selectHabit,
         selectedAnalysis,
         selectedHabit,
+        weeklyLoadAnalysis,
     }
 }

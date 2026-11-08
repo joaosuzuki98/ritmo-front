@@ -12,5 +12,5 @@ export type AppTabParamList = {
 export type RootParamList = {
     Main: NavigatorScreenParams<AppTabParamList>
     StartYourDay: undefined
-    AskTheStars: { habitId?: string } | undefined
+    AskTheStars: { habitId?: string; mode?: 'weeklyLoad' } | undefined
 }

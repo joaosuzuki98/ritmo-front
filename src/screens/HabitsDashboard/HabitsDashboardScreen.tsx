@@ -45,6 +45,7 @@ export const HabitsDashboardScreen = ({
     isAddHabitModalVisible = false,
     onMenuPress = () => undefined,
     onAnalyzeSchedule,
+    onWeeklyLoadAnalysis = () => undefined,
     onOpenAddHabitModal = () => undefined,
     onCloseAddHabitModal = () => undefined,
 }: HabitsDashboardScreenProps) => {
@@ -236,6 +237,7 @@ export const HabitsDashboardScreen = ({
                 <HabitToolbar
                     isSearchOpen={isSearchOpen}
                     sort={viewModel.sort}
+                    onWeeklyLoadPress={onWeeklyLoadAnalysis}
                     onSearch={() => setIsSearchOpen(true)}
                     onSort={viewModel.setSort}
                 />

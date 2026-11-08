@@ -84,7 +84,16 @@ export const AppNavigator = ({
                         onOpenAddHabitModal={openAddHabitModal}
                         onCloseAddHabitModal={closeAddHabitModal}
                         onAnalyzeSchedule={habitId =>
-                            navigation.navigate('AskTheStars', { habitId })
+                            navigation.navigate('AskTheStars', {
+                                habitId,
+                                mode: undefined,
+                            })
+                        }
+                        onWeeklyLoadAnalysis={() =>
+                            navigation.navigate('AskTheStars', {
+                                habitId: undefined,
+                                mode: 'weeklyLoad',
+                            })
                         }
                     />
                 )}

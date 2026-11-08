@@ -121,6 +121,9 @@ export const AppDrawerNavigator = ({
                         <AskTheStarsScreen
                             currentUser={currentUser}
                             initialHabitId={route.params?.habitId}
+                            isWeeklyLoadAnalysis={
+                                route.params?.mode === 'weeklyLoad'
+                            }
                             onClose={() => {
                                 if (navigation.canGoBack()) {
                                     navigation.goBack()
