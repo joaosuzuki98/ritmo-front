@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
     },
     label: {
-        marginTop: spacing.lg,
+        marginTop: spacing.md,
     },
     errorText: { marginTop: spacing.xs },
     submitButton: { marginTop: spacing.lg },

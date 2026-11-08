@@ -1,14 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
 
+import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
-import { colors } from '../../../styles/colors'
 import { globalStyles } from '../../../styles/globalStyles'
 import { spacing } from '../../../styles/spacing'
-import { typography } from '../../../styles/typography'
 import {
     addTodoCategorySchema,
     type AddTodoCategoryFormData,
@@ -62,22 +61,30 @@ export const AddTodoCategoryModal = ({
         }
     }
     const submitCategory = () => handleSubmit(handleCreate)()
+    const handleClose = () => {
+        if (isSubmitting) return
+        onClose()
+    }
 
     return (
-        <Modal
-            animationType="fade"
-            onRequestClose={onClose}
-            transparent
-            visible={isVisible}
+        <BottomSheetLayout
+            closeAccessibilityLabel="Close category form"
+            heightMode="fixed"
+            isCloseDisabled={isSubmitting}
+            isVisible={isVisible}
+            onClose={handleClose}
+            title="New category"
         >
-            <View style={styles.overlay}>
-                <Pressable
-                    accessibilityLabel="Close category form"
-                    onPress={onClose}
-                    style={styles.backdrop}
-                />
-                <View style={styles.card}>
-                    <Text style={styles.title}>New category</Text>
+            <ScrollView
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+                style={styles.formScroll}
+                showsVerticalScrollIndicator={false}
+            >
+                <View>
+                    <Text style={[globalStyles.formFieldLabel, styles.label]}>
+                        Category name
+                    </Text>
                     <Controller
                         control={control}
                         name="name"
@@ -96,80 +103,53 @@ export const AddTodoCategoryModal = ({
                         )}
                     />
                     {errors.name ? (
-                        <Text style={globalStyles.formErrorText}>
+                        <Text
+                            style={[
+                                globalStyles.formErrorText,
+                                styles.errorText,
+                            ]}
+                        >
                             {errors.name.message}
                         </Text>
                     ) : null}
                     {submitError ? (
-                        <Text style={globalStyles.formErrorText}>
+                        <Text
+                            style={[
+                                globalStyles.formErrorText,
+                                styles.errorText,
+                            ]}
+                        >
                             {submitError}
                         </Text>
                     ) : null}
-                    <View style={styles.actions}>
-                        <Pressable
-                            accessibilityRole="button"
-                            disabled={isSubmitting}
-                            onPress={onClose}
-                            style={styles.cancelButton}
-                        >
-                            <Text style={styles.cancelText}>Cancel</Text>
-                        </Pressable>
-                        <FormActionButton
-                            accessibilityLabel="Create category"
-                            disabled={isSubmitting}
-                            isLoading={isSubmitting}
-                            onPress={submitCategory}
-                            title="Create"
-                        />
-                    </View>
                 </View>
-            </View>
-        </Modal>
+                <FormActionButton
+                    accessibilityLabel="Create category"
+                    disabled={isSubmitting}
+                    isLoading={isSubmitting}
+                    onPress={submitCategory}
+                    title="Create category"
+                    containerStyle={styles.submitButton}
+                />
+            </ScrollView>
+        </BottomSheetLayout>
     )
 }
 
 const styles = StyleSheet.create({
-    overlay: {
-        alignItems: 'center',
-        flex: 1,
-        justifyContent: 'center',
-        padding: spacing.lg,
+    formScroll: { flex: 1 },
+    content: {
+        flexGrow: 1,
+        justifyContent: 'space-between',
+        paddingBottom: spacing.lg,
     },
-    backdrop: {
-        ...StyleSheet.absoluteFill,
-        backgroundColor: 'rgba(0, 0, 0, 0.62)',
+    label: {
+        marginTop: spacing.md,
     },
-    card: {
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderRadius: 20,
-        borderWidth: 1,
-        gap: spacing.sm,
-        padding: spacing.lg,
-        width: '100%',
+    errorText: {
+        marginTop: spacing.xs,
     },
-    title: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 20,
-        fontWeight: '600',
-    },
-    actions: {
-        alignItems: 'stretch',
-        flexDirection: 'column-reverse',
-        gap: spacing.sm,
-        justifyContent: 'flex-end',
-        marginTop: spacing.sm,
-    },
-    cancelButton: {
-        alignItems: 'center',
-        minHeight: spacing.touchTarget,
-        justifyContent: 'center',
-        paddingHorizontal: spacing.md,
-    },
-    cancelText: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 14,
+    submitButton: {
+        marginTop: spacing.lg,
     },
 })
