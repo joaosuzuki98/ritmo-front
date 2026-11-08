@@ -8,6 +8,7 @@ import {
 import type { SortCriterion } from '../habitDashboard.types'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
+import { spacing } from '../../../styles/spacing'
 
 type HabitToolbarProps = {
     isSearchOpen: boolean
@@ -32,6 +33,7 @@ export const HabitToolbar = ({
             className="flex-row items-center justify-between"
             style={{
                 paddingBottom: 28 * scale,
+                paddingHorizontal: spacing.lg * scale,
                 paddingTop: 8 * scale,
             }}
         >
