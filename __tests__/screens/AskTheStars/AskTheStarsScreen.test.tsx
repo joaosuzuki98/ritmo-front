@@ -7,6 +7,9 @@ import { useIsFocused } from '@react-navigation/native'
 import { database, type Habit, type User } from '../../../src/database'
 import { AskTheStarsScreen } from '../../../src/screens/AskTheStars/AskTheStarsScreen'
 import { AnimatedStarMessage } from '../../../src/screens/AskTheStars/components/AnimatedStarMessage'
+import { AnimatedSuggestionCard } from '../../../src/screens/AskTheStars/components/AnimatedSuggestionCard'
+import * as scheduleAnalysis from '../../../src/habits/habitScheduleAnalysis'
+import * as loadAnalysis from '../../../src/habits/habitLoadAnalysis'
 
 jest.mock('../../../src/database', () => ({
     database: { get: jest.fn(), write: jest.fn() },
@@ -112,6 +115,7 @@ describe('AskTheStarsScreen analysis loading', () => {
             expect(unsubscribe).toHaveBeenCalled(),
         )
         jest.useRealTimers()
+        jest.restoreAllMocks()
     })
 
     it.each(['events', 'completion_records'] as const)(
@@ -197,6 +201,100 @@ describe('AskTheStarsScreen analysis loading', () => {
         expect(messages()[0]).toContain('with Walk')
         expect(LottieView).toHaveBeenCalledTimes(1)
     })
+
+    it.each(['schedule', 'reduce', 'increase'] as const)(
+        'reveals %s cards only after the message finishes and resets on revisiting',
+        flow => {
+            jest.spyOn(
+                scheduleAnalysis,
+                'analyzeHabitSchedules',
+            ).mockReturnValue([
+                {
+                    habitId: 'Read',
+                    occurrenceCount: 20,
+                    successRate: 0,
+                    hasEnoughHistory: true,
+                    isLowSuccess: true,
+                    suggestions: [
+                        {
+                            days: [1],
+                            time: new Date(2026, 10, 7, 9),
+                            successRate: 1,
+                            sampleCount: 10,
+                        },
+                    ],
+                },
+            ])
+            jest.spyOn(loadAnalysis, 'analyzeWeeklyHabitLoad').mockReturnValue(
+                flow === 'increase'
+                    ? {
+                          kind: 'increase',
+                          weeklyRates: [],
+                          completionRate: 1,
+                          lighterDays: [
+                              {
+                                  weekDay: 2,
+                                  scheduledHabitCount: 0,
+                                  estimatedMinutes: 0,
+                                  eventCount: 0,
+                              },
+                          ],
+                      }
+                    : {
+                          kind: 'reduce',
+                          weeklyRates: [],
+                          completionRate: 0,
+                          leastCompletedHabits: [
+                              {
+                                  id: 'Read',
+                                  name: 'Read',
+                                  rate: 0,
+                                  occurrenceCount: 20,
+                              },
+                          ],
+                      },
+            )
+            const renderScreen = () =>
+                screen(
+                    flow === 'schedule' ? 'Read' : undefined,
+                    flow !== 'schedule',
+                )
+            const finishMessage = () =>
+                act(() => {
+                    renderer.root
+                        .findByType(AnimatedStarMessage)
+                        .props.onAnimationComplete()
+                })
+            act(() => {
+                renderer = create(renderScreen())
+            })
+            emit('habits', [makeHabit('Read')])
+            emit('events', [])
+            emit('completion_records', [])
+            act(() => jest.advanceTimersByTime(700))
+            expect(
+                renderer.root.findAllByType(AnimatedSuggestionCard),
+            ).toHaveLength(0)
+
+            finishMessage()
+            expect(
+                renderer.root.findAllByType(AnimatedSuggestionCard),
+            ).toHaveLength(1)
+
+            jest.mocked(useIsFocused).mockReturnValue(false)
+            act(() => renderer.update(renderScreen()))
+            jest.mocked(useIsFocused).mockReturnValue(true)
+            act(() => renderer.update(renderScreen()))
+            act(() => jest.advanceTimersByTime(700))
+            expect(
+                renderer.root.findAllByType(AnimatedSuggestionCard),
+            ).toHaveLength(0)
+            finishMessage()
+            expect(
+                renderer.root.findAllByType(AnimatedSuggestionCard),
+            ).toHaveLength(1)
+        },
+    )
 
     it('shows the real loading text on every visit with already loaded data', () => {
         act(() => {

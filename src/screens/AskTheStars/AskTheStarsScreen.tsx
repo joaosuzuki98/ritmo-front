@@ -12,6 +12,7 @@ import {
     useWindowDimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useIsFocused } from '@react-navigation/native'
 
 import { BottomSheetLayout } from '../../components/BottomSheetLayout'
 import type { User } from '../../database'
@@ -28,6 +29,7 @@ import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { AnimatedStarMessage } from './components/AnimatedStarMessage'
+import { AnimatedSuggestionCard } from './components/AnimatedSuggestionCard'
 import { StarMoonAnimation } from './components/StarMoonAnimation'
 import { useAskTheStarsViewModel } from './useAskTheStarsViewModel'
 import { useAnalysisLoading } from './useAnalysisLoading'
@@ -81,6 +83,10 @@ export const AskTheStarsScreen = ({
         index: number
     }>({ habitId: undefined, index: 0 })
     const [isHabitPickerVisible, setIsHabitPickerVisible] = useState(false)
+    const [completedMessageKey, setCompletedMessageKey] = useState<
+        string | null
+    >(null)
+    const isFocused = useIsFocused()
     const isAnalysisFlow = Boolean(initialHabitId)
     const isWeeklyLoadFlow = isWeeklyLoadAnalysis && !isAnalysisFlow
     const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
@@ -162,9 +168,21 @@ export const AskTheStarsScreen = ({
     }
 
     const starMessage = getStarMessage()
+    const messageKey = JSON.stringify([
+        currentUser.id,
+        isWeeklyLoadFlow,
+        selectedHabit?.id ?? initialHabitId,
+        starMessage,
+    ])
+    const canShowCards =
+        isFocused && canShowStarMessage && completedMessageKey === messageKey
+
+    useEffect(() => {
+        if (!isFocused || !canShowStarMessage) setCompletedMessageKey(null)
+    }, [isFocused, canShowStarMessage])
 
     const handleAccept = async () => {
-        if (!selectedSuggestion || isSaving || shouldShowAnalysisLoading) return
+        if (!selectedSuggestion || isSaving || !canShowCards) return
         if (await acceptSuggestion(selectedSuggestion))
             onScheduleAccepted(clampWeekDay(selectedSuggestion.days[0] ?? 1))
     }
@@ -176,34 +194,39 @@ export const AskTheStarsScreen = ({
         const isSelected = selectedSuggestionIndex === index
 
         return (
-            <Pressable
-                accessibilityRole="radio"
-                accessibilityState={{ selected: isSelected }}
+            <AnimatedSuggestionCard
+                index={index}
                 key={`${suggestion.days.join(
                     '-',
                 )}-${suggestion.time.getHours()}`}
-                onPress={() =>
-                    setSuggestionSelection({
-                        habitId: selectedAnalysis?.habitId,
-                        index,
-                    })
-                }
-                style={[
-                    styles.suggestionCard,
-                    isSelected && styles.selectedSuggestionCard,
-                ]}
             >
-                <Text style={styles.suggestionTitle}>
-                    {formatDays(suggestion.days)}
-                </Text>
-                <Text style={styles.suggestionTime}>
-                    {formatTime(suggestion.time)}
-                </Text>
-                <Text style={styles.suggestionEvidence}>
-                    {Math.round(suggestion.successRate * 100)}% success across{' '}
-                    {suggestion.sampleCount} similar scheduled occurrences
-                </Text>
-            </Pressable>
+                <Pressable
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() =>
+                        setSuggestionSelection({
+                            habitId: selectedAnalysis?.habitId,
+                            index,
+                        })
+                    }
+                    style={[
+                        styles.suggestionCard,
+                        isSelected && styles.selectedSuggestionCard,
+                    ]}
+                >
+                    <Text style={styles.suggestionTitle}>
+                        {formatDays(suggestion.days)}
+                    </Text>
+                    <Text style={styles.suggestionTime}>
+                        {formatTime(suggestion.time)}
+                    </Text>
+                    <Text style={styles.suggestionEvidence}>
+                        {Math.round(suggestion.successRate * 100)}% success
+                        across {suggestion.sampleCount} similar scheduled
+                        occurrences
+                    </Text>
+                </Pressable>
+            </AnimatedSuggestionCard>
         )
     }
 
@@ -229,7 +252,12 @@ export const AskTheStarsScreen = ({
 
             <ScrollView
                 ref={scrollRef}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    isWeeklyLoadFlow && {
+                        paddingBottom: bottom + spacing.xl,
+                    },
+                ]}
                 showsVerticalScrollIndicator={false}
                 style={styles.scrollView}
             >
@@ -269,8 +297,12 @@ export const AskTheStarsScreen = ({
                 ) : null}
                 {canShowStarMessage ? (
                     <AnimatedStarMessage
-                        key={starMessage}
+                        key={messageKey}
                         message={starMessage}
+                        onAnimationStart={() => setCompletedMessageKey(null)}
+                        onAnimationComplete={() =>
+                            setCompletedMessageKey(messageKey)
+                        }
                     />
                 ) : null}
 
@@ -296,7 +328,7 @@ export const AskTheStarsScreen = ({
                 ) : null}
 
                 {isAnalysisFlow &&
-                !shouldShowAnalysisLoading &&
+                canShowCards &&
                 isLowSuccess &&
                 selectedAnalysis?.suggestions.length ? (
                     <View style={styles.suggestions}>
@@ -310,6 +342,7 @@ export const AskTheStarsScreen = ({
                 ) : null}
 
                 {isWeeklyLoadFlow &&
+                canShowCards &&
                 !isLoading &&
                 !hasLoadError &&
                 weeklyLoadAnalysis?.kind === 'reduce' ? (
@@ -317,22 +350,31 @@ export const AskTheStarsScreen = ({
                         <Text style={styles.suggestionsHeading}>
                             Habits to review
                         </Text>
-                        {weeklyLoadAnalysis.leastCompletedHabits.map(habit => (
-                            <View key={habit.id} style={styles.suggestionCard}>
-                                <Text style={styles.suggestionTitle}>
-                                    {habit.name}
-                                </Text>
-                                <Text style={styles.suggestionEvidence}>
-                                    {Math.round(habit.rate * 100)}% completed
-                                    across {habit.occurrenceCount} planned
-                                    sessions
-                                </Text>
-                            </View>
-                        ))}
+                        {weeklyLoadAnalysis.leastCompletedHabits.map(
+                            (habit, index) => (
+                                <AnimatedSuggestionCard
+                                    key={habit.id}
+                                    index={index}
+                                >
+                                    <View style={styles.suggestionCard}>
+                                        <Text style={styles.suggestionTitle}>
+                                            {habit.name}
+                                        </Text>
+                                        <Text style={styles.suggestionEvidence}>
+                                            {Math.round(habit.rate * 100)}%
+                                            completed across{' '}
+                                            {habit.occurrenceCount} planned
+                                            sessions
+                                        </Text>
+                                    </View>
+                                </AnimatedSuggestionCard>
+                            ),
+                        )}
                     </View>
                 ) : null}
 
                 {isWeeklyLoadFlow &&
+                canShowCards &&
                 !isLoading &&
                 !hasLoadError &&
                 weeklyLoadAnalysis?.kind === 'increase' ? (
@@ -340,28 +382,31 @@ export const AskTheStarsScreen = ({
                         <Text style={styles.suggestionsHeading}>
                             Lighter days to consider
                         </Text>
-                        {weeklyLoadAnalysis.lighterDays.map(day => (
-                            <View
+                        {weeklyLoadAnalysis.lighterDays.map((day, index) => (
+                            <AnimatedSuggestionCard
                                 key={day.weekDay}
-                                style={styles.suggestionCard}
+                                index={index}
                             >
-                                <Text style={styles.suggestionTitle}>
-                                    {
-                                        weekDayLabels[
-                                            day.weekDay as keyof typeof weekDayLabels
-                                        ]
-                                    }
-                                </Text>
-                                <Text style={styles.suggestionEvidence}>
-                                    {day.scheduledHabitCount} scheduled habits
-                                    {day.estimatedMinutes
-                                        ? ` · ${day.estimatedMinutes} estimated minutes`
-                                        : ''}
-                                    {day.eventCount
-                                        ? ` · ${day.eventCount} calendar events`
-                                        : ''}
-                                </Text>
-                            </View>
+                                <View style={styles.suggestionCard}>
+                                    <Text style={styles.suggestionTitle}>
+                                        {
+                                            weekDayLabels[
+                                                day.weekDay as keyof typeof weekDayLabels
+                                            ]
+                                        }
+                                    </Text>
+                                    <Text style={styles.suggestionEvidence}>
+                                        {day.scheduledHabitCount} scheduled
+                                        habits
+                                        {day.estimatedMinutes
+                                            ? ` · ${day.estimatedMinutes} estimated minutes`
+                                            : ''}
+                                        {day.eventCount
+                                            ? ` · ${day.eventCount} calendar events`
+                                            : ''}
+                                    </Text>
+                                </View>
+                            </AnimatedSuggestionCard>
                         ))}
                     </View>
                 ) : null}
@@ -383,7 +428,7 @@ export const AskTheStarsScreen = ({
                         { marginBottom: spacing.md + bottom },
                     ]}
                 >
-                    {isLowSuccess ? (
+                    {isLowSuccess && canShowCards ? (
                         <Pressable
                             accessibilityRole="button"
                             disabled={

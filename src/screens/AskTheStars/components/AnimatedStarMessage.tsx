@@ -6,17 +6,27 @@ import { theme } from '../../../styles/theme'
 
 type AnimatedStarMessageProps = {
     message: string
+    onAnimationStart?: () => void
+    onAnimationComplete?: () => void
 }
 
 const letterDelay = 45
 const popDuration = 220
 
 export const AnimatedStarMessage = memo(
-    ({ message }: AnimatedStarMessageProps) => {
+    ({
+        message,
+        onAnimationStart,
+        onAnimationComplete,
+    }: AnimatedStarMessageProps) => {
         const progress = useRef(new Animated.Value(0)).current
+        const callbacks = useRef({ onAnimationStart, onAnimationComplete })
+        callbacks.current = { onAnimationStart, onAnimationComplete }
 
         useFocusEffect(
             useCallback(() => {
+                let isActive = true
+                callbacks.current.onAnimationStart?.()
                 const duration =
                     Array.from(message).length * letterDelay + popDuration
                 progress.setValue(0)
@@ -26,9 +36,15 @@ export const AnimatedStarMessage = memo(
                     easing: Easing.linear,
                     useNativeDriver: true,
                 })
-                animation.start()
+                animation.start(({ finished }) => {
+                    if (finished && isActive)
+                        callbacks.current.onAnimationComplete?.()
+                })
 
-                return () => animation.stop()
+                return () => {
+                    isActive = false
+                    animation.stop()
+                }
             }, [message, progress]),
         )
 
