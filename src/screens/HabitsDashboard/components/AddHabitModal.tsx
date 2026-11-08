@@ -198,7 +198,6 @@ export const AddHabitModal = ({
     return (
         <BottomSheetLayout
             closeAccessibilityLabel="Close add habit modal"
-            headerStyle={{ marginBottom: theme.bottomSheet.headerGap }}
             isCloseDisabled={isSubmitting}
             isVisible={isVisible}
             onClose={handleClose}
