@@ -22,7 +22,7 @@ import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
-import { getScheduleTimeParts } from '../scheduleTime'
+import { getScheduleMinuteParts, getScheduleTimeParts } from '../scheduleTime'
 import { ScheduleTimeInput } from './ScheduleTimeInput'
 
 type AddScheduleItemModalProps = {
@@ -56,7 +56,7 @@ const getInitialValues = (
     if (!item || !item.endTime)
         defaultEnd.setHours(
             (item?.dateTime.getHours() ?? startHour) + 1,
-            0,
+            item?.dateTime.getMinutes() ?? 0,
             0,
             0,
         )
@@ -65,8 +65,10 @@ const getInitialValues = (
 
     return {
         endHour: initialEnd.hour,
+        endMinute: getScheduleMinuteParts(endDate.getMinutes()),
         endPeriod: initialEnd.period,
         startHour: initialStart.hour,
+        startMinute: getScheduleMinuteParts(item?.dateTime.getMinutes() ?? 0),
         startPeriod: initialStart.period,
         title: item?.title ?? '',
         location: item?.location ?? '',
@@ -280,7 +282,7 @@ export const AddScheduleItemModal = ({
                                         selectedReminderType === value
                                     return (
                                         <Pressable
-                                            accessibilityRole="button"
+                                            accessibilityRole="radio"
                                             accessibilityState={{
                                                 selected: isSelected,
                                             }}
@@ -295,6 +297,7 @@ export const AddScheduleItemModal = ({
                                             ]}
                                         >
                                             <Text
+                                                numberOfLines={1}
                                                 style={[
                                                     styles.reminderTypeText,
                                                     isSelected &&
@@ -323,6 +326,7 @@ export const AddScheduleItemModal = ({
                                 accessibilityLabel="Schedule item start hour"
                                 control={control}
                                 hourName="startHour"
+                                minuteName="startMinute"
                                 periodName="startPeriod"
                             />
                         </View>
@@ -339,6 +343,7 @@ export const AddScheduleItemModal = ({
                                 accessibilityLabel="Schedule item end hour"
                                 control={control}
                                 hourName="endHour"
+                                minuteName="endMinute"
                                 periodName="endPeriod"
                             />
                         </View>
@@ -391,7 +396,7 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
     },
     label: {
-        marginTop: 20,
+        marginTop: spacing.md,
     },
     errorText: { marginTop: 5 },
     timeRow: { flexDirection: 'row', gap: spacing.md },
@@ -402,17 +407,21 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     descriptionInput: { minHeight: 78, textAlignVertical: 'top' },
-    reminderTypes: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    reminderTypes: { flexDirection: 'row', gap: spacing.sm },
     reminderType: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
-        borderRadius: 18,
+        borderRadius: 4,
         borderWidth: 1,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
+        flex: 1,
+        justifyContent: 'center',
+        minHeight: 40,
+        paddingHorizontal: spacing.xs,
     },
     selectedReminderType: {
         backgroundColor: colors.accent,
-        borderColor: colors.accent,
+        borderColor: colors.accentStrong,
     },
     reminderTypeText: {
         color: colors.textMuted,

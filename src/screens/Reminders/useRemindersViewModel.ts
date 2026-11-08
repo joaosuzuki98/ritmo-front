@@ -116,11 +116,13 @@ export const useRemindersViewModel = (currentUserId: string) => {
             selectedDate,
             data.startHour,
             data.startPeriod,
+            data.startMinute,
         )
         const endTime = getScheduleDateTime(
             selectedDate,
             data.endHour,
             data.endPeriod,
+            data.endMinute,
         )
         const [existingEvents, existingHabits] = await Promise.all([
             database
@@ -166,11 +168,13 @@ export const useRemindersViewModel = (currentUserId: string) => {
             selectedDate,
             data.startHour,
             data.startPeriod,
+            data.startMinute,
         )
         const endTime = getScheduleDateTime(
             selectedDate,
             data.endHour,
             data.endPeriod,
+            data.endMinute,
         )
         const [existingEvents, existingHabits] = await Promise.all([
             database

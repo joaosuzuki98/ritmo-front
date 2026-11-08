@@ -182,10 +182,12 @@ export const useScheduleViewModel = (currentUserId: string) => {
 
     const addScheduleItem = async ({
         endHour,
+        endMinute,
         endPeriod,
         location,
         description,
         startHour,
+        startMinute,
         startPeriod,
         title,
     }: AddScheduleItemFormData) => {
@@ -193,11 +195,13 @@ export const useScheduleViewModel = (currentUserId: string) => {
             selectedDate,
             startHour,
             startPeriod,
+            startMinute,
         )
         const scheduledEndTime = getScheduleDateTime(
             selectedDate,
             endHour,
             endPeriod,
+            endMinute,
         )
         const [existingEvents, existingHabits] = await Promise.all([
             database
@@ -235,10 +239,12 @@ export const useScheduleViewModel = (currentUserId: string) => {
         eventId: string,
         {
             endHour,
+            endMinute,
             endPeriod,
             location,
             description,
             startHour,
+            startMinute,
             startPeriod,
             title,
         }: AddScheduleItemFormData,
@@ -249,11 +255,13 @@ export const useScheduleViewModel = (currentUserId: string) => {
             selectedDate,
             startHour,
             startPeriod,
+            startMinute,
         )
         const scheduledEndTime = getScheduleDateTime(
             selectedDate,
             endHour,
             endPeriod,
+            endMinute,
         )
         const [existingEvents, existingHabits] = await Promise.all([
             database

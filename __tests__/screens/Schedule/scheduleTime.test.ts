@@ -23,4 +23,16 @@ describe('scheduleTime', () => {
         expect(getScheduleTimeParts(12)).toEqual({ hour: '12', period: 'PM' })
         expect(getScheduleTimeParts(18)).toEqual({ hour: '06', period: 'PM' })
     })
+
+    it('preserves selected minutes in the stored date-time value', () => {
+        const date = getScheduleDateTime(
+            new Date(2026, 5, 12),
+            '09',
+            'AM',
+            '35',
+        )
+
+        expect(date.getHours()).toBe(9)
+        expect(date.getMinutes()).toBe(35)
+    })
 })

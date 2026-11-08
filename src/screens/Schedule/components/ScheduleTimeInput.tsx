@@ -1,16 +1,21 @@
-import { Controller, type Control } from 'react-hook-form'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useState } from 'react'
+import DateTimePicker, {
+    DateTimePickerAndroid,
+} from '@react-native-community/datetimepicker'
+import { useController, type Control } from 'react-hook-form'
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 
 import type { AddScheduleItemFormData } from '../addScheduleItemSchema'
-import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
 import { globalStyles } from '../../../styles/globalStyles'
 import { typography } from '../../../styles/typography'
+import { getScheduleHour, getScheduleTimeParts } from '../scheduleTime'
 
 type ScheduleTimeInputProps = {
     accessibilityLabel: string
     control: Control<AddScheduleItemFormData>
     hourName: 'startHour' | 'endHour'
+    minuteName: 'startMinute' | 'endMinute'
     periodName: 'startPeriod' | 'endPeriod'
 }
 
@@ -18,128 +23,106 @@ export const ScheduleTimeInput = ({
     accessibilityLabel,
     control,
     hourName,
+    minuteName,
     periodName,
-}: ScheduleTimeInputProps) => (
-    <>
-        <View style={styles.row}>
-            <Controller
-                control={control}
-                name={hourName}
-                render={({ field, fieldState }) => (
-                    <FormTextInput
-                        accessibilityLabel={accessibilityLabel}
-                        hasError={Boolean(fieldState.error)}
-                        keyboardType="number-pad"
-                        maxLength={2}
-                        onBlur={() => {
-                            field.onBlur()
-                            if (field.value)
-                                field.onChange(field.value.padStart(2, '0'))
-                        }}
-                        onChangeText={value => {
-                            const digits = value.replace(/\D/g, '')
-                            if (digits && Number(digits) > 12) return
-                            field.onChange(digits)
-                        }}
-                        placeholder="08"
-                        containerStyle={styles.hourInputContainer}
-                        style={styles.hourInput}
-                        value={field.value}
-                    />
-                )}
-            />
-            <Text style={styles.minutes}>:00</Text>
-            <Controller
-                control={control}
-                name={periodName}
-                render={({ field }) => (
-                    <View style={styles.periods}>
-                        {(['AM', 'PM'] as const).map(period => {
-                            const isSelected = field.value === period
-                            return (
-                                <Pressable
-                                    accessibilityLabel={`Select ${period}`}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{
-                                        selected: isSelected,
-                                    }}
-                                    key={period}
-                                    onPress={() => field.onChange(period)}
-                                    style={[
-                                        styles.period,
-                                        isSelected && styles.periodSelected,
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.periodText,
-                                            isSelected &&
-                                                styles.periodTextSelected,
-                                        ]}
-                                    >
-                                        {period}
-                                    </Text>
-                                </Pressable>
-                            )
-                        })}
-                    </View>
-                )}
-            />
+}: ScheduleTimeInputProps) => {
+    const [isPickerVisible, setIsPickerVisible] = useState(false)
+    const { field: hourField, fieldState } = useController({
+        control,
+        name: hourName,
+    })
+    const { field: minuteField } = useController({
+        control,
+        name: minuteName,
+    })
+    const { field: periodField } = useController({
+        control,
+        name: periodName,
+    })
+
+    const getTimeValue = () => {
+        const value = new Date()
+        value.setHours(
+            getScheduleHour(hourField.value, periodField.value),
+            Number(minuteField.value),
+            0,
+            0,
+        )
+        return value
+    }
+
+    const handleTimeChange = (date: Date) => {
+        const timeParts = getScheduleTimeParts(date.getHours())
+        hourField.onChange(timeParts.hour)
+        minuteField.onChange(String(date.getMinutes()).padStart(2, '0'))
+        periodField.onChange(timeParts.period)
+    }
+
+    const handleOpenPicker = () => {
+        if (Platform.OS === 'android') {
+            DateTimePickerAndroid.open({
+                display: 'clock',
+                is24Hour: false,
+                mode: 'time',
+                onValueChange: (_event, date) => handleTimeChange(date),
+                value: getTimeValue(),
+            })
+            return
+        }
+
+        setIsPickerVisible(visible => !visible)
+    }
+
+    return (
+        <View>
+            <Pressable
+                accessibilityLabel={accessibilityLabel}
+                accessibilityRole="button"
+                onPress={handleOpenPicker}
+                style={styles.timeButton}
+            >
+                <Text
+                    style={[
+                        styles.timeText,
+                        fieldState.error && styles.timeTextError,
+                    ]}
+                >
+                    {getTimeValue().toLocaleTimeString([], {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    })}
+                </Text>
+            </Pressable>
+            {Platform.OS === 'ios' && isPickerVisible ? (
+                <DateTimePicker
+                    display="spinner"
+                    mode="time"
+                    onValueChange={(_event, date) => handleTimeChange(date)}
+                    value={getTimeValue()}
+                />
+            ) : null}
+            {fieldState.error ? (
+                <Text style={[globalStyles.formErrorText, styles.errorText]}>
+                    {fieldState.error.message}
+                </Text>
+            ) : null}
         </View>
-        <Controller
-            control={control}
-            name={hourName}
-            render={({ fieldState }) =>
-                fieldState.error ? (
-                    <Text
-                        style={[globalStyles.formErrorText, styles.errorText]}
-                    >
-                        {fieldState.error.message}
-                    </Text>
-                ) : (
-                    <View />
-                )
-            }
-        />
-    </>
-)
+    )
+}
 
 const styles = StyleSheet.create({
-    row: { alignItems: 'center', flexDirection: 'row', gap: 4 },
-    hourInputContainer: {
-        flex: 1,
-        minWidth: 32,
-        paddingHorizontal: 0,
-    },
-    hourInput: {
-        textAlign: 'center',
-    },
-    minutes: {
-        color: colors.text,
-        fontFamily: typography.fontFamily,
-        fontSize: 17,
-    },
-    periods: { flexDirection: 'row', gap: 3 },
-    period: {
-        alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
-        borderColor: colors.border,
-        borderRadius: 6,
-        borderWidth: 1,
+    timeButton: {
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 4,
         justifyContent: 'center',
         minHeight: 40,
-        minWidth: 36,
-        paddingHorizontal: 3,
+        paddingHorizontal: 10,
     },
-    periodSelected: {
-        backgroundColor: colors.accent,
-        borderColor: colors.accentStrong,
-    },
-    periodText: {
-        color: colors.textMuted,
+    timeText: {
+        color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 11,
+        fontSize: 14,
     },
-    periodTextSelected: { color: colors.text },
+    timeTextError: { color: colors.danger },
     errorText: { marginTop: 5 },
 })

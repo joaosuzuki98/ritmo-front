@@ -345,7 +345,7 @@ export const RemindersScreen = ({
                     else onCloseAddEventModal()
                 }}
                 title={editingEvent ? 'Edit event' : 'Add event'}
-                submitLabel={editingEvent ? 'SAVE EVENT' : 'ADD EVENT'}
+                submitLabel={editingEvent ? 'Save event' : 'Add event'}
                 showEventDetails
                 showReminderType
                 onCreateItem={viewModel.addEvent}

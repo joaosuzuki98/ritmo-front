@@ -15,12 +15,16 @@ export const getScheduleHour = (
     period: ScheduleTimePeriod,
 ): number => (Number(hour) % 12) + (period === 'PM' ? 12 : 0)
 
+export const getScheduleMinuteParts = (minute: number): string =>
+    String(minute).padStart(2, '0')
+
 export const getScheduleDateTime = (
     date: Date,
     hour: string,
     period: ScheduleTimePeriod,
+    minute = '00',
 ): Date => {
     const dateTime = new Date(date)
-    dateTime.setHours(getScheduleHour(hour, period), 0, 0, 0)
+    dateTime.setHours(getScheduleHour(hour, period), Number(minute), 0, 0)
     return dateTime
 }
