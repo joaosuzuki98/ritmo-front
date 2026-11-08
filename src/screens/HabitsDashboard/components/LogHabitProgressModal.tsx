@@ -29,6 +29,7 @@ import {
     logHabitProgressSchema,
     type LogHabitProgressFormData,
 } from '../logHabitProgressSchema'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type LogHabitProgressModalProps = {
     habit: HabitCardViewData | null
@@ -79,6 +80,7 @@ export const LogHabitProgressModal = ({
     onClose,
     onSave,
 }: LogHabitProgressModalProps) => {
+    const { t } = useTranslation()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -126,14 +128,14 @@ export const LogHabitProgressModal = ({
     return (
         <BottomSheetLayout
             backdropColor={theme.colors.bottomSheetBackdropStrong}
-            closeAccessibilityLabel="Close progress form"
+            closeAccessibilityLabel={t('Close progress form')}
             heightRatio={theme.bottomSheet.progressHeightRatio}
             isVisible={isVisible}
             onClose={onClose}
             sheetStyle={styles.sheet}
         >
             <Text style={[styles.title, { fontSize: 28 * scale }]}>
-                Record today’s progress
+                {t('Record today’s progress')}
             </Text>
             <Text style={styles.habitTitle}>{habit?.title}</Text>
             <ScrollView
@@ -141,7 +143,7 @@ export const LogHabitProgressModal = ({
                 showsVerticalScrollIndicator={false}
             >
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    How did it go?
+                    {t('How did it go?')}
                 </Text>
                 <View style={styles.statusOptions}>
                     {statusOptions.map(option => {
@@ -170,7 +172,7 @@ export const LogHabitProgressModal = ({
                                             styles.statusOptionTextSelected,
                                     ]}
                                 >
-                                    {option.label}
+                                    {t(option.label)}
                                 </Text>
                             </Pressable>
                         )
@@ -182,7 +184,7 @@ export const LogHabitProgressModal = ({
                         <Text
                             style={[globalStyles.formFieldLabel, styles.label]}
                         >
-                            What got in the way?
+                            {t('What got in the way?')}
                         </Text>
                         <View style={styles.statusOptions}>
                             {incompletionReasonOptions.map(option => {
@@ -217,7 +219,7 @@ export const LogHabitProgressModal = ({
                                                     styles.statusOptionTextSelected,
                                             ]}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                         </Text>
                                     </Pressable>
                                 )
@@ -230,14 +232,14 @@ export const LogHabitProgressModal = ({
                                     styles.errorText,
                                 ]}
                             >
-                                {errors.reason.message}
+                                {t(errors.reason.message ?? '')}
                             </Text>
                         ) : null}
                     </>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Time
+                    {t('Time')}
                 </Text>
                 <Controller
                     control={control}
@@ -258,23 +260,23 @@ export const LogHabitProgressModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.time.message}
+                        {t(errors.time.message ?? '')}
                     </Text>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Observation
+                    {t('Observation')}
                 </Text>
                 <Controller
                     control={control}
                     name="note"
                     render={({ field }) => (
                         <FormTextInput
-                            accessibilityLabel="Progress observation"
+                            accessibilityLabel={t('Progress observation')}
                             multiline
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Add a note about today"
+                            placeholder={t('Add a note about today')}
                             containerStyle={styles.noteContainer}
                             hasError={Boolean(errors.note)}
                             style={styles.noteText}
@@ -287,7 +289,7 @@ export const LogHabitProgressModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.note.message}
+                        {t(errors.note.message ?? '')}
                     </Text>
                 ) : null}
 
@@ -295,15 +297,15 @@ export const LogHabitProgressModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {submitError}
+                        {t(submitError)}
                     </Text>
                 ) : null}
                 <FormActionButton
-                    accessibilityLabel="Save progress"
+                    accessibilityLabel={t('Save progress')}
                     disabled={isSubmitting}
                     isLoading={isSubmitting}
                     onPress={handleFormSubmit}
-                    title="Save progress"
+                    title={t('Save progress')}
                     containerStyle={styles.saveButton}
                 />
             </ScrollView>

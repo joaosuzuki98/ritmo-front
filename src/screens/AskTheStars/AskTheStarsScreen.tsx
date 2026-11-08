@@ -33,6 +33,7 @@ import { AnimatedSuggestionCard } from './components/AnimatedSuggestionCard'
 import { StarMoonAnimation } from './components/StarMoonAnimation'
 import { useAskTheStarsViewModel } from './useAskTheStarsViewModel'
 import { useAnalysisLoading } from './useAnalysisLoading'
+import { useTranslation } from '../../localization/useTranslation'
 
 type AskTheStarsScreenProps = {
     currentUser: User
@@ -44,14 +45,19 @@ type AskTheStarsScreenProps = {
     totalAccessDays: number
 }
 
-const formatTime = (date: Date) =>
-    date.toLocaleTimeString(undefined, {
+const formatTime = (date: Date, language: 'en' | 'pt') =>
+    date.toLocaleTimeString(language === 'pt' ? 'pt-BR' : 'en-US', {
         hour: 'numeric',
         minute: '2-digit',
     })
 
-const formatDays = (days: readonly number[]) =>
-    days.map(day => weekDayLabels[day as keyof typeof weekDayLabels]).join(', ')
+const formatDays = (
+    days: readonly number[],
+    translate: (text: string) => string,
+) =>
+    days
+        .map(day => translate(weekDayLabels[day as keyof typeof weekDayLabels]))
+        .join(', ')
 
 export const AskTheStarsScreen = ({
     currentUser,
@@ -62,6 +68,7 @@ export const AskTheStarsScreen = ({
     onScheduleAccepted,
     totalAccessDays,
 }: AskTheStarsScreenProps) => {
+    const { language, t } = useTranslation()
     const { bottom } = useSafeAreaInsets()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
@@ -126,45 +133,94 @@ export const AskTheStarsScreen = ({
     const getStarMessage = () => {
         if (!isAnalysisFlow) {
             if (!isWeeklyLoadFlow)
-                return 'Coming soon! Ask the stars for guidance with your habits.'
+                return t(
+                    'Coming soon! Ask the stars for guidance with your habits.',
+                )
             if (!weeklyLoadAnalysis)
-                return 'I’m reviewing your weekly routine and completion history.'
+                return t(
+                    'I’m reviewing your weekly routine and completion history.',
+                )
             if (weeklyLoadAnalysis.kind === 'insufficient')
-                return `I need at least 5 active habits and 10 planned sessions per week, with enough history across three full weeks, before I can recommend changing your total load. You currently have ${weeklyLoadAnalysis.activeHabitCount} active habits and ${weeklyLoadAnalysis.occurrenceCount} planned sessions in the last full week.`
+                return t(
+                    'I need at least 5 active habits and 10 planned sessions per week, with enough history across three full weeks, before I can recommend changing your total load. You currently have {{activeHabitCount}} active habits and {{occurrenceCount}} planned sessions in the last full week.',
+                    {
+                        activeHabitCount: weeklyLoadAnalysis.activeHabitCount,
+                        occurrenceCount: weeklyLoadAnalysis.occurrenceCount,
+                    },
+                )
             if (weeklyLoadAnalysis.kind === 'balanced')
-                return 'Your weekly completion is mixed, so I recommend keeping your current routine steady and checking again after a little more tracking.'
+                return t(
+                    'Your weekly completion is mixed, so I recommend keeping your current routine steady and checking again after a little more tracking.',
+                )
             if (weeklyLoadAnalysis.kind === 'reduce')
-                return `Your completion rate across the last weeks is ${Math.round(
-                    weeklyLoadAnalysis.completionRate * 100,
-                )}%. A lighter routine may be more sustainable. Here are up to three habits with the lowest completion for you to review; nothing will change unless you decide to change it.`
-            return `You completed about ${Math.round(
-                weeklyLoadAnalysis.completionRate * 100,
-            )}% of planned sessions across the last weeks. Your consistency is high; these are the three lightest weekdays to consider if you decide to add a habit.`
+                return t(
+                    'Your completion rate across the last weeks is {{completionRate}}%. A lighter routine may be more sustainable. Here are up to three habits with the lowest completion for you to review; nothing will change unless you decide to change it.',
+                    {
+                        completionRate: Math.round(
+                            weeklyLoadAnalysis.completionRate * 100,
+                        ),
+                    },
+                )
+            return t(
+                'You completed about {{completionRate}}% of planned sessions across the last weeks. Your consistency is high; these are the three lightest weekdays to consider if you decide to add a habit.',
+                {
+                    completionRate: Math.round(
+                        weeklyLoadAnalysis.completionRate * 100,
+                    ),
+                },
+            )
         }
         if (!selectedHabit)
-            return 'Choose a habit and I will look for a time that fits your routine.'
+            return t(
+                'Choose a habit and I will look for a time that fits your routine.',
+            )
         if (!hasEnoughHistory)
-            return `I need a little more history with ${selectedHabit.name} before I can find a reliable pattern. Keep tracking it and ask me again soon.`
+            return t(
+                'I need a little more history with {{habitName}} before I can find a reliable pattern. Keep tracking it and ask me again soon.',
+                {
+                    habitName: selectedHabit.name,
+                },
+            )
         if (isLowSuccess)
             return selectedSuggestion
-                ? `${selectedHabit.name} has a ${Math.round(
-                      successRate * 100,
-                  )}% success rate. Your stronger habits point to free alternative times below; choose one to keep the same weekly frequency.`
-                : `${selectedHabit.name} has a ${Math.round(
-                      successRate * 100,
-                  )}% success rate, but I couldn't find a free alternative time that keeps the same weekly frequency.`
+                ? t(
+                      '{{habitName}} has a {{successRate}}% success rate. Your stronger habits point to free alternative times below; choose one to keep the same weekly frequency.',
+                      {
+                          habitName: selectedHabit.name,
+                          successRate: Math.round(successRate * 100),
+                      },
+                  )
+                : t(
+                      "{{habitName}} has a {{successRate}}% success rate, but I couldn't find a free alternative time that keeps the same weekly frequency.",
+                      {
+                          habitName: selectedHabit.name,
+                          successRate: Math.round(successRate * 100),
+                      },
+                  )
         if (successRate < 0.5)
-            return `${selectedHabit.name} is completed ${Math.round(
-                successRate * 100,
-            )}% of the time. There is room to build a steadier routine; keep tracking your progress.`
+            return t(
+                '{{habitName}} is completed {{successRate}}% of the time. There is room to build a steadier routine; keep tracking your progress.',
+                {
+                    habitName: selectedHabit.name,
+                    successRate: Math.round(successRate * 100),
+                },
+            )
         if (successRate < 0.75)
-            return `${selectedHabit.name} is completed ${Math.round(
-                successRate * 100,
-            )}% of the time. You're making progress—small, consistent steps can help strengthen this habit.`
+            return t(
+                "{{habitName}} is completed {{successRate}}% of the time. You're making progress—small, consistent steps can help strengthen this habit.",
+                {
+                    habitName: selectedHabit.name,
+                    successRate: Math.round(successRate * 100),
+                },
+            )
 
-        return `${selectedHabit.name} is completed ${Math.round(
-            successRate * 100,
-        )}% of the time. That's strong consistency; keep up the great work!`
+        return t(
+            "{{habitName}} is completed {{successRate}}% of the time. That's strong consistency; keep up the great work!",
+            {
+                habitName: selectedHabit.name,
+                successRate: Math.round(successRate * 100),
+            },
+        )
     }
 
     const starMessage = getStarMessage()
@@ -215,15 +271,21 @@ export const AskTheStarsScreen = ({
                     ]}
                 >
                     <Text style={styles.suggestionTitle}>
-                        {formatDays(suggestion.days)}
+                        {formatDays(suggestion.days, t)}
                     </Text>
                     <Text style={styles.suggestionTime}>
-                        {formatTime(suggestion.time)}
+                        {formatTime(suggestion.time, language)}
                     </Text>
                     <Text style={styles.suggestionEvidence}>
-                        {Math.round(suggestion.successRate * 100)}% success
-                        across {suggestion.sampleCount} similar scheduled
-                        occurrences
+                        {t(
+                            '{{successRate}}% success across {{sampleCount}} similar scheduled occurrences',
+                            {
+                                successRate: Math.round(
+                                    suggestion.successRate * 100,
+                                ),
+                                sampleCount: suggestion.sampleCount,
+                            },
+                        )}
                     </Text>
                 </Pressable>
             </AnimatedSuggestionCard>
@@ -241,13 +303,13 @@ export const AskTheStarsScreen = ({
                 userName={currentUser.name}
             />
             <Pressable
-                accessibilityLabel="Back to previous screen"
+                accessibilityLabel={t('Back to previous screen')}
                 accessibilityRole="button"
                 hitSlop={spacing.sm}
                 onPress={onClose}
                 style={styles.backButton}
             >
-                <Text style={styles.backText}>Back</Text>
+                <Text style={styles.backText}>{t('Back')}</Text>
             </Pressable>
 
             <ScrollView
@@ -267,7 +329,7 @@ export const AskTheStarsScreen = ({
                         { fontSize: Math.min(64 * scale, width * 0.12) },
                     ]}
                 >
-                    Ask the Stars
+                    {t('Ask the Stars')}
                 </Text>
 
                 <View style={styles.mascotArea}>
@@ -281,7 +343,7 @@ export const AskTheStarsScreen = ({
 
                 {isWaitingForData ? (
                     <View
-                        accessibilityLabel="Loading habit analysis"
+                        accessibilityLabel={t('Loading habit analysis')}
                         accessibilityState={{ busy: true }}
                         className="mb-4 items-center gap-2"
                     >
@@ -291,7 +353,7 @@ export const AskTheStarsScreen = ({
                                 fontFamily: typography.fontFamily,
                             }}
                         >
-                            Reading your habit history…
+                            {t('Reading your habit history…')}
                         </Text>
                     </View>
                 ) : null}
@@ -310,8 +372,13 @@ export const AskTheStarsScreen = ({
                     <Pressable
                         accessibilityLabel={
                             selectedHabit
-                                ? `Selected habit: ${selectedHabit.name}. Choose another habit`
-                                : 'Choose a habit to analyze'
+                                ? t(
+                                      'Selected habit: {{habitName}}. Choose another habit',
+                                      {
+                                          habitName: selectedHabit.name,
+                                      },
+                                  )
+                                : t('Choose a habit to analyze')
                         }
                         accessibilityRole="button"
                         disabled={shouldShowAnalysisLoading || hasLoadError}
@@ -322,7 +389,7 @@ export const AskTheStarsScreen = ({
                             numberOfLines={1}
                             style={styles.selectedHabitText}
                         >
-                            {selectedHabit?.name ?? 'Choose a habit'}
+                            {selectedHabit?.name ?? t('Choose a habit')}
                         </Text>
                     </Pressable>
                 ) : null}
@@ -334,8 +401,8 @@ export const AskTheStarsScreen = ({
                     <View style={styles.suggestions}>
                         <Text style={styles.suggestionsHeading}>
                             {selectedAnalysis.suggestions.length > 1
-                                ? 'Suggested schedules'
-                                : 'Suggested schedule'}
+                                ? t('Suggested schedules')
+                                : t('Suggested schedule')}
                         </Text>
                         {selectedAnalysis.suggestions.map(renderSuggestion)}
                     </View>
@@ -348,7 +415,7 @@ export const AskTheStarsScreen = ({
                 weeklyLoadAnalysis?.kind === 'reduce' ? (
                     <View style={styles.suggestions}>
                         <Text style={styles.suggestionsHeading}>
-                            Habits to review
+                            {t('Habits to review')}
                         </Text>
                         {weeklyLoadAnalysis.leastCompletedHabits.map(
                             (habit, index) => (
@@ -361,10 +428,16 @@ export const AskTheStarsScreen = ({
                                             {habit.name}
                                         </Text>
                                         <Text style={styles.suggestionEvidence}>
-                                            {Math.round(habit.rate * 100)}%
-                                            completed across{' '}
-                                            {habit.occurrenceCount} planned
-                                            sessions
+                                            {t(
+                                                '{{rate}}% completed across {{occurrenceCount}} planned sessions',
+                                                {
+                                                    rate: Math.round(
+                                                        habit.rate * 100,
+                                                    ),
+                                                    occurrenceCount:
+                                                        habit.occurrenceCount,
+                                                },
+                                            )}
                                         </Text>
                                     </View>
                                 </AnimatedSuggestionCard>
@@ -380,7 +453,7 @@ export const AskTheStarsScreen = ({
                 weeklyLoadAnalysis?.kind === 'increase' ? (
                     <View style={styles.suggestions}>
                         <Text style={styles.suggestionsHeading}>
-                            Lighter days to consider
+                            {t('Lighter days to consider')}
                         </Text>
                         {weeklyLoadAnalysis.lighterDays.map((day, index) => (
                             <AnimatedSuggestionCard
@@ -389,20 +462,37 @@ export const AskTheStarsScreen = ({
                             >
                                 <View style={styles.suggestionCard}>
                                     <Text style={styles.suggestionTitle}>
-                                        {
+                                        {t(
                                             weekDayLabels[
                                                 day.weekDay as keyof typeof weekDayLabels
-                                            ]
-                                        }
+                                            ],
+                                        )}
                                     </Text>
                                     <Text style={styles.suggestionEvidence}>
-                                        {day.scheduledHabitCount} scheduled
-                                        habits
+                                        {t(
+                                            '{{scheduledHabitCount}} scheduled habits',
+                                            {
+                                                scheduledHabitCount:
+                                                    day.scheduledHabitCount,
+                                            },
+                                        )}
                                         {day.estimatedMinutes
-                                            ? ` · ${day.estimatedMinutes} estimated minutes`
+                                            ? ` · ${t(
+                                                  '{{estimatedMinutes}} estimated minutes',
+                                                  {
+                                                      estimatedMinutes:
+                                                          day.estimatedMinutes,
+                                                  },
+                                              )}`
                                             : ''}
                                         {day.eventCount
-                                            ? ` · ${day.eventCount} calendar events`
+                                            ? ` · ${t(
+                                                  '{{eventCount}} calendar events',
+                                                  {
+                                                      eventCount:
+                                                          day.eventCount,
+                                                  },
+                                              )}`
                                             : ''}
                                     </Text>
                                 </View>
@@ -412,11 +502,11 @@ export const AskTheStarsScreen = ({
                 ) : null}
 
                 {isAnalysisFlow && errorMessage ? (
-                    <Text style={styles.errorMessage}>{errorMessage}</Text>
+                    <Text style={styles.errorMessage}>{t(errorMessage)}</Text>
                 ) : null}
                 {isWeeklyLoadFlow && hasLoadError ? (
                     <Text style={styles.errorMessage}>
-                        Unable to load your weekly habit history.
+                        {t('Unable to load your weekly habit history.')}
                     </Text>
                 ) : null}
             </ScrollView>
@@ -446,7 +536,7 @@ export const AskTheStarsScreen = ({
                             ]}
                         >
                             <Text style={styles.acceptButtonText}>
-                                {isSaving ? 'Saving…' : 'Accept schedule'}
+                                {isSaving ? t('Saving…') : t('Accept schedule')}
                             </Text>
                         </Pressable>
                     ) : null}
@@ -455,7 +545,9 @@ export const AskTheStarsScreen = ({
                         onPress={onClose}
                         style={styles.cancelButton}
                     >
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                        <Text style={styles.cancelButtonText}>
+                            {t('Cancel')}
+                        </Text>
                     </Pressable>
                 </View>
             ) : (
@@ -463,10 +555,12 @@ export const AskTheStarsScreen = ({
                     style={[styles.composer, { bottom: spacing.md + bottom }]}
                 >
                     <TextInput
-                        accessibilityLabel="Ask your star, available in a future update"
+                        accessibilityLabel={t(
+                            'Ask your star, available in a future update',
+                        )}
                         accessibilityState={{ disabled: true }}
                         editable={false}
-                        placeholder="Ask a question about your habits"
+                        placeholder={t('Ask a question about your habits')}
                         placeholderTextColor={colors.onboardingMuted}
                         style={styles.composerInput}
                     />
@@ -482,12 +576,12 @@ export const AskTheStarsScreen = ({
             )}
 
             <BottomSheetLayout
-                closeAccessibilityLabel="Close habit selection"
+                closeAccessibilityLabel={t('Close habit selection')}
                 heightMode="max"
                 heightRatio={0.5}
                 isVisible={isAnalysisFlow && isHabitPickerVisible}
                 onClose={() => setIsHabitPickerVisible(false)}
-                title="Choose a habit"
+                title={t('Choose a habit')}
             >
                 <ScrollView
                     contentContainerStyle={styles.habitOptions}
@@ -528,7 +622,9 @@ export const AskTheStarsScreen = ({
                         })
                     ) : (
                         <Text style={styles.emptyMessage}>
-                            No active habits are available to analyze yet.
+                            {t(
+                                'No active habits are available to analyze yet.',
+                            )}
                         </Text>
                     )}
                 </ScrollView>

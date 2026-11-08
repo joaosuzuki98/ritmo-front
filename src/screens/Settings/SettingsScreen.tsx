@@ -13,6 +13,8 @@ import { ScreenLayout } from '../../components/ScreenLayout/ScreenLayout'
 import { ScreenSubtitle } from '../../components/ScreenSubtitle/ScreenSubtitle'
 import { getResponsiveScale } from '../../styles/responsive'
 import { priorityCodes } from '../../constants/priorities'
+import { isAppLanguage } from '../../localization/languages'
+import { useTranslation } from '../../localization/useTranslation'
 import { SettingsCheckbox } from './components/SettingsCheckbox'
 import { SettingsSelect } from './components/SettingsSelect'
 import { settingsScreenStyles as styles } from './SettingsScreen.styles'
@@ -31,6 +33,7 @@ export const SettingsScreen = ({
 }: SettingsScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const { language, setLanguage, t } = useTranslation()
     const {
         errorMessage,
         openSystemNotificationSettings,
@@ -39,7 +42,6 @@ export const SettingsScreen = ({
         updatePreference,
     } = useSettingsViewModel(currentUser.id)
     const isPriorityPickerEnabled = preferences.notifyPriorityHabits
-    const [language, setLanguage] = useState('English')
     const [theme, setTheme] = useState('System')
 
     const onSelectMinimumPriority = async (value: string) => {
@@ -51,9 +53,11 @@ export const SettingsScreen = ({
         <ScreenLayout
             onMenuPress={onMenuPress}
             onProfilePress={() => undefined}
-            title="Settings"
+            title={t('Settings')}
             subtitle={
-                <ScreenSubtitle>Customize your experience</ScreenSubtitle>
+                <ScreenSubtitle>
+                    {t('Customize your experience')}
+                </ScreenSubtitle>
             }
             totalAccessDays={totalAccessDays}
             totalPoints={currentUser.totalPoints}
@@ -67,28 +71,30 @@ export const SettingsScreen = ({
                     <Text
                         style={[styles.sectionTitle, { fontSize: 30 * scale }]}
                     >
-                        General
+                        {t('General')}
                     </Text>
                     <SettingsSelect
-                        accessibilityLabel="Select language"
+                        accessibilityLabel={t('Select language')}
                         containerStyle={styles.field}
-                        label="Language"
-                        onSelect={setLanguage}
+                        label={t('Language')}
+                        onSelect={value => {
+                            if (isAppLanguage(value)) setLanguage(value)
+                        }}
                         options={[
-                            { value: 'English', label: 'English' },
-                            { value: 'Português', label: 'Português' },
+                            { value: 'en', label: 'English' },
+                            { value: 'pt', label: 'Português' },
                         ]}
                         value={language}
                     />
                     <SettingsSelect
-                        accessibilityLabel="Select theme"
+                        accessibilityLabel={t('Select theme')}
                         containerStyle={styles.field}
-                        label="Theme"
+                        label={t('Theme')}
                         onSelect={setTheme}
                         options={[
-                            { value: 'System', label: 'System' },
-                            { value: 'Dark', label: 'Dark' },
-                            { value: 'Light', label: 'Light' },
+                            { value: 'System', label: t('System') },
+                            { value: 'Dark', label: t('Dark') },
+                            { value: 'Light', label: t('Light') },
                         ]}
                         value={theme}
                     />
@@ -98,36 +104,46 @@ export const SettingsScreen = ({
                     <Text
                         style={[styles.sectionTitle, { fontSize: 30 * scale }]}
                     >
-                        Notifications
+                        {t('Notifications')}
                     </Text>
                     <View style={styles.checkboxList}>
                         <SettingsCheckbox
                             checked={preferences.notifyHabitStart}
-                            label="Notify me when a habit is about to start (15 minutes beforehand)"
+                            label={t(
+                                'Notify me when a habit is about to start (15 minutes beforehand)',
+                            )}
                             onPress={() => togglePreference('notifyHabitStart')}
                         />
                         <SettingsCheckbox
                             checked={preferences.notifyDailyFocus}
-                            label="Remind me about focus habits I haven't completed today"
+                            label={t(
+                                "Remind me about focus habits I haven't completed today",
+                            )}
                             onPress={() => togglePreference('notifyDailyFocus')}
                         />
                         <SettingsCheckbox
                             checked={preferences.notifyLowSuccessHabits}
-                            label="Notify me when a habit's success rate is low (less than 15% success rate)"
+                            label={t(
+                                "Notify me when a habit's success rate is low (less than 15% success rate)",
+                            )}
                             onPress={() =>
                                 togglePreference('notifyLowSuccessHabits')
                             }
                         />
                         <SettingsCheckbox
                             checked={preferences.notifyWeeklyHabitLoad}
-                            label="Send me weekly habit load recommendations"
+                            label={t(
+                                'Send me weekly habit load recommendations',
+                            )}
                             onPress={() =>
                                 togglePreference('notifyWeeklyHabitLoad')
                             }
                         />
                         <SettingsCheckbox
                             checked={preferences.notifyPriorityHabits}
-                            label="Remind me about priority habits I haven't completed"
+                            label={t(
+                                "Remind me about priority habits I haven't completed",
+                            )}
                             onPress={() =>
                                 togglePreference('notifyPriorityHabits')
                             }
@@ -135,32 +151,33 @@ export const SettingsScreen = ({
                     </View>
 
                     <SettingsSelect
-                        accessibilityLabel="Select minimum priority"
+                        accessibilityLabel={t('Select minimum priority')}
                         containerStyle={styles.priorityPicker}
                         disabled={!isPriorityPickerEnabled}
-                        label="Minimum priority"
+                        label={t('Minimum priority')}
                         onSelect={onSelectMinimumPriority}
                         options={[
-                            { value: 'low', label: 'Low' },
-                            { value: 'medium', label: 'Medium' },
-                            { value: 'high', label: 'High' },
+                            { value: 'low', label: t('Low') },
+                            { value: 'medium', label: t('Medium') },
+                            { value: 'high', label: t('High') },
                         ]}
-                        placeholder="Select priority level"
+                        placeholder={t('Select priority level')}
                         value={preferences.minimumPriority ?? ''}
                     />
 
                     {Platform.OS === 'android' ? (
                         <View>
                             <Text style={styles.inlineMessage}>
-                                Allow alarms and reminders in Android settings
-                                to schedule local notifications.
+                                {t(
+                                    'Allow alarms and reminders in Android settings to schedule local notifications.',
+                                )}
                             </Text>
                             <Pressable
                                 accessibilityRole="button"
                                 onPress={openSystemNotificationSettings}
                             >
                                 <Text style={styles.inlineAction}>
-                                    Open notification settings
+                                    {t('Open notification settings')}
                                 </Text>
                             </Pressable>
                         </View>
@@ -174,7 +191,7 @@ export const SettingsScreen = ({
                     <Text
                         style={[styles.dangerTitle, { fontSize: 30 * scale }]}
                     >
-                        Danger Zone
+                        {t('Danger Zone')}
                     </Text>
                     <Pressable
                         accessibilityRole="button"
@@ -183,7 +200,7 @@ export const SettingsScreen = ({
                         style={styles.deleteButton}
                     >
                         <Text style={styles.deleteButtonText}>
-                            Delete account
+                            {t('Delete account')}
                         </Text>
                     </Pressable>
                 </View>

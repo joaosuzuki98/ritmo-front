@@ -1,6 +1,8 @@
 module.exports = {
     preset: '@react-native/jest-preset',
     moduleNameMapper: {
+        '^@react-native-async-storage/async-storage$':
+            '@react-native-async-storage/async-storage/jest',
         '\\.(svg)$': '<rootDir>/__mocks__/svgMock.js',
         '\\.(css)$': '<rootDir>/__mocks__/styleMock.js',
         '^@react-native/new-app-screen$':
@@ -18,6 +20,6 @@ module.exports = {
             '<rootDir>/__mocks__/react-native-gesture-handler.js',
     },
     transformIgnorePatterns: [
-        'node_modules/(?!((jest-)?react-native|@react-native(-community)?|react-native-css-interop|@noble/hashes)/)',
+        'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-async-storage/async-storage|react-native-css-interop|@noble/hashes)/)',
     ],
 }

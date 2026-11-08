@@ -15,6 +15,7 @@ import { AppNavigator } from './AppNavigator'
 import type { RootParamList } from './types'
 import { useDailyAccess } from './useDailyAccess'
 import { startLocalReminderManager } from '../notifications/localNotifications'
+import { useTranslation } from '../localization/useTranslation'
 
 type AppDrawerNavigatorProps = {
     currentUser: User
@@ -27,6 +28,7 @@ export const AppDrawerNavigator = ({
     currentUser,
     onLogout,
 }: AppDrawerNavigatorProps) => {
+    const { t } = useTranslation()
     useEffect(() => {
         const syncManager = createSyncManager({
             baseUrl: API_BASE_URL,
@@ -62,7 +64,7 @@ export const AppDrawerNavigator = ({
                 {hasError ? (
                     <Pressable accessibilityRole="button" onPress={retry}>
                         <Text className="text-white">
-                            Unable to load today. Tap to retry.
+                            {t('Unable to load today. Tap to retry.')}
                         </Text>
                     </Pressable>
                 ) : (

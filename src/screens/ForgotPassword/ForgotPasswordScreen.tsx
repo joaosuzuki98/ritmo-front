@@ -21,6 +21,7 @@ import {
     resetPasswordSchema,
     type ResetPasswordFormData,
 } from './resetPasswordSchema'
+import { useTranslation } from '../../localization/useTranslation'
 
 type ForgotPasswordScreenProps = {
     onBack: () => void
@@ -29,6 +30,7 @@ type ForgotPasswordScreenProps = {
 type ResetStep = 'email' | 'code' | 'done'
 
 export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
+    const { t } = useTranslation()
     const [step, setStep] = useState<ResetStep>('email')
     const [email, setEmail] = useState('')
     const [submitError, setSubmitError] = useState('')
@@ -54,7 +56,7 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
             setSubmitError(
                 error instanceof Error
                     ? error.message
-                    : 'Não foi possível solicitar o código. Tente novamente.',
+                    : 'Could not request the code. Please try again.',
             )
         } finally {
             setIsSubmitting(false)
@@ -76,7 +78,7 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
             setSubmitError(
                 error instanceof Error
                     ? error.message
-                    : 'Não foi possível redefinir a senha. Tente novamente.',
+                    : 'Could not reset the password. Please try again.',
             )
         } finally {
             setIsSubmitting(false)
@@ -85,13 +87,18 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
 
     const description =
         step === 'email'
-            ? 'Enviaremos um código para o email da sua conta.'
+            ? t('We’ll send a code to the email on your account.')
             : step === 'code'
-            ? `Digite o código enviado para ${email} e escolha uma nova senha.`
-            : 'Sua senha foi atualizada. Entre novamente para continuar.'
+            ? t('Enter the code sent to {{email}} and choose a new password.', {
+                  email,
+              })
+            : t('Your password has been updated. Sign in again to continue.')
 
     return (
-        <AuthScreenLayout description={description} title="Recuperar senha">
+        <AuthScreenLayout
+            description={description}
+            title={t('Recover password')}
+        >
             <View>
                 {step === 'email' ? (
                     <Controller
@@ -104,10 +111,10 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                                     emailForm.formState.errors.email?.message
                                 }
                                 keyboardType="email-address"
-                                label="Email"
+                                label={t('Email')}
                                 onBlur={field.onBlur}
                                 onChangeText={field.onChange}
-                                placeholder="voce@exemplo.com"
+                                placeholder={t('you@example.com')}
                                 returnKeyType="done"
                                 textContentType="emailAddress"
                                 value={field.value}
@@ -127,7 +134,7 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                                         resetForm.formState.errors.code?.message
                                     }
                                     keyboardType="number-pad"
-                                    label="Código de 8 dígitos"
+                                    label={t('8-digit code')}
                                     onBlur={field.onBlur}
                                     onChangeText={field.onChange}
                                     placeholder="12345678"
@@ -146,10 +153,10 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                                         resetForm.formState.errors.password
                                             ?.message
                                     }
-                                    label="Nova senha"
+                                    label={t('New password')}
                                     onBlur={field.onBlur}
                                     onChangeText={field.onChange}
-                                    placeholder="Pelo menos 8 caracteres"
+                                    placeholder={t('At least 8 characters')}
                                     secureTextEntry
                                     textContentType="newPassword"
                                     value={field.value}
@@ -166,10 +173,10 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                                         resetForm.formState.errors
                                             .confirmPassword?.message
                                     }
-                                    label="Confirme a nova senha"
+                                    label={t('Confirm the new password')}
                                     onBlur={field.onBlur}
                                     onChangeText={field.onChange}
-                                    placeholder="Digite a senha novamente"
+                                    placeholder={t('Enter your password again')}
                                     secureTextEntry
                                     textContentType="newPassword"
                                     value={field.value}
@@ -181,7 +188,7 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
 
                 {submitError ? (
                     <Text accessibilityLiveRegion="polite" style={styles.error}>
-                        {submitError}
+                        {t(submitError)}
                     </Text>
                 ) : null}
 
@@ -190,7 +197,7 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                         disabled={isSubmitting}
                         isLoading={isSubmitting}
                         onPress={emailForm.handleSubmit(handleRequestCode)}
-                        title="Enviar código"
+                        title={t('Send code')}
                     />
                 ) : null}
                 {step === 'code' ? (
@@ -198,13 +205,13 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                         disabled={isSubmitting}
                         isLoading={isSubmitting}
                         onPress={resetForm.handleSubmit(handleCompleteReset)}
-                        title="Redefinir senha"
+                        title={t('Reset password')}
                     />
                 ) : null}
                 {step === 'done' ? (
                     <FormActionButton
                         onPress={onBack}
-                        title="Voltar para entrar"
+                        title={t('Back to sign in')}
                     />
                 ) : null}
                 {step !== 'done' ? (
@@ -212,7 +219,7 @@ export const ForgotPasswordScreen = ({ onBack }: ForgotPasswordScreenProps) => {
                         containerStyle={styles.secondaryButton}
                         disabled={isSubmitting}
                         onPress={onBack}
-                        title="Voltar para entrar"
+                        title={t('Back to sign in')}
                     />
                 ) : null}
             </View>

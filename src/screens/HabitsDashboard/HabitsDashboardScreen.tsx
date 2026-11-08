@@ -37,6 +37,7 @@ import type {
 } from './habitDashboard.types'
 import { useHabitsDashboardViewModel } from './useHabitsDashboardViewModel'
 import { getHabitCardOffset } from './habitDragUtils'
+import { useTranslation } from '../../localization/useTranslation'
 
 export const HabitsDashboardScreen = ({
     currentUser,
@@ -50,6 +51,7 @@ export const HabitsDashboardScreen = ({
     onOpenAddHabitModal = () => undefined,
     onCloseAddHabitModal = () => undefined,
 }: HabitsDashboardScreenProps) => {
+    const { t } = useTranslation()
     const viewModel = useHabitsDashboardViewModel(
         currentUser.id,
         initialWeekDay,
@@ -131,12 +133,14 @@ export const HabitsDashboardScreen = ({
 
     const handleDeleteHabit = (habit: HabitCardViewData) => {
         Alert.alert(
-            'Delete habit?',
-            `“${habit.title}” will be removed from your habits.`,
+            t('Delete habit?'),
+            t('“{{habitTitle}}” will be removed from your habits.', {
+                habitTitle: habit.title,
+            }),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('Cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: t('Delete'),
                     style: 'destructive',
                     onPress: () => {
                         viewModel
@@ -144,8 +148,8 @@ export const HabitsDashboardScreen = ({
                             .then(() => setSelectedHabit(null))
                             .catch(() =>
                                 Alert.alert(
-                                    'Unable to delete habit',
-                                    'Please try again.',
+                                    t('Unable to delete habit'),
+                                    t('Please try again.'),
                                 ),
                             )
                     },
@@ -166,8 +170,8 @@ export const HabitsDashboardScreen = ({
             }))
         if (completed === false)
             Alert.alert(
-                'Cannot complete habit',
-                'You can only complete a habit for today.',
+                t('Cannot complete habit'),
+                t('You can only complete a habit for today.'),
             )
     }
 
@@ -187,8 +191,8 @@ export const HabitsDashboardScreen = ({
             }))
         if (saved === false)
             Alert.alert(
-                'Cannot complete habit',
-                'You can only complete a habit for today.',
+                t('Cannot complete habit'),
+                t('You can only complete a habit for today.'),
             )
         return saved
     }
@@ -215,7 +219,7 @@ export const HabitsDashboardScreen = ({
 
     return (
         <ScreenLayout
-            title={title}
+            title={t(title)}
             subtitle={
                 <DaySelector
                     weekDay={viewModel.weekDay}
@@ -276,7 +280,7 @@ export const HabitsDashboardScreen = ({
                                     paddingVertical: spacing.lg,
                                 }}
                             >
-                                Loading habits…
+                                {t('Loading habits…')}
                             </Text>
                         ) : null}
                         {viewModel.state === 'error' ? (
@@ -288,10 +292,12 @@ export const HabitsDashboardScreen = ({
                                         paddingVertical: spacing.md,
                                     }}
                                 >
-                                    Unable to load habits.
+                                    {t('Unable to load habits.')}
                                 </Text>
                                 <Pressable
-                                    accessibilityLabel="Retry loading habits"
+                                    accessibilityLabel={t(
+                                        'Retry loading habits',
+                                    )}
                                     onPress={() => viewModel.moveDay(0)}
                                 >
                                     <Text
@@ -300,7 +306,7 @@ export const HabitsDashboardScreen = ({
                                             fontFamily: typography.fontFamily,
                                         }}
                                     >
-                                        Retry
+                                        {t('Retry')}
                                     </Text>
                                 </Pressable>
                             </View>
@@ -324,12 +330,14 @@ export const HabitsDashboardScreen = ({
                                     }}
                                 >
                                     {viewModel.hasAnyHabits
-                                        ? 'No habits for this day.'
-                                        : 'No habits yet. Create your first habit to get started.'}
+                                        ? t('No habits for this day.')
+                                        : t(
+                                              'No habits yet. Create your first habit to get started.',
+                                          )}
                                 </Text>
                                 {!viewModel.hasAnyHabits ? (
                                     <Pressable
-                                        accessibilityLabel="Add a habit"
+                                        accessibilityLabel={t('Add a habit')}
                                         onPress={onOpenAddHabitModal}
                                     >
                                         <Text
@@ -339,7 +347,7 @@ export const HabitsDashboardScreen = ({
                                                     typography.fontFamily,
                                             }}
                                         >
-                                            Add habit
+                                            {t('Add habit')}
                                         </Text>
                                     </Pressable>
                                 ) : null}
@@ -354,10 +362,10 @@ export const HabitsDashboardScreen = ({
                                         paddingVertical: spacing.lg,
                                     }}
                                 >
-                                    No habits match your search.
+                                    {t('No habits match your search.')}
                                 </Text>
                                 <Pressable
-                                    accessibilityLabel="Clear search"
+                                    accessibilityLabel={t('Clear search')}
                                     onPress={viewModel.clearSearch}
                                 >
                                     <Text
@@ -366,7 +374,7 @@ export const HabitsDashboardScreen = ({
                                             fontFamily: typography.fontFamily,
                                         }}
                                     >
-                                        Clear search
+                                        {t('Clear search')}
                                     </Text>
                                 </Pressable>
                             </View>

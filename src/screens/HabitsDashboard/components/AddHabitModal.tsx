@@ -36,6 +36,7 @@ import { habitRequirementStatuses } from '../../../constants/habitRequirementSta
 import type { HabitCardViewData, HabitOption } from '../habitDashboard.types'
 import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
 import { theme } from '../../../styles/theme'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type AddHabitModalProps = {
     isVisible: boolean
@@ -99,6 +100,7 @@ export const AddHabitModal = ({
     onCreateHabit,
     onUpdateHabit,
 }: AddHabitModalProps) => {
+    const { language, t } = useTranslation()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const daySize = Math.min(42 * scale, (width - spacing.lg * scale * 2) / 7)
@@ -197,11 +199,11 @@ export const AddHabitModal = ({
 
     return (
         <BottomSheetLayout
-            closeAccessibilityLabel="Close add habit modal"
+            closeAccessibilityLabel={t('Close add habit modal')}
             isCloseDisabled={isSubmitting}
             isVisible={isVisible}
             onClose={handleClose}
-            title={habit ? 'Edit habit' : 'Add habit'}
+            title={t(habit ? 'Edit habit' : 'Add habit')}
         >
             <ScrollView
                 contentContainerStyle={{
@@ -211,18 +213,18 @@ export const AddHabitModal = ({
                 showsVerticalScrollIndicator={false}
             >
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Name
+                    {t('Name')}
                 </Text>
                 <Controller
                     control={control}
                     name="name"
                     render={({ field }) => (
                         <FormTextInput
-                            accessibilityLabel="Habit name"
+                            accessibilityLabel={t('Habit name')}
                             autoCapitalize="sentences"
                             onChangeText={field.onChange}
                             onBlur={field.onBlur}
-                            placeholder="e.g. Study"
+                            placeholder={t('e.g. Study')}
                             hasError={Boolean(errors.name)}
                             value={field.value}
                         />
@@ -232,23 +234,23 @@ export const AddHabitModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.name.message}
+                        {t(errors.name.message ?? '')}
                     </Text>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Description
+                    {t('Description')}
                 </Text>
                 <Controller
                     control={control}
                     name="description"
                     render={({ field }) => (
                         <FormTextInput
-                            accessibilityLabel="Habit description"
+                            accessibilityLabel={t('Habit description')}
                             multiline
                             onChangeText={field.onChange}
                             onBlur={field.onBlur}
-                            placeholder="What does this habit mean to you?"
+                            placeholder={t('What does this habit mean to you?')}
                             containerStyle={styles.multilineContainer}
                             style={styles.multilineText}
                             textAlignVertical="top"
@@ -258,12 +260,12 @@ export const AddHabitModal = ({
                 />
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Category
+                    {t('Category')}
                 </Text>
                 {categoryOptions.length > 0 && !isEnteringNewCategory ? (
                     <View style={styles.settingsPickerContainer}>
                         <Picker
-                            accessibilityLabel="Choose habit category"
+                            accessibilityLabel={t('Choose habit category')}
                             dropdownIconColor={colors.textMuted}
                             dropdownIconRippleColor="transparent"
                             mode="dropdown"
@@ -280,7 +282,7 @@ export const AddHabitModal = ({
                             style={styles.settingsPicker}
                         >
                             <Picker.Item
-                                label="Choose a category"
+                                label={t('Choose a category')}
                                 style={styles.settingsPickerItem}
                                 value=""
                             />
@@ -293,7 +295,7 @@ export const AddHabitModal = ({
                                 />
                             ))}
                             <Picker.Item
-                                label="Add a new category"
+                                label={t('Add a new category')}
                                 style={styles.addCategoryPickerItem}
                                 value="__create_new_category__"
                             />
@@ -309,11 +311,11 @@ export const AddHabitModal = ({
                             name="categoryName"
                             render={({ field }) => (
                                 <FormTextInput
-                                    accessibilityLabel="Habit category"
+                                    accessibilityLabel={t('Habit category')}
                                     autoCapitalize="words"
                                     onChangeText={field.onChange}
                                     onBlur={field.onBlur}
-                                    placeholder="e.g. Personal growth"
+                                    placeholder={t('e.g. Personal growth')}
                                     value={field.value}
                                 />
                             )}
@@ -325,7 +327,7 @@ export const AddHabitModal = ({
                                 style={styles.backToCategories}
                             >
                                 <Text style={styles.newCategoryText}>
-                                    Choose an existing category
+                                    {t('Choose an existing category')}
                                 </Text>
                             </Pressable>
                         ) : null}
@@ -333,7 +335,7 @@ export const AddHabitModal = ({
                 )}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Frequency
+                    {t('Frequency')}
                 </Text>
                 <Controller
                     control={control}
@@ -342,8 +344,8 @@ export const AddHabitModal = ({
                         <View style={styles.optionRow}>
                             {(
                                 [
-                                    ['daily', 'Every day'],
-                                    ['weekly', 'Selected days'],
+                                    ['daily', t('Every day')],
+                                    ['weekly', t('Selected days')],
                                 ] as const
                             ).map(([value, label]) => {
                                 const isSelected = field.value === value
@@ -385,7 +387,7 @@ export const AddHabitModal = ({
                             const isSelected = selectedWeekDays.includes(day)
                             return (
                                 <Pressable
-                                    accessibilityLabel={weekDayLabels[day]}
+                                    accessibilityLabel={t(weekDayLabels[day])}
                                     accessibilityRole="checkbox"
                                     accessibilityState={{
                                         checked: isSelected,
@@ -409,7 +411,7 @@ export const AddHabitModal = ({
                                                 styles.dayTextSelected,
                                         ]}
                                     >
-                                        {weekDayLabels[day].slice(0, 2)}
+                                        {t(weekDayLabels[day]).slice(0, 2)}
                                     </Text>
                                 </Pressable>
                             )
@@ -420,16 +422,16 @@ export const AddHabitModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.weekDays.message}
+                        {t(errors.weekDays.message ?? '')}
                     </Text>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Complete after
+                    {t('Complete after')}
                 </Text>
                 <View style={styles.settingsPickerContainer}>
                     <Picker
-                        accessibilityLabel="Choose prerequisite habit"
+                        accessibilityLabel={t('Choose prerequisite habit')}
                         dropdownIconColor={colors.textMuted}
                         dropdownIconRippleColor="transparent"
                         mode="dropdown"
@@ -442,7 +444,7 @@ export const AddHabitModal = ({
                         style={styles.settingsPicker}
                     >
                         <Picker.Item
-                            label="No prerequisite"
+                            label={t('No prerequisite')}
                             style={styles.settingsPickerItem}
                             value=""
                         />
@@ -460,16 +462,16 @@ export const AddHabitModal = ({
                 </View>
                 {habitOptions.length === 0 ? (
                     <Text style={styles.helperText}>
-                        Create another habit first to add a prerequisite.
+                        {t('Create another habit first to add a prerequisite.')}
                     </Text>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Only when another habit is
+                    {t('Only when another habit is')}
                 </Text>
                 <View style={styles.settingsPickerContainer}>
                     <Picker
-                        accessibilityLabel="Choose condition habit"
+                        accessibilityLabel={t('Choose condition habit')}
                         dropdownIconColor={colors.textMuted}
                         dropdownIconRippleColor="transparent"
                         mode="dropdown"
@@ -490,7 +492,7 @@ export const AddHabitModal = ({
                         style={styles.settingsPicker}
                     >
                         <Picker.Item
-                            label="No condition"
+                            label={t('No condition')}
                             style={styles.settingsPickerItem}
                             value=""
                         />
@@ -514,7 +516,7 @@ export const AddHabitModal = ({
                         <Text
                             style={[globalStyles.formFieldLabel, styles.label]}
                         >
-                            Must be marked as
+                            {t('Must be marked as')}
                         </Text>
                         <View style={styles.optionRow}>
                             {habitRequirementStatuses.map(status => {
@@ -547,7 +549,7 @@ export const AddHabitModal = ({
                                                     styles.optionTextSelected,
                                             ]}
                                         >
-                                            {conditionStatusLabels[status]}
+                                            {t(conditionStatusLabels[status])}
                                         </Text>
                                     </Pressable>
                                 )
@@ -571,7 +573,7 @@ export const AddHabitModal = ({
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Priority
+                    {t('Priority')}
                 </Text>
                 <Controller
                     control={control}
@@ -605,11 +607,11 @@ export const AddHabitModal = ({
                                             ]}
                                         >
                                             <Text style={styles.priorityText}>
-                                                {
+                                                {t(
                                                     priorityPresentations[
                                                         priority
-                                                    ].label
-                                                }
+                                                    ].label,
+                                                )}
                                             </Text>
                                         </Pressable>
                                     )
@@ -624,11 +626,11 @@ export const AddHabitModal = ({
                         <Text
                             style={[globalStyles.formFieldLabel, styles.label]}
                         >
-                            Duration
+                            {t('Duration')}
                         </Text>
                         <View style={styles.settingsPickerContainer}>
                             <Picker
-                                accessibilityLabel="Estimated duration"
+                                accessibilityLabel={t('Estimated duration')}
                                 dropdownIconColor={colors.textMuted}
                                 dropdownIconRippleColor="transparent"
                                 mode="dropdown"
@@ -645,7 +647,24 @@ export const AddHabitModal = ({
                                 {durationOptions.map(option => (
                                     <Picker.Item
                                         key={option.value || 'not-set'}
-                                        label={option.label}
+                                        label={
+                                            option.value === ''
+                                                ? t('Not set')
+                                                : option.label.endsWith(' min')
+                                                ? t('{{minutes}} min', {
+                                                      minutes:
+                                                          option.label.replace(
+                                                              ' min',
+                                                              '',
+                                                          ),
+                                                  })
+                                                : t('{{hours}} hr', {
+                                                      hours: option.label.replace(
+                                                          ' hr',
+                                                          '',
+                                                      ),
+                                                  })
+                                        }
                                         style={styles.settingsPickerItem}
                                         value={option.value}
                                     />
@@ -667,12 +686,14 @@ export const AddHabitModal = ({
                         <Text
                             style={[globalStyles.formFieldLabel, styles.label]}
                         >
-                            Preferred time
+                            {t('Preferred time')}
                         </Text>
                         <View>
                             <View style={styles.preferredTimeRow}>
                                 <Pressable
-                                    accessibilityLabel="Choose preferred time"
+                                    accessibilityLabel={t(
+                                        'Choose preferred time',
+                                    )}
                                     accessibilityRole="button"
                                     onPress={handleOpenPreferredTimePicker}
                                     style={styles.preferredTimeButton}
@@ -688,16 +709,23 @@ export const AddHabitModal = ({
                                         {preferredTime
                                             ? parsePreferredTime(
                                                   preferredTime,
-                                              )?.toLocaleTimeString([], {
-                                                  hour: 'numeric',
-                                                  minute: '2-digit',
-                                              })
-                                            : 'Choose a time'}
+                                              )?.toLocaleTimeString(
+                                                  language === 'pt'
+                                                      ? 'pt-BR'
+                                                      : 'en-US',
+                                                  {
+                                                      hour: 'numeric',
+                                                      minute: '2-digit',
+                                                  },
+                                              )
+                                            : t('Choose a time')}
                                     </Text>
                                 </Pressable>
                                 {preferredTime ? (
                                     <Pressable
-                                        accessibilityLabel="Clear preferred time"
+                                        accessibilityLabel={t(
+                                            'Clear preferred time',
+                                        )}
                                         accessibilityRole="button"
                                         onPress={() =>
                                             setValue('preferredTime', '', {
@@ -737,23 +765,23 @@ export const AddHabitModal = ({
                                     styles.errorText,
                                 ]}
                             >
-                                {errors.preferredTime.message}
+                                {t(errors.preferredTime.message ?? '')}
                             </Text>
                         ) : null}
                     </View>
                 </View>
 
                 {submitError ? (
-                    <Text style={styles.submitError}>{submitError}</Text>
+                    <Text style={styles.submitError}>{t(submitError)}</Text>
                 ) : null}
                 <FormActionButton
-                    accessibilityLabel={
-                        habit ? 'Save habit changes' : 'Create habit'
-                    }
+                    accessibilityLabel={t(
+                        habit ? 'Save habit changes' : 'Create habit',
+                    )}
                     disabled={isSubmitting}
                     isLoading={isSubmitting}
                     onPress={handleFormSubmit}
-                    title={habit ? 'Save changes' : 'Add habit'}
+                    title={t(habit ? 'Save changes' : 'Add habit')}
                     containerStyle={styles.submitButton}
                 />
             </ScrollView>

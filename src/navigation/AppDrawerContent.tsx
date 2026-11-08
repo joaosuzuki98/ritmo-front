@@ -21,6 +21,7 @@ import { spacing } from '../styles/spacing'
 import { typography } from '../styles/typography'
 import { AppDrawerLogoutContext } from './AppDrawerLogoutContext'
 import type { AppTabParamList } from './types'
+import { useTranslation } from '../localization/useTranslation'
 
 type AppDrawerContentProps = DrawerContentComponentProps & {
     currentUser: User
@@ -106,6 +107,7 @@ export const AppDrawerContent = ({
     currentUser,
 }: AppDrawerContentProps) => {
     const onLogout = useContext(AppDrawerLogoutContext)
+    const { t } = useTranslation()
     const { bottom } = useSafeAreaInsets()
     const mainRoute = state.routes.find(route => route.name === 'Main')
     const mainState = mainRoute?.state
@@ -176,7 +178,7 @@ export const AppDrawerContent = ({
                                         { color: itemColor },
                                     ]}
                                 >
-                                    {item.label}
+                                    {t(item.label)}
                                 </Text>
                             </Pressable>
                         )
@@ -189,7 +191,7 @@ export const AppDrawerContent = ({
             >
                 <View style={styles.separator} />
                 <Pressable
-                    accessibilityLabel="Logout"
+                    accessibilityLabel={t('Logout')}
                     accessibilityRole="button"
                     onPress={onLogout}
                     style={({ pressed }) => [
@@ -205,7 +207,7 @@ export const AppDrawerContent = ({
                             weight="regular"
                         />
                         <Text numberOfLines={1} style={styles.logoutLabel}>
-                            Logout
+                            {t('Logout')}
                         </Text>
                     </View>
                 </Pressable>

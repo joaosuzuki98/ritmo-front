@@ -10,6 +10,7 @@ import type { SortCriterion } from '../habitDashboard.types'
 import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type HabitToolbarProps = {
     isSearchOpen: boolean
@@ -29,6 +30,7 @@ export const HabitToolbar = ({
     onSort,
 }: HabitToolbarProps) => {
     const { width } = useWindowDimensions()
+    const { t } = useTranslation()
     const scale = getResponsiveScale(width)
 
     return (
@@ -41,7 +43,7 @@ export const HabitToolbar = ({
             }}
         >
             <Pressable
-                accessibilityLabel="Open weekly habit load recommendations"
+                accessibilityLabel={t('Open weekly habit load recommendations')}
                 accessibilityRole="button"
                 onPress={onWeeklyLoadPress}
                 style={{ padding: 10 * scale }}
@@ -54,7 +56,7 @@ export const HabitToolbar = ({
             </Pressable>
             <View className="flex-row items-center">
                 <Pressable
-                    accessibilityLabel="Open category distribution"
+                    accessibilityLabel={t('Open category distribution')}
                     accessibilityRole="button"
                     onPress={onCategoriesPress}
                     style={{ padding: 10 * scale }}
@@ -66,9 +68,9 @@ export const HabitToolbar = ({
                     />
                 </Pressable>
                 <Pressable
-                    accessibilityLabel={
-                        isSearchOpen ? 'Search open' : 'Open search'
-                    }
+                    accessibilityLabel={t(
+                        isSearchOpen ? 'Search open' : 'Open search',
+                    )}
                     accessibilityState={{ selected: isSearchOpen }}
                     onPress={onSearch}
                     style={{ padding: 10 * scale }}
@@ -80,7 +82,7 @@ export const HabitToolbar = ({
                     />
                 </Pressable>
                 <Pressable
-                    accessibilityLabel="Sort by priority"
+                    accessibilityLabel={t('Sort by priority')}
                     accessibilityState={{ selected: sort === 'priority' }}
                     onPress={() =>
                         onSort(

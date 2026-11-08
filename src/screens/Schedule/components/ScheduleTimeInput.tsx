@@ -10,6 +10,7 @@ import { colors } from '../../../styles/colors'
 import { globalStyles } from '../../../styles/globalStyles'
 import { typography } from '../../../styles/typography'
 import { getScheduleHour, getScheduleTimeParts } from '../scheduleTime'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type ScheduleTimeInputProps = {
     accessibilityLabel: string
@@ -26,6 +27,7 @@ export const ScheduleTimeInput = ({
     minuteName,
     periodName,
 }: ScheduleTimeInputProps) => {
+    const { language, t } = useTranslation()
     const [isPickerVisible, setIsPickerVisible] = useState(false)
     const { field: hourField, fieldState } = useController({
         control,
@@ -87,10 +89,13 @@ export const ScheduleTimeInput = ({
                         fieldState.error && styles.timeTextError,
                     ]}
                 >
-                    {getTimeValue().toLocaleTimeString([], {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                    })}
+                    {getTimeValue().toLocaleTimeString(
+                        language === 'pt' ? 'pt-BR' : 'en-US',
+                        {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        },
+                    )}
                 </Text>
             </Pressable>
             {Platform.OS === 'ios' && isPickerVisible ? (
@@ -103,7 +108,7 @@ export const ScheduleTimeInput = ({
             ) : null}
             {fieldState.error ? (
                 <Text style={[globalStyles.formErrorText, styles.errorText]}>
-                    {fieldState.error.message}
+                    {t(fieldState.error.message ?? '')}
                 </Text>
             ) : null}
         </View>

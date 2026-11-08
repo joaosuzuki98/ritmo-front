@@ -23,6 +23,7 @@ import {
     useRemindersViewModel,
     type ReminderType,
 } from './useRemindersViewModel'
+import { useTranslation } from '../../localization/useTranslation'
 
 type RemindersScreenProps = {
     currentUser: User
@@ -47,7 +48,7 @@ const monthNames = [
     'December',
 ]
 
-const formatEventDate = (date: Date): string => {
+const formatEventDate = (date: Date, language: 'en' | 'pt'): string => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
@@ -55,7 +56,9 @@ const formatEventDate = (date: Date): string => {
         2,
         '0',
     )}`
-    return `${year}/${month}/${day}, ${time}`
+    return language === 'pt'
+        ? `${day}/${month}/${year}, ${time}`
+        : `${year}/${month}/${day}, ${time}`
 }
 
 export const RemindersScreen = ({
@@ -67,6 +70,7 @@ export const RemindersScreen = ({
 }: RemindersScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const { language, t } = useTranslation()
     const viewModel = useRemindersViewModel(currentUser.id)
     const [editingEvent, setEditingEvent] = useState<Event | null>(null)
     const [isMonthYearModalVisible, setIsMonthYearModalVisible] =
@@ -74,14 +78,14 @@ export const RemindersScreen = ({
     const renderEvents = (events: Event[]) =>
         events.map(event => (
             <Pressable
-                accessibilityLabel={`Edit event ${event.title}`}
+                accessibilityLabel={`${t('Edit event')} ${event.title}`}
                 accessibilityRole="button"
                 key={event.id}
                 onPress={() => setEditingEvent(event)}
                 style={styles.eventCard}
             >
                 <Text style={[styles.eventText, { fontSize: 16 * scale }]}>
-                    {formatEventDate(event.dateTime)} - {event.title}
+                    {formatEventDate(event.dateTime, language)} - {event.title}
                 </Text>
                 {event.location ? (
                     <Text
@@ -107,9 +111,11 @@ export const RemindersScreen = ({
 
     return (
         <ScreenLayout
-            title="Reminders"
+            title={t('Reminders')}
             subtitle={
-                <ScreenSubtitle>Keep track of important dates</ScreenSubtitle>
+                <ScreenSubtitle>
+                    {t('Keep track of important dates')}
+                </ScreenSubtitle>
             }
             totalAccessDays={totalAccessDays}
             onMenuPress={onMenuPress}
@@ -136,7 +142,7 @@ export const RemindersScreen = ({
                         ]}
                     >
                         <Pressable
-                            accessibilityLabel="Previous month"
+                            accessibilityLabel={t('Previous month')}
                             onPress={() => viewModel.moveMonth(-1)}
                             style={styles.monthArrow}
                         >
@@ -151,10 +157,10 @@ export const RemindersScreen = ({
                                 { fontSize: 25 * scale },
                             ]}
                         >
-                            {monthNames[viewModel.visibleMonth.getMonth()]}
+                            {t(monthNames[viewModel.visibleMonth.getMonth()])}
                         </Text>
                         <Pressable
-                            accessibilityLabel="Next month"
+                            accessibilityLabel={t('Next month')}
                             onPress={() => viewModel.moveMonth(1)}
                             style={styles.monthArrow}
                         >
@@ -166,7 +172,7 @@ export const RemindersScreen = ({
                     </View>
                     <View style={styles.yearRow}>
                         <Pressable
-                            accessibilityLabel="Choose month and year"
+                            accessibilityLabel={t('Choose month and year')}
                             accessibilityRole="button"
                             onPress={() => setIsMonthYearModalVisible(true)}
                             style={styles.calendarButton}
@@ -183,7 +189,10 @@ export const RemindersScreen = ({
                 </View>
 
                 <View style={styles.weekDays}>
-                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                    {(language === 'pt'
+                        ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+                        : ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+                    ).map((day, index) => (
                         <Text key={`${day}-${index}`} style={styles.weekDay}>
                             {day}
                         </Text>
@@ -225,7 +234,9 @@ export const RemindersScreen = ({
                             <Pressable
                                 key={`day-${index}`}
                                 accessibilityLabel={
-                                    day ? `Select day ${day}` : undefined
+                                    day
+                                        ? t('Select day {{day}}', { day })
+                                        : undefined
                                 }
                                 accessibilityRole={day ? 'button' : undefined}
                                 accessibilityState={
@@ -280,7 +291,7 @@ export const RemindersScreen = ({
                     <Text
                         style={[styles.sectionTitle, { fontSize: 21 * scale }]}
                     >
-                        Upcoming events
+                        {t('Upcoming events')}
                     </Text>
                     {renderEvents(viewModel.eventsForSelectedDate)}
                     {viewModel.eventsForSelectedDate.length === 0 ? (
@@ -288,8 +299,8 @@ export const RemindersScreen = ({
                             style={[styles.emptyText, { fontSize: 15 * scale }]}
                         >
                             {viewModel.events.length === 0
-                                ? 'No events yet.'
-                                : 'No events for this day.'}
+                                ? t('No events yet.')
+                                : t('No events for this day.')}
                         </Text>
                     ) : null}
                 </View>
@@ -298,7 +309,7 @@ export const RemindersScreen = ({
                     <Text
                         style={[styles.sectionTitle, { fontSize: 21 * scale }]}
                     >
-                        Upcoming holidays
+                        {t('Upcoming holidays')}
                     </Text>
                     {viewModel.holidaysForSelectedDate.length > 0 ? (
                         renderEvents(viewModel.holidaysForSelectedDate)
@@ -306,7 +317,7 @@ export const RemindersScreen = ({
                         <Text
                             style={[styles.emptyText, { fontSize: 15 * scale }]}
                         >
-                            No upcoming holidays.
+                            {t('No upcoming holidays.')}
                         </Text>
                     )}
                 </View>
@@ -314,7 +325,7 @@ export const RemindersScreen = ({
                     <Text
                         style={[styles.sectionTitle, { fontSize: 21 * scale }]}
                     >
-                        Upcoming important days
+                        {t('Upcoming important days')}
                     </Text>
                     {viewModel.importantDaysForSelectedDate.length > 0 ? (
                         renderEvents(viewModel.importantDaysForSelectedDate)
@@ -322,7 +333,7 @@ export const RemindersScreen = ({
                         <Text
                             style={[styles.emptyText, { fontSize: 15 * scale }]}
                         >
-                            No important days yet.
+                            {t('No important days yet.')}
                         </Text>
                     )}
                 </View>
@@ -344,8 +355,8 @@ export const RemindersScreen = ({
                     if (editingEvent) setEditingEvent(null)
                     else onCloseAddEventModal()
                 }}
-                title={editingEvent ? 'Edit event' : 'Add event'}
-                submitLabel={editingEvent ? 'Save event' : 'Add event'}
+                title={t(editingEvent ? 'Edit event' : 'Add event')}
+                submitLabel={t(editingEvent ? 'Save event' : 'Add event')}
                 showEventDetails
                 showReminderType
                 onCreateItem={viewModel.addEvent}

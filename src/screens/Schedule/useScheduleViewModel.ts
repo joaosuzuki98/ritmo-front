@@ -9,6 +9,7 @@ import {
 } from './schedule.utils'
 import { findEventScheduleConflict } from '../../utils/scheduleConflict'
 import { getScheduleDateTime } from './scheduleTime'
+import { useTranslation } from '../../localization/useTranslation'
 
 const monthNames = [
     'January',
@@ -81,10 +82,8 @@ export const getHourLabel = (hour: number): string => {
 export const parseScheduleHour = (time: string): number =>
     Number(time.slice(0, 2))
 
-const getScheduleConflictError = (title: string): Error =>
-    new Error(`This time overlaps with “${title}”.`)
-
 export const useScheduleViewModel = (currentUserId: string) => {
+    const { language, t } = useTranslation()
     const today = startOfDay(new Date())
     const [selectedDate, setSelectedDate] = useState(today)
     const [calendarMonth, setCalendarMonth] = useState(
@@ -218,7 +217,12 @@ export const useScheduleViewModel = (currentUserId: string) => {
             existingEvents,
             existingHabits,
         )
-        if (conflict) throw getScheduleConflictError(conflict.title)
+        if (conflict)
+            throw new Error(
+                t('This time overlaps with “{{eventTitle}}”.', {
+                    eventTitle: conflict.title,
+                }),
+            )
 
         await database.write(async () => {
             await database.get<Event>('events').create(event => {
@@ -278,7 +282,12 @@ export const useScheduleViewModel = (currentUserId: string) => {
             existingEvents,
             existingHabits,
         )
-        if (conflict) throw getScheduleConflictError(conflict.title)
+        if (conflict)
+            throw new Error(
+                t('This time overlaps with “{{eventTitle}}”.', {
+                    eventTitle: conflict.title,
+                }),
+            )
 
         await database.write(async () => {
             await event.update(record => {
@@ -301,8 +310,14 @@ export const useScheduleViewModel = (currentUserId: string) => {
     return {
         calendarMonth,
         entries,
-        formatScheduleDate,
-        formatMonthLabel,
+        formatScheduleDate: (date: Date) =>
+            language === 'pt'
+                ? `${date.getDate()} de ${t(monthNames[date.getMonth()])}`
+                : formatScheduleDate(date),
+        formatMonthLabel: (date: Date) =>
+            language === 'pt'
+                ? `${t(monthNames[date.getMonth()])} ${date.getFullYear()}`
+                : formatMonthLabel(date),
         getCalendarDays,
         getHourLabel,
         addScheduleItem,

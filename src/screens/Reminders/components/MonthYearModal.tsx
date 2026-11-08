@@ -13,6 +13,7 @@ import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type MonthYearModalProps = {
     isVisible: boolean
@@ -43,6 +44,7 @@ export const MonthYearModal = ({
     onSelectMonth,
 }: MonthYearModalProps) => {
     const { width } = useWindowDimensions()
+    const { t } = useTranslation()
     const scale = getResponsiveScale(width)
     const [year, setYear] = useState(selectedMonth.getFullYear())
 
@@ -59,7 +61,7 @@ export const MonthYearModal = ({
         >
             <View style={styles.overlay}>
                 <Pressable
-                    accessibilityLabel="Close month selector"
+                    accessibilityLabel={t('Close month selector')}
                     onPress={onClose}
                     style={styles.backdrop}
                 />
@@ -75,10 +77,10 @@ export const MonthYearModal = ({
                 >
                     <View style={styles.header}>
                         <Text style={[styles.title, { fontSize: 25 * scale }]}>
-                            Choose a month
+                            {t('Choose a month')}
                         </Text>
                         <Pressable
-                            accessibilityLabel="Close month selector"
+                            accessibilityLabel={t('Close month selector')}
                             accessibilityRole="button"
                             onPress={onClose}
                             style={styles.closeButton}
@@ -89,7 +91,7 @@ export const MonthYearModal = ({
 
                     <View style={styles.yearHeader}>
                         <Pressable
-                            accessibilityLabel="Previous year"
+                            accessibilityLabel={t('Previous year')}
                             accessibilityRole="button"
                             onPress={() => setYear(current => current - 1)}
                             style={styles.yearButton}
@@ -100,7 +102,7 @@ export const MonthYearModal = ({
                             {year}
                         </Text>
                         <Pressable
-                            accessibilityLabel="Next year"
+                            accessibilityLabel={t('Next year')}
                             accessibilityRole="button"
                             onPress={() => setYear(current => current + 1)}
                             style={styles.yearButton}
@@ -117,7 +119,13 @@ export const MonthYearModal = ({
 
                             return (
                                 <Pressable
-                                    accessibilityLabel={`Select ${month} ${year}`}
+                                    accessibilityLabel={t(
+                                        'Select {{month}} {{year}}',
+                                        {
+                                            month: t(month),
+                                            year,
+                                        },
+                                    )}
                                     accessibilityRole="button"
                                     accessibilityState={{
                                         selected: isSelected,
@@ -140,7 +148,7 @@ export const MonthYearModal = ({
                                                 styles.selectedMonthText,
                                         ]}
                                     >
-                                        {month}
+                                        {t(month)}
                                     </Text>
                                 </Pressable>
                             )

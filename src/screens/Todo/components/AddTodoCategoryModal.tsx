@@ -12,6 +12,7 @@ import {
     addTodoCategorySchema,
     type AddTodoCategoryFormData,
 } from '../addTodoCategorySchema'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type AddTodoCategoryModalProps = {
     isVisible: boolean
@@ -24,6 +25,7 @@ export const AddTodoCategoryModal = ({
     onClose,
     onCreateCategory,
 }: AddTodoCategoryModalProps) => {
+    const { t } = useTranslation()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const {
@@ -68,12 +70,12 @@ export const AddTodoCategoryModal = ({
 
     return (
         <BottomSheetLayout
-            closeAccessibilityLabel="Close category form"
+            closeAccessibilityLabel={t('Close category form')}
             heightMode="fixed"
             isCloseDisabled={isSubmitting}
             isVisible={isVisible}
             onClose={handleClose}
-            title="New category"
+            title={t('New category')}
         >
             <ScrollView
                 contentContainerStyle={styles.content}
@@ -83,19 +85,19 @@ export const AddTodoCategoryModal = ({
             >
                 <View>
                     <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                        Category name
+                        {t('Category name')}
                     </Text>
                     <Controller
                         control={control}
                         name="name"
                         render={({ field }) => (
                             <FormTextInput
-                                accessibilityLabel="Category name"
+                                accessibilityLabel={t('Category name')}
                                 autoCapitalize="words"
                                 onBlur={field.onBlur}
                                 onChangeText={field.onChange}
                                 onSubmitEditing={submitCategory}
-                                placeholder="Ex.: Personal"
+                                placeholder={t('Ex.: Personal')}
                                 returnKeyType="done"
                                 hasError={Boolean(errors.name)}
                                 value={field.value}
@@ -109,7 +111,7 @@ export const AddTodoCategoryModal = ({
                                 styles.errorText,
                             ]}
                         >
-                            {errors.name.message}
+                            {t(errors.name.message ?? '')}
                         </Text>
                     ) : null}
                     {submitError ? (
@@ -119,16 +121,16 @@ export const AddTodoCategoryModal = ({
                                 styles.errorText,
                             ]}
                         >
-                            {submitError}
+                            {t(submitError)}
                         </Text>
                     ) : null}
                 </View>
                 <FormActionButton
-                    accessibilityLabel="Create category"
+                    accessibilityLabel={t('Create category')}
                     disabled={isSubmitting}
                     isLoading={isSubmitting}
                     onPress={submitCategory}
-                    title="Create category"
+                    title={t('Create category')}
                     containerStyle={styles.submitButton}
                 />
             </ScrollView>

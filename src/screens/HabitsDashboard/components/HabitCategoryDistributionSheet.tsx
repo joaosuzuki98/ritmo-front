@@ -14,6 +14,7 @@ import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import type { HabitCategoryViewData } from '../habitDashboard.types'
 import { buildHabitCategoryDistribution } from '../habitCategoryDistribution'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type HabitCategoryDistributionSheetProps = {
     habits: readonly HabitCategoryViewData[]
@@ -35,6 +36,7 @@ export const HabitCategoryDistributionSheet = ({
     onClose,
 }: HabitCategoryDistributionSheetProps) => {
     const { width } = useWindowDimensions()
+    const { t } = useTranslation()
     const scale = getResponsiveScale(width)
     const groups = useMemo(
         () => buildHabitCategoryDistribution(habits),
@@ -44,11 +46,11 @@ export const HabitCategoryDistributionSheet = ({
 
     return (
         <BottomSheetLayout
-            closeAccessibilityLabel="Close category distribution"
+            closeAccessibilityLabel={t('Close category distribution')}
             headerStyle={{ marginBottom: spacing.md * scale }}
             isVisible={isVisible}
             onClose={onClose}
-            title="Habit categories"
+            title={t('Habit categories')}
             heightMode="fixed"
             heightRatio={0.76}
             shouldAvoidKeyboard={false}
@@ -64,17 +66,19 @@ export const HabitCategoryDistributionSheet = ({
                             { paddingVertical: spacing.lg * scale },
                         ]}
                     >
-                        No habits to group.
+                        {t('No habits to group.')}
                     </Text>
                 ) : (
                     groups.map(group => (
                         <View
                             key={group.label}
-                            accessibilityLabel={`${group.label}, ${
-                                group.percentage
-                            } percent, ${group.habits.length} ${
-                                group.habits.length === 1 ? 'habit' : 'habits'
-                            }`}
+                            accessibilityLabel={`${group.label}, ${t(
+                                '{{percentage}} percent, {{count}} habits',
+                                {
+                                    percentage: group.percentage,
+                                    count: group.habits.length,
+                                },
+                            )}`}
                             style={[
                                 styles.categoryCard,
                                 {
@@ -99,10 +103,9 @@ export const HabitCategoryDistributionSheet = ({
                                             marginTop: spacing.xxs * scale,
                                         }}
                                     >
-                                        {group.habits.length}{' '}
                                         {group.habits.length === 1
-                                            ? 'habit'
-                                            : 'habits'}
+                                            ? t('habit')
+                                            : t('habits')}
                                     </Text>
                                 </View>
                                 <Text style={styles.categoryPercentage}>
@@ -111,7 +114,10 @@ export const HabitCategoryDistributionSheet = ({
                             </View>
                             <View
                                 accessible
-                                accessibilityLabel={`${group.percentage}% of habits`}
+                                accessibilityLabel={t(
+                                    '{{percentage}}% of habits',
+                                    { percentage: group.percentage },
+                                )}
                                 accessibilityRole="progressbar"
                                 accessibilityValue={{
                                     min: 0,

@@ -38,6 +38,7 @@ import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { theme } from '../../../styles/theme'
 import { typography } from '../../../styles/typography'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type HabitCardProps = {
     habit: HabitCardViewData
@@ -82,6 +83,7 @@ export const HabitCard = ({
     dragTranslationY,
     dragReleaseOffset,
 }: HabitCardProps) => {
+    const { t } = useTranslation()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const habitId = habit.id
@@ -403,12 +405,14 @@ export const HabitCard = ({
                 </View>
             ) : null}
             <Pressable
-                accessibilityLabel={`Open details for ${habit.title}`}
+                accessibilityLabel={t('Open details for {{habitTitle}}', {
+                    habitTitle: habit.title,
+                })}
                 accessibilityHint={
                     habit.isBlocked
-                        ? `Requirement not met: ${habit.blockingHabitTitles.join(
-                              ', ',
-                          )}.`
+                        ? t('Requirement not met: {{habitTitles}}.', {
+                              habitTitles: habit.blockingHabitTitles.join(', '),
+                          })
                         : undefined
                 }
                 accessibilityRole="button"
@@ -475,7 +479,9 @@ export const HabitCard = ({
                                 {habit.isFocusOfDay ? (
                                     <View
                                         accessible
-                                        accessibilityLabel="Focus of the day"
+                                        accessibilityLabel={t(
+                                            'Focus of the day',
+                                        )}
                                     >
                                         <Sun
                                             color={colors.priorityText}
@@ -485,9 +491,12 @@ export const HabitCard = ({
                                     </View>
                                 ) : null}
                                 <Pressable
-                                    accessibilityLabel={`${
-                                        habit.isPaused ? 'Resume' : 'Pause'
-                                    } ${habit.title}`}
+                                    accessibilityLabel={t(
+                                        habit.isPaused
+                                            ? 'Resume {{habitTitle}}'
+                                            : 'Pause {{habitTitle}}',
+                                        { habitTitle: habit.title },
+                                    )}
                                     accessibilityRole="button"
                                     onPress={event => {
                                         event.stopPropagation()
@@ -515,13 +524,14 @@ export const HabitCard = ({
                 </View>
                 {habit.isPrerequisiteOnly ? (
                     <Text style={styles.requirementBadge}>
-                        Required for another habit
+                        {t('Required for another habit')}
                     </Text>
                 ) : null}
                 {habit.isBlocked ? (
                     <Text style={styles.blockedText}>
-                        Requirement not met:{' '}
-                        {habit.blockingHabitTitles.join(', ')}
+                        {t('Requirement not met: {{habitTitles}}', {
+                            habitTitles: habit.blockingHabitTitles.join(', '),
+                        })}
                     </Text>
                 ) : null}
                 <Text
@@ -545,8 +555,9 @@ export const HabitCard = ({
                     ]}
                 >
                     {habit.status === 'completed'
-                        ? 'Completed'
-                        : habit.description?.trim() || 'No description given'}
+                        ? t('Completed')
+                        : habit.description?.trim() ||
+                          t('No description given')}
                 </Text>
                 <View
                     className="absolute flex-row items-center"
@@ -561,7 +572,13 @@ export const HabitCard = ({
                         weight="regular"
                     />
                     <Text
-                        accessibilityLabel={`Streak ${habit.currentStreak} for ${habit.title}`}
+                        accessibilityLabel={t(
+                            'Streak {{count}} for {{habitTitle}}',
+                            {
+                                count: habit.currentStreak,
+                                habitTitle: habit.title,
+                            },
+                        )}
                         className="font-normal"
                         style={{
                             color: habit.isFocusOfDay

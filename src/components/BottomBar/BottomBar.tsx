@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { bottomBarStyles } from './BottomBar.styles'
 import { getResponsiveScale } from '../../styles/responsive'
+import { useTranslation } from '../../localization/useTranslation'
 
 type BottomBarProps = BottomTabBarProps & {
     onAddItem: (routeName: string) => void
@@ -25,6 +26,7 @@ export const BottomBar = ({
 }: BottomBarProps) => {
     const { bottom } = useSafeAreaInsets()
     const { width } = useWindowDimensions()
+    const { t } = useTranslation()
     const scale = getResponsiveScale(width)
     const visibleRoutes = state.routes.filter(
         route => route.name !== 'Settings',
@@ -33,7 +35,7 @@ export const BottomBar = ({
     const isSettingsActive = activeRouteName === 'Settings'
     const addButton = (
         <Pressable
-            accessibilityLabel="Add item"
+            accessibilityLabel={t('Add item')}
             accessibilityRole="button"
             accessibilityState={{ disabled: isSettingsActive }}
             disabled={isSettingsActive}
@@ -65,7 +67,7 @@ export const BottomBar = ({
                     isSettingsActive && bottomBarStyles.addLabelDisabled,
                 ]}
             >
-                Add
+                {t('Add')}
             </Text>
         </Pressable>
     )
@@ -80,7 +82,9 @@ export const BottomBar = ({
         >
             {visibleRoutes.map((route, index) => {
                 const isFocused = activeRouteName === route.name
-                const label = descriptors[route.key].options.title ?? route.name
+                const label = t(
+                    descriptors[route.key].options.title ?? route.name,
+                )
                 const onPress = () => navigation.navigate(route.name)
 
                 const iconColor = isFocused
