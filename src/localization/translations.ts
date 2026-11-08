@@ -305,6 +305,7 @@ const portuguese: Record<string, string> = {
         'Escolha hábitos diferentes para cada requisito.',
     'Close progress form': 'Fechar formulário de progresso',
     'Record today’s progress': 'Registrar o progresso de hoje',
+    'How did it go?': 'Como foi?',
     'What got in the way?': 'O que atrapalhou?',
     Time: 'Horário',
     Observation: 'Observação',
