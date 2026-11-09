@@ -16,7 +16,7 @@ const tableSchema = (config: TableSchemaConfig) =>
     })
 
 export const databaseSchema = appSchema({
-    version: 12,
+    version: 18,
     tables: [
         tableSchema({
             name: 'users',
@@ -24,12 +24,11 @@ export const databaseSchema = appSchema({
                 { name: 'name', type: 'string' },
                 { name: 'mascot_name', type: 'string', isOptional: true },
                 { name: 'email', type: 'string', isIndexed: true },
-                { name: 'password', type: 'string', isOptional: true },
-                { name: 'password_hash', type: 'string', isOptional: true },
-                { name: 'password_salt', type: 'string', isOptional: true },
                 { name: 'total_points', type: 'number' },
                 { name: 'level', type: 'number' },
                 { name: 'is_logged_in', type: 'boolean', isOptional: true },
+                { name: 'total_access_days', type: 'number', isOptional: true },
+                { name: 'last_access_date', type: 'string', isOptional: true },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],
@@ -286,6 +285,43 @@ export const databaseSchema = appSchema({
             columns: [
                 { name: 'user_id', type: 'string', isIndexed: true },
                 { name: 'name', type: 'string' },
+                { name: 'created_at', type: 'number', isOptional: true },
+                { name: 'updated_at', type: 'number', isOptional: true },
+            ],
+        }),
+        tableSchema({
+            name: 'notification_preferences',
+            columns: [
+                { name: 'user_id', type: 'string', isIndexed: true },
+                { name: 'notify_habit_start', type: 'boolean' },
+                { name: 'notify_daily_focus', type: 'boolean' },
+                { name: 'notify_priority_habits', type: 'boolean' },
+                {
+                    name: 'notify_low_success_habits',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                {
+                    name: 'notify_weekly_habit_load',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                {
+                    name: 'pending_weekly_habit_load',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                { name: 'minimum_priority', type: 'string', isOptional: true },
+                {
+                    name: 'low_success_notification_state',
+                    type: 'string',
+                    isOptional: true,
+                },
+                {
+                    name: 'pending_habit_analysis_id',
+                    type: 'string',
+                    isOptional: true,
+                },
                 { name: 'created_at', type: 'number', isOptional: true },
                 { name: 'updated_at', type: 'number', isOptional: true },
             ],

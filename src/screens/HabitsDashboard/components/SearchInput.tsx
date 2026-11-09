@@ -6,6 +6,7 @@ import { X } from 'phosphor-react-native'
 import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
 import { typography } from '../../../styles/typography'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type SearchInputProps = {
     value: string
@@ -20,6 +21,7 @@ export const SearchInput = ({
     onClose,
     onClear,
 }: SearchInputProps) => {
+    const { t } = useTranslation()
     const inputRef = useRef<React.ElementRef<typeof FormTextInput>>(null)
     useEffect(() => {
         inputRef.current?.focus()
@@ -28,19 +30,22 @@ export const SearchInput = ({
         <View style={styles.container}>
             <FormTextInput
                 ref={inputRef}
-                accessibilityLabel="Search habits by title"
+                accessibilityLabel={t('Search habits by title')}
                 autoCapitalize="none"
                 onChangeText={onChangeText}
-                placeholder="Search habits"
+                placeholder={t('Search habits')}
                 containerStyle={styles.searchField}
                 value={value}
             />
             {value ? (
-                <Pressable accessibilityLabel="Clear search" onPress={onClear}>
-                    <Text style={styles.clearText}>Clear</Text>
+                <Pressable
+                    accessibilityLabel={t('Clear search')}
+                    onPress={onClear}
+                >
+                    <Text style={styles.clearText}>{t('Clear')}</Text>
                 </Pressable>
             ) : null}
-            <Pressable accessibilityLabel="Close search" onPress={onClose}>
+            <Pressable accessibilityLabel={t('Close search')} onPress={onClose}>
                 <X color={colors.text} size={24} />
             </Pressable>
         </View>

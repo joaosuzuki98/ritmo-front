@@ -27,6 +27,7 @@ export const colors = {
     success: '#79D99B',
     warning: '#F2C94C',
     danger: '#F2779A',
+    dayCount: '#E21E2A',
     priorityText: '#21134D',
     onboardingBackground: '#13141A',
     onboardingMuted: '#5A648E',
@@ -34,5 +35,6 @@ export const colors = {
     onboardingSurface: '#373942',
     onboardingAction: '#283AB0',
     onboardingGreen: '#56E39F',
+    startYourDayGrass: '#14D664',
     passwordSuccess: '#1CDD6C',
 } as const

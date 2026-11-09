@@ -3,6 +3,7 @@ import {
     CheckCircle,
     Flame,
     PencilSimple,
+    Sparkle,
     Trash,
     Warning,
 } from 'phosphor-react-native'
@@ -26,6 +27,7 @@ import { typography } from '../../../styles/typography'
 import type { HabitCardViewData } from '../habitDashboard.types'
 import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
 import { theme } from '../../../styles/theme'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type HabitDetailsModalProps = {
     habit: HabitCardViewData | null
@@ -34,20 +36,21 @@ type HabitDetailsModalProps = {
     onEdit: () => void
     onDelete: () => void
     onLogProgress: () => void
+    onAnalyzeSchedule: () => void
 }
 
-const formatDate = (date?: Date) =>
+const formatDate = (date: Date | undefined, language: 'en' | 'pt') =>
     date
-        ? date.toLocaleDateString(undefined, {
+        ? date.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', {
               day: '2-digit',
               month: 'short',
               year: 'numeric',
           })
         : 'Not set'
 
-const formatTime = (date?: Date) =>
+const formatTime = (date: Date | undefined, language: 'en' | 'pt') =>
     date
-        ? date.toLocaleTimeString(undefined, {
+        ? date.toLocaleTimeString(language === 'pt' ? 'pt-BR' : 'en-US', {
               hour: '2-digit',
               minute: '2-digit',
           })
@@ -63,7 +66,7 @@ const formatDuration = (minutes?: number) => {
 
 const getStatusColor = (status: string) => {
     if (status === 'completed') return colors.success
-    if (status === 'skipped') return colors.danger
+    if (status === 'skipped') return colors.dayCount
     if (status === 'partial') return colors.priorityMedium
     return colors.textMuted
 }
@@ -75,7 +78,9 @@ export const HabitDetailsModal = ({
     onEdit,
     onDelete,
     onLogProgress,
+    onAnalyzeSchedule,
 }: HabitDetailsModalProps) => {
+    const { language, t } = useTranslation()
     const { height, width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const daySize = Math.min(
@@ -108,13 +113,16 @@ export const HabitDetailsModal = ({
             label: 'Success rate',
             value: `${Math.round(habit.successRate ?? 0)}%`,
         },
-        { label: 'Current streak', value: `${habit.currentStreak ?? 0} days` },
+        {
+            label: 'Current streak',
+            value: t('{{count}} days', { count: habit.currentStreak ?? 0 }),
+        },
     ]
 
     return (
         <BottomSheetLayout
             backdropColor={theme.colors.bottomSheetBackdropStrong}
-            closeAccessibilityLabel="Close habit details"
+            closeAccessibilityLabel={t('Close habit details')}
             headerStyle={{ marginBottom: theme.spacing.md }}
             heightMode="fixed"
             isVisible={isVisible}
@@ -130,7 +138,7 @@ export const HabitDetailsModal = ({
                 },
             ]}
             shouldAvoidKeyboard={false}
-            title="Habit details"
+            title={t('Habit details')}
             titleStyle={{
                 fontSize: theme.bottomSheet.detailsTitle.fontSize * scale,
             }}
@@ -139,12 +147,7 @@ export const HabitDetailsModal = ({
                 contentContainerStyle={{ paddingBottom: 24 * scale }}
                 showsVerticalScrollIndicator={false}
             >
-                <View
-                    style={[
-                        styles.titleBlock,
-                        { borderLeftColor: habit.priorityColor },
-                    ]}
-                >
+                <View style={styles.titleBlock}>
                     <View style={styles.titleHeader}>
                         {habit.status === 'completed' ? (
                             <View style={styles.statusIcon}>
@@ -165,7 +168,7 @@ export const HabitDetailsModal = ({
                         ) : null}
                         <View style={styles.titleCopy}>
                             <Text
-                                style={[styles.title, { fontSize: 34 * scale }]}
+                                style={[styles.title, { fontSize: 22 * scale }]}
                             >
                                 {habit.title}
                             </Text>
@@ -177,25 +180,44 @@ export const HabitDetailsModal = ({
                         </View>
                         <View style={styles.titleActions}>
                             <Pressable
-                                accessibilityLabel={`Edit ${habit.title}`}
+                                accessibilityLabel={t(
+                                    'Analyze the schedule for {{habitTitle}} with Ask the Stars',
+                                    { habitTitle: habit.title },
+                                )}
+                                accessibilityRole="button"
+                                onPress={onAnalyzeSchedule}
+                                style={styles.titleActionButton}
+                            >
+                                <Sparkle
+                                    color={colors.onboardingPurple}
+                                    size={38 * scale}
+                                    weight="regular"
+                                />
+                            </Pressable>
+                            <Pressable
+                                accessibilityLabel={t('Edit {{habitTitle}}', {
+                                    habitTitle: habit.title,
+                                })}
                                 accessibilityRole="button"
                                 onPress={onEdit}
                                 style={styles.titleActionButton}
                             >
                                 <PencilSimple
                                     color={colors.text}
-                                    size={24 * scale}
+                                    size={38 * scale}
                                 />
                             </Pressable>
                             <Pressable
-                                accessibilityLabel={`Delete ${habit.title}`}
+                                accessibilityLabel={t('Delete {{habitTitle}}', {
+                                    habitTitle: habit.title,
+                                })}
                                 accessibilityRole="button"
                                 onPress={onDelete}
                                 style={styles.titleActionButton}
                             >
                                 <Trash
-                                    color={colors.danger}
-                                    size={24 * scale}
+                                    color={colors.dayCount}
+                                    size={38 * scale}
                                 />
                             </Pressable>
                         </View>
@@ -207,65 +229,93 @@ export const HabitDetailsModal = ({
                         {habit.isFocusOfDay ? (
                             <View style={styles.focusBadge}>
                                 <Text style={styles.focusBadgeText}>
-                                    Focus of the day
+                                    {t('Focus of the day')}
                                 </Text>
                             </View>
                         ) : null}
                         {hasDistractionLock ? (
                             <View style={styles.lockBadge}>
                                 <Text style={styles.lockBadgeText}>
-                                    Distraction lock used
+                                    {t('Distraction lock used')}
                                 </Text>
                             </View>
                         ) : null}
                     </View>
                 ) : null}
 
+                {habit.description ? (
+                    <Text
+                        style={[styles.description, { fontSize: 22 * scale }]}
+                    >
+                        {habit.description}
+                    </Text>
+                ) : null}
+
+                <Text
+                    style={[
+                        styles.priorityText,
+                        { color: habit.priorityColor },
+                    ]}
+                >
+                    {t('Priority')}: {t(habit.priorityLabel)}
+                </Text>
+
                 <FormActionButton
-                    accessibilityLabel={`Record today's progress for ${habit.title}`}
+                    accessibilityLabel={t(
+                        "Record today's progress for {{habitTitle}}",
+                        { habitTitle: habit.title },
+                    )}
                     disabled={habit.isBlocked}
                     onPress={onLogProgress}
                     title={
                         habit.isBlocked
-                            ? 'Complete requirements first'
-                            : 'Record today’s progress'
+                            ? t('Complete requirements first')
+                            : t('Record today’s progress')
                     }
                     containerStyle={styles.logProgressButton}
                 />
 
-                {habit.description ? (
-                    <Text style={styles.description}>{habit.description}</Text>
-                ) : null}
-
                 {habit.dependencyHabitTitle || habit.conditionHabitTitle ? (
                     <>
-                        <Text style={styles.sectionTitle}>Requirements</Text>
+                        <Text style={styles.sectionTitle}>
+                            {t('Requirements')}
+                        </Text>
                         <View style={styles.requirementsBox}>
                             {habit.dependencyHabitTitle ? (
                                 <Text style={styles.requirementText}>
-                                    Complete “{habit.dependencyHabitTitle}”
-                                    first today.
+                                    {t(
+                                        'Complete “{{habitTitle}}” first today.',
+                                        {
+                                            habitTitle:
+                                                habit.dependencyHabitTitle,
+                                        },
+                                    )}
                                 </Text>
                             ) : null}
                             {habit.conditionHabitTitle ? (
                                 <Text style={styles.requirementText}>
-                                    “{habit.conditionHabitTitle}” must be marked
-                                    as{' '}
-                                    {habit.conditionStatus
-                                        ? habitRequirementStatusLabels[
-                                              habit.conditionStatus as keyof typeof habitRequirementStatusLabels
-                                          ]
-                                        : 'the required status'}
-                                    .
+                                    {t(
+                                        '“{{habitTitle}}” must be marked as {{status}}.',
+                                        {
+                                            habitTitle:
+                                                habit.conditionHabitTitle,
+                                            status: habit.conditionStatus
+                                                ? t(
+                                                      habitRequirementStatusLabels[
+                                                          habit.conditionStatus as keyof typeof habitRequirementStatusLabels
+                                                      ],
+                                                  )
+                                                : t('the required status'),
+                                        },
+                                    )}
                                 </Text>
                             ) : null}
                         </View>
                     </>
                 ) : null}
 
-                <Text style={styles.sectionTitle}>Schedule</Text>
+                <Text style={styles.sectionTitle}>{t('Schedule')}</Text>
                 <View style={styles.scheduleDaysSection}>
-                    <Text style={styles.detailLabel}>Days</Text>
                     <View style={styles.scheduleDaysRow}>
                         {weekDays.map(day => {
                             const isSelected = habit.weekDays.includes(day)
@@ -290,7 +340,7 @@ export const HabitDetailsModal = ({
                                                 styles.scheduleDayTextSelected,
                                         ]}
                                     >
-                                        {weekDayLabels[day].slice(0, 2)}
+                                        {t(weekDayLabels[day]).slice(0, 2)}
                                     </Text>
                                 </View>
                             )
@@ -301,18 +351,18 @@ export const HabitDetailsModal = ({
                     {[
                         {
                             label: 'Estimated duration',
-                            value: formatDuration(
-                                habit.estimatedDurationMinutes,
+                            value: t(
+                                formatDuration(habit.estimatedDurationMinutes),
                             ),
                         },
                         {
                             label: 'Preferred time',
-                            value: formatTime(habit.preferredTime),
+                            value: formatTime(habit.preferredTime, language),
                         },
                     ].map(detail => (
                         <View key={detail.label} style={styles.detailItem}>
                             <Text style={styles.detailLabel}>
-                                {detail.label}
+                                {t(detail.label)}
                             </Text>
                             <Text style={styles.detailValue}>
                                 {detail.value}
@@ -323,21 +373,23 @@ export const HabitDetailsModal = ({
 
                 {habit.seasonalStart || habit.seasonalEnd ? (
                     <View style={styles.seasonRow}>
-                        <Text style={styles.detailLabel}>Season</Text>
+                        <Text style={styles.detailLabel}>{t('Season')}</Text>
                         <Text style={styles.detailValue}>
-                            {formatDate(habit.seasonalStart)}
+                            {formatDate(habit.seasonalStart, language)}
                             {'  -  '}
-                            {formatDate(habit.seasonalEnd)}
+                            {formatDate(habit.seasonalEnd, language)}
                         </Text>
                     </View>
                 ) : null}
 
-                <Text style={styles.sectionTitle}>Progress</Text>
+                <Text style={styles.sectionTitle}>{t('Progress')}</Text>
                 <View style={styles.statsRow}>
                     {stats.map(stat => (
                         <View key={stat.label} style={styles.statItem}>
                             <Text style={styles.statValue}>{stat.value}</Text>
-                            <Text style={styles.statLabel}>{stat.label}</Text>
+                            <Text style={styles.statLabel}>
+                                {t(stat.label)}
+                            </Text>
                         </View>
                     ))}
                 </View>
@@ -349,11 +401,13 @@ export const HabitDetailsModal = ({
                         weight="fill"
                     />
                     <Text style={styles.streakText}>
-                        Longest streak: {habit.longestStreak ?? 0} days
+                        {t('Longest streak: {{count}} days', {
+                            count: habit.longestStreak ?? 0,
+                        })}
                     </Text>
                 </View>
 
-                <Text style={styles.sectionTitle}>Recent activity</Text>
+                <Text style={styles.sectionTitle}>{t('Recent activity')}</Text>
                 {history.length ? (
                     <View style={styles.historyGrid}>
                         {history.slice(0, 14).map((record, index) => (
@@ -362,14 +416,14 @@ export const HabitDetailsModal = ({
                                 style={[
                                     styles.historyItem,
                                     {
-                                        borderColor: getStatusColor(
+                                        backgroundColor: `${getStatusColor(
                                             record.status,
-                                        ),
+                                        )}1A`,
                                     },
                                 ]}
                             >
                                 <Text style={styles.historyDate}>
-                                    {formatDate(record.date)}
+                                    {formatDate(record.date, language)}
                                 </Text>
                                 <Text
                                     style={[
@@ -381,20 +435,25 @@ export const HabitDetailsModal = ({
                                         },
                                     ]}
                                 >
-                                    {
+                                    {t(
                                         getHabitStatusPresentation(
                                             record.status,
-                                        ).label
-                                    }
+                                        ).label,
+                                    )}
                                 </Text>
                                 {record.completionTime ? (
                                     <Text style={styles.historyDetail}>
-                                        {formatTime(record.completionTime)}
+                                        {formatTime(
+                                            record.completionTime,
+                                            language,
+                                        )}
                                     </Text>
                                 ) : null}
                                 {record.incompletionReason ? (
                                     <Text style={styles.historyDetail}>
-                                        Reason: {record.incompletionReason}
+                                        {t('Reason: {{reason}}', {
+                                            reason: record.incompletionReason,
+                                        })}
                                     </Text>
                                 ) : null}
                                 {record.note ? (
@@ -407,20 +466,24 @@ export const HabitDetailsModal = ({
                     </View>
                 ) : (
                     <Text style={styles.emptyHistory}>
-                        No activity recorded yet.
+                        {t('No activity recorded yet.')}
                     </Text>
                 )}
 
                 {latestNote ? (
                     <View style={styles.noteBox}>
-                        <Text style={styles.detailLabel}>Latest note</Text>
+                        <Text style={styles.detailLabel}>
+                            {t('Latest note')}
+                        </Text>
                         <Text style={styles.noteText}>{latestNote}</Text>
                     </View>
                 ) : null}
 
                 {habit.createdAt ? (
                     <Text style={styles.createdText}>
-                        Created {formatDate(habit.createdAt)}
+                        {t('Created {{date}}', {
+                            date: formatDate(habit.createdAt, language),
+                        })}
                     </Text>
                 ) : null}
             </ScrollView>
@@ -437,9 +500,7 @@ const styles = StyleSheet.create({
         paddingTop: 18,
     },
     titleBlock: {
-        borderLeftWidth: 5,
         marginBottom: 10,
-        paddingLeft: 14,
     },
     titleHeader: {
         alignItems: 'center',
@@ -477,7 +538,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         marginTop: 16,
     },
-    logProgressButton: { marginTop: 24 },
+    logProgressButton: { marginTop: 12 },
     focusBadge: {
         backgroundColor: colors.accent,
         borderRadius: 8,
@@ -505,7 +566,13 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 18,
         lineHeight: 27,
-        marginTop: 22,
+        marginTop: 10,
+    },
+    priorityText: {
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
+        fontWeight: '600',
+        marginTop: 8,
     },
     requirementsBox: {
         backgroundColor: colors.surfaceMuted,
@@ -625,8 +692,6 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     historyItem: {
-        backgroundColor: colors.surfaceMuted,
-        borderLeftWidth: 4,
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 10,

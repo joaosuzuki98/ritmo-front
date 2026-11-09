@@ -12,6 +12,7 @@ import { globalStyles } from '../../../styles/globalStyles'
 import { BottomSheetLayout } from '../../../components/BottomSheetLayout'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type AddTodoTaskModalProps = {
     isVisible: boolean
@@ -24,6 +25,7 @@ export const AddTodoTaskModal = ({
     onClose,
     onCreateTask,
 }: AddTodoTaskModalProps) => {
+    const { t } = useTranslation()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const {
@@ -66,12 +68,12 @@ export const AddTodoTaskModal = ({
 
     return (
         <BottomSheetLayout
-            closeAccessibilityLabel="Close task modal"
+            closeAccessibilityLabel={t('Close task modal')}
             heightMode="fixed"
             isCloseDisabled={isSubmitting}
             isVisible={isVisible}
             onClose={handleClose}
-            title="Add task"
+            title={t('Add task')}
         >
             <ScrollView
                 contentContainerStyle={styles.content}
@@ -81,20 +83,20 @@ export const AddTodoTaskModal = ({
             >
                 <View>
                     <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                        What do you need to do?
+                        {t('What do you need to do?')}
                     </Text>
                     <Controller
                         control={control}
                         name="title"
                         render={({ field }) => (
                             <FormTextInput
-                                accessibilityLabel="Task name"
+                                accessibilityLabel={t('Task name')}
                                 autoCapitalize="sentences"
                                 autoFocus
                                 onBlur={field.onBlur}
                                 onChangeText={field.onChange}
                                 onSubmitEditing={submitTask}
-                                placeholder="e.g. Review notes"
+                                placeholder={t('e.g. Review notes')}
                                 returnKeyType="done"
                                 hasError={Boolean(errors.title)}
                                 value={field.value}
@@ -108,7 +110,7 @@ export const AddTodoTaskModal = ({
                                 styles.errorText,
                             ]}
                         >
-                            {errors.title.message}
+                            {t(errors.title.message ?? '')}
                         </Text>
                     ) : null}
                     {submitError ? (
@@ -118,16 +120,16 @@ export const AddTodoTaskModal = ({
                                 styles.errorText,
                             ]}
                         >
-                            {submitError}
+                            {t(submitError)}
                         </Text>
                     ) : null}
                 </View>
                 <FormActionButton
-                    accessibilityLabel="Add task"
+                    accessibilityLabel={t('Add task')}
                     disabled={isSubmitting}
                     isLoading={isSubmitting}
                     onPress={submitTask}
-                    title="ADD TASK"
+                    title={t('ADD TASK')}
                     containerStyle={styles.submitButton}
                 />
             </ScrollView>
@@ -143,7 +145,7 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
     },
     label: {
-        marginTop: spacing.lg,
+        marginTop: spacing.md,
     },
     errorText: { marginTop: spacing.xs },
     submitButton: { marginTop: spacing.lg },

@@ -11,6 +11,7 @@ import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type DaySelectorProps = {
     weekDay: WeekDay
@@ -19,6 +20,7 @@ type DaySelectorProps = {
 
 export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
     const { width } = useWindowDimensions()
+    const { t } = useTranslation()
     const scale = getResponsiveScale(width)
     return (
         <View
@@ -29,7 +31,7 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
             ]}
         >
             <Pressable
-                accessibilityLabel="Previous day"
+                accessibilityLabel={t('Previous day')}
                 onPress={() => onChange(cycleWeekDay(weekDay - 1))}
                 style={[
                     styles.dayButton,
@@ -54,10 +56,10 @@ export const DaySelector = ({ weekDay, onChange }: DaySelectorProps) => {
                 />
             </Pressable>
             <View style={styles.subtitle}>
-                <ScreenSubtitle>{weekDayLabels[weekDay]}</ScreenSubtitle>
+                <ScreenSubtitle>{t(weekDayLabels[weekDay])}</ScreenSubtitle>
             </View>
             <Pressable
-                accessibilityLabel="Next day"
+                accessibilityLabel={t('Next day')}
                 onPress={() => onChange(cycleWeekDay(weekDay + 1))}
                 style={[
                     styles.dayButton,

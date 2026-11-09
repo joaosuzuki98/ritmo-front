@@ -26,3 +26,17 @@ export const incompletionReasonOptions = incompletionReasonCodes.map(value => ({
 export const getIncompletionReasonLabel = (
     value?: IncompletionReasonCode,
 ): string | undefined => (value ? reasonLabels[value] : undefined)
+
+export const findIncompletionReasonId = (
+    reasons: readonly { id: string; description: string }[],
+    value?: IncompletionReasonCode,
+): string | undefined => {
+    const label = getIncompletionReasonLabel(value)
+    if (!label) return undefined
+
+    const normalizedLabel = label.trim().toLocaleLowerCase()
+    return reasons.find(
+        reason =>
+            reason.description.trim().toLocaleLowerCase() === normalizedLabel,
+    )?.id
+}

@@ -73,14 +73,20 @@ export type HabitCardViewData = {
     isTemporarilySorted: boolean
 }
 
+export type HabitCategoryViewData = Pick<
+    HabitCardViewData,
+    'id' | 'title' | 'categoryLabel'
+>
+
 export type HabitsDashboardScreenProps = {
     currentUser: User
+    totalAccessDays: number
     title?: string
     initialWeekDay?: WeekDay
     isAddHabitModalVisible?: boolean
     onOpenAddHabitModal?: () => void
     onCloseAddHabitModal?: () => void
+    onAnalyzeSchedule?: (habitId: string) => void
+    onWeeklyLoadAnalysis?: () => void
     onMenuPress?: () => void
-    isDoubleTapHintVisible?: boolean
-    onCloseDoubleTapHint?: () => void
 }

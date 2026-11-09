@@ -2,12 +2,14 @@ import { Pressable, Text, View, useWindowDimensions } from 'react-native'
 import { Fire, Lightning, List } from 'phosphor-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import UserMascot from '../../assets/images/mascot/default-mascot.svg'
 import { topBarStyles } from './TopBar.styles'
 import { getResponsiveScale } from '../../styles/responsive'
+import { useTranslation } from '../../localization/useTranslation'
 
 export type TopBarProps = {
     userName: string
-    level: number
+    totalAccessDays: number
     totalPoints: number
     onProfilePress: () => void
     onMenuPress: () => void
@@ -15,13 +17,14 @@ export type TopBarProps = {
 
 export const TopBar = ({
     userName,
-    level,
+    totalAccessDays,
     totalPoints,
     onProfilePress,
     onMenuPress,
 }: TopBarProps) => {
     const { width } = useWindowDimensions()
     const { top } = useSafeAreaInsets()
+    const { t } = useTranslation()
     const scale = getResponsiveScale(width)
 
     return (
@@ -37,7 +40,7 @@ export const TopBar = ({
             accessibilityRole="header"
         >
             <Pressable
-                accessibilityLabel="Open user profile"
+                accessibilityLabel={t('Open user profile')}
                 accessibilityRole="button"
                 onPress={onProfilePress}
                 style={[
@@ -48,7 +51,9 @@ export const TopBar = ({
                         width: 64 * scale,
                     },
                 ]}
-            />
+            >
+                <UserMascot height={56 * scale} width={56 * scale} />
+            </Pressable>
             <View style={[topBarStyles.identity, { marginLeft: 12 * scale }]}>
                 <Text
                     numberOfLines={1}
@@ -85,12 +90,12 @@ export const TopBar = ({
                             { fontSize: 24 * scale },
                         ]}
                     >
-                        {level}
+                        {totalAccessDays}
                     </Text>
                 </View>
             </View>
             <Pressable
-                accessibilityLabel="Open menu"
+                accessibilityLabel={t('Open menu')}
                 accessibilityRole="button"
                 onPress={onMenuPress}
                 style={[

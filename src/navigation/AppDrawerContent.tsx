@@ -1,45 +1,72 @@
 import { DrawerContentScrollView } from '@react-navigation/drawer'
 import type { DrawerContentComponentProps } from '@react-navigation/drawer'
 import {
-    Bell,
-    CalendarBlank,
     ChartBar,
-    CheckSquare,
     GearSix,
     SignOut,
-    Stack,
+    Sparkle,
+    Storefront,
+    Trophy,
     UserCircle,
+    UsersThree,
 } from 'phosphor-react-native'
 import { useContext } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import UserMascot from '../assets/images/mascot/default-mascot.svg'
 import type { User } from '../database'
 import { colors } from '../styles/colors'
 import { spacing } from '../styles/spacing'
 import { typography } from '../styles/typography'
 import { AppDrawerLogoutContext } from './AppDrawerLogoutContext'
 import type { AppTabParamList } from './types'
+import { useTranslation } from '../localization/useTranslation'
 
 type AppDrawerContentProps = DrawerContentComponentProps & {
     currentUser: User
 }
 
-const menuItems = [
-    { label: 'Habits', route: 'Habits', icon: 'habits', isAvailable: true },
+type MenuRoute = keyof AppTabParamList | 'AskTheStars'
+type MenuItem = {
+    label: string
+    route: MenuRoute | null
+    icon:
+        | 'profile'
+        | 'ranking'
+        | 'friends'
+        | 'astrology'
+        | 'statistics'
+        | 'shop'
+        | 'settings'
+    isAvailable: boolean
+}
+
+const menuItems: MenuItem[] = [
     {
-        label: 'Schedule',
-        route: 'Schedule',
-        icon: 'schedule',
-        isAvailable: true,
+        label: 'Profile',
+        route: null,
+        icon: 'profile',
+        isAvailable: false,
     },
     {
-        label: 'Reminders',
-        route: 'Reminders',
-        icon: 'reminders',
+        label: 'Leaderboard',
+        route: null,
+        icon: 'ranking',
+        isAvailable: false,
+    },
+    {
+        label: 'Friends',
+        route: null,
+        icon: 'friends',
+        isAvailable: false,
+    },
+    {
+        label: 'Ask the Stars',
+        route: 'AskTheStars',
+        icon: 'astrology',
         isAvailable: true,
     },
-    { label: 'Todo', route: 'Todo', icon: 'todo', isAvailable: true },
     {
         label: 'Statistics',
         route: null,
@@ -47,23 +74,30 @@ const menuItems = [
         isAvailable: false,
     },
     {
-        label: 'Settings',
+        label: 'Shop',
         route: null,
-        icon: 'settings',
+        icon: 'shop',
         isAvailable: false,
     },
-] as const
+    {
+        label: 'Settings',
+        route: 'Settings',
+        icon: 'settings',
+        isAvailable: true,
+    },
+]
 
-type MenuIconName = (typeof menuItems)[number]['icon']
+type MenuIconName = MenuItem['icon']
 
 const getMenuIcon = (name: MenuIconName, color: string) => {
     const iconProps = { color, size: 22, weight: 'regular' as const }
 
-    if (name === 'habits') return <Stack {...iconProps} />
-    if (name === 'schedule') return <CalendarBlank {...iconProps} />
-    if (name === 'reminders') return <Bell {...iconProps} />
-    if (name === 'todo') return <CheckSquare {...iconProps} />
+    if (name === 'profile') return <UserCircle {...iconProps} />
+    if (name === 'ranking') return <Trophy {...iconProps} />
+    if (name === 'friends') return <UsersThree {...iconProps} />
+    if (name === 'astrology') return <Sparkle {...iconProps} />
     if (name === 'statistics') return <ChartBar {...iconProps} />
+    if (name === 'shop') return <Storefront {...iconProps} />
     return <GearSix {...iconProps} />
 }
 
@@ -73,14 +107,24 @@ export const AppDrawerContent = ({
     currentUser,
 }: AppDrawerContentProps) => {
     const onLogout = useContext(AppDrawerLogoutContext)
+    const { t } = useTranslation()
     const { bottom } = useSafeAreaInsets()
     const mainRoute = state.routes.find(route => route.name === 'Main')
     const mainState = mainRoute?.state
+    const drawerRouteName = state.routes[state.index]?.name
     const activeRouteName =
-        mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
+        drawerRouteName === 'StartYourDay' || drawerRouteName === 'AskTheStars'
+            ? drawerRouteName
+            : mainState?.routes?.[mainState.index ?? 0]?.name ?? 'Habits'
 
-    const onSelectRoute = (route: keyof AppTabParamList) => {
-        navigation.navigate('Main', { screen: route })
+    const onSelectRoute = (route: MenuRoute) => {
+        navigation.closeDrawer()
+        if (route === 'AskTheStars')
+            navigation.navigate('AskTheStars', {
+                habitId: undefined,
+                mode: undefined,
+            })
+        else navigation.navigate('Main', { screen: route })
     }
 
     return (
@@ -91,11 +135,7 @@ export const AppDrawerContent = ({
             >
                 <View style={styles.profile}>
                     <View style={styles.profileIcon}>
-                        <UserCircle
-                            color={colors.textMuted}
-                            size={42}
-                            weight="regular"
-                        />
+                        <UserMascot height={42} width={42} />
                     </View>
                     <View style={styles.profileIdentity}>
                         <Text numberOfLines={1} style={styles.profileName}>
@@ -107,15 +147,12 @@ export const AppDrawerContent = ({
                     </View>
                 </View>
 
-                <Text style={styles.sectionLabel}>MENU PRINCIPAL</Text>
                 <View style={styles.items}>
                     {menuItems.map(item => {
                         const isActive = item.route === activeRouteName
-                        const itemColor = item.isAvailable
-                            ? isActive
-                                ? colors.text
-                                : colors.textMuted
-                            : colors.priorityFallback
+                        const itemColor = isActive
+                            ? colors.text
+                            : colors.textMuted
 
                         return (
                             <Pressable
@@ -132,9 +169,6 @@ export const AppDrawerContent = ({
                                 style={[
                                     styles.item,
                                     isActive ? styles.activeItem : null,
-                                    !item.isAvailable
-                                        ? styles.disabledItem
-                                        : null,
                                 ]}
                             >
                                 {getMenuIcon(item.icon, itemColor)}
@@ -144,13 +178,8 @@ export const AppDrawerContent = ({
                                         { color: itemColor },
                                     ]}
                                 >
-                                    {item.label}
+                                    {t(item.label)}
                                 </Text>
-                                {!item.isAvailable ? (
-                                    <Text style={styles.comingSoon}>
-                                        EM BREVE
-                                    </Text>
-                                ) : null}
                             </Pressable>
                         )
                     })}
@@ -162,7 +191,7 @@ export const AppDrawerContent = ({
             >
                 <View style={styles.separator} />
                 <Pressable
-                    accessibilityLabel="Logout"
+                    accessibilityLabel={t('Logout')}
                     accessibilityRole="button"
                     onPress={onLogout}
                     style={({ pressed }) => [
@@ -173,12 +202,12 @@ export const AppDrawerContent = ({
                 >
                     <View style={styles.logoutContent}>
                         <SignOut
-                            color={colors.danger}
+                            color={colors.dayCount}
                             size={22}
                             weight="regular"
                         />
                         <Text numberOfLines={1} style={styles.logoutLabel}>
-                            Logout
+                            {t('Logout')}
                         </Text>
                     </View>
                 </Pressable>
@@ -205,7 +234,6 @@ const styles = StyleSheet.create({
     },
     profileIcon: {
         alignItems: 'center',
-        backgroundColor: colors.surfaceMuted,
         borderRadius: 24,
         height: 48,
         justifyContent: 'center',
@@ -230,15 +258,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: spacing.xxs,
     },
-    sectionLabel: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1,
-        marginBottom: spacing.sm,
-        marginLeft: spacing.xs,
-    },
     items: { gap: spacing.xxs },
     item: {
         alignItems: 'center',
@@ -248,20 +267,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
     },
     activeItem: { backgroundColor: colors.surfaceMuted },
-    disabledItem: { opacity: 0.7 },
     itemLabel: {
         flex: 1,
         fontFamily: typography.fontFamily,
         fontSize: 15,
         fontWeight: '600',
         marginLeft: spacing.md,
-    },
-    comingSoon: {
-        color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 8,
-        fontWeight: '700',
-        letterSpacing: 0.5,
     },
     bottom: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
     separator: {
@@ -283,7 +294,7 @@ const styles = StyleSheet.create({
     },
     logoutPressed: { backgroundColor: colors.surfaceMuted },
     logoutLabel: {
-        color: colors.danger,
+        color: colors.dayCount,
         fontFamily: typography.fontFamily,
         fontSize: 15,
         fontWeight: '700',

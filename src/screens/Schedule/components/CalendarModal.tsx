@@ -17,6 +17,7 @@ import { colors } from '../../../styles/colors'
 import { getResponsiveScale } from '../../../styles/responsive'
 import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type CalendarModalProps = {
     isVisible: boolean
@@ -27,7 +28,7 @@ type CalendarModalProps = {
     onSelectDate: (date: Date) => void
 }
 
-const weekDayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+const englishWeekDayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 export const CalendarModal = ({
     isVisible,
@@ -38,8 +39,13 @@ export const CalendarModal = ({
     onSelectDate,
 }: CalendarModalProps) => {
     const { width } = useWindowDimensions()
+    const { language, t } = useTranslation()
     const scale = getResponsiveScale(width)
     const days = getCalendarDays(month)
+    const weekDayLabels =
+        language === 'pt'
+            ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+            : englishWeekDayLabels
 
     return (
         <Modal
@@ -50,7 +56,7 @@ export const CalendarModal = ({
         >
             <View style={styles.overlay}>
                 <Pressable
-                    accessibilityLabel="Close calendar"
+                    accessibilityLabel={t('Close calendar')}
                     onPress={onClose}
                     style={styles.backdrop}
                 />
@@ -66,10 +72,10 @@ export const CalendarModal = ({
                 >
                     <View style={styles.header}>
                         <Text style={[styles.title, { fontSize: 25 * scale }]}>
-                            Choose a day
+                            {t('Choose a day')}
                         </Text>
                         <Pressable
-                            accessibilityLabel="Close calendar"
+                            accessibilityLabel={t('Close calendar')}
                             accessibilityRole="button"
                             onPress={onClose}
                             style={styles.closeButton}
@@ -79,7 +85,7 @@ export const CalendarModal = ({
                     </View>
                     <View style={styles.monthHeader}>
                         <Pressable
-                            accessibilityLabel="Previous month"
+                            accessibilityLabel={t('Previous month')}
                             onPress={() => onChangeMonth(-1)}
                             style={styles.monthButton}
                         >
@@ -91,10 +97,15 @@ export const CalendarModal = ({
                                 { fontSize: 19 * scale },
                             ]}
                         >
-                            {formatMonthLabel(month)}
+                            {language === 'pt'
+                                ? month.toLocaleDateString('pt-BR', {
+                                      month: 'long',
+                                      year: 'numeric',
+                                  })
+                                : formatMonthLabel(month)}
                         </Text>
                         <Pressable
-                            accessibilityLabel="Next month"
+                            accessibilityLabel={t('Next month')}
                             onPress={() => onChangeMonth(1)}
                             style={styles.monthButton}
                         >
@@ -128,10 +139,18 @@ export const CalendarModal = ({
                                 dateKey(date) === dateKey(selectedDate)
                             return (
                                 <Pressable
-                                    accessibilityLabel={`Select ${date.toLocaleDateString(
-                                        'en-US',
-                                        { month: 'long', day: 'numeric' },
-                                    )}`}
+                                    accessibilityLabel={t(
+                                        'Select {{month}} {{day}}',
+                                        {
+                                            month: date.toLocaleDateString(
+                                                language === 'pt'
+                                                    ? 'pt-BR'
+                                                    : 'en-US',
+                                                { month: 'long' },
+                                            ),
+                                            day: date.getDate(),
+                                        },
+                                    )}
                                     accessibilityRole="button"
                                     key={dateKey(date)}
                                     onPress={() => onSelectDate(date)}

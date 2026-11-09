@@ -11,9 +11,9 @@ export const globalStyles = StyleSheet.create({
     formFieldLabel: {
         color: colors.text,
         fontFamily: typography.fontFamily,
-        fontSize: 15,
+        fontSize: 13,
         fontWeight: '500',
-        marginBottom: spacing.xxs,
+        marginBottom: spacing.sm,
     },
     formErrorText: {
         color: colors.danger,

@@ -5,13 +5,14 @@ import {
     Bell,
     CalendarBlank,
     CheckSquare,
-    Plus,
+    FirstAid,
     Stack,
 } from 'phosphor-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { bottomBarStyles } from './BottomBar.styles'
 import { getResponsiveScale } from '../../styles/responsive'
+import { useTranslation } from '../../localization/useTranslation'
 
 type BottomBarProps = BottomTabBarProps & {
     onAddItem: (routeName: string) => void
@@ -25,11 +26,19 @@ export const BottomBar = ({
 }: BottomBarProps) => {
     const { bottom } = useSafeAreaInsets()
     const { width } = useWindowDimensions()
+    const { t } = useTranslation()
     const scale = getResponsiveScale(width)
+    const visibleRoutes = state.routes.filter(
+        route => route.name !== 'Settings',
+    )
+    const activeRouteName = state.routes[state.index]?.name
+    const isSettingsActive = activeRouteName === 'Settings'
     const addButton = (
         <Pressable
-            accessibilityLabel="Add item"
+            accessibilityLabel={t('Add item')}
             accessibilityRole="button"
+            accessibilityState={{ disabled: isSettingsActive }}
+            disabled={isSettingsActive}
             onPress={() => onAddItem(state.routes[state.index].name)}
             style={[
                 bottomBarStyles.add,
@@ -42,18 +51,23 @@ export const BottomBar = ({
                 },
             ]}
         >
-            <Plus
-                color={bottomBarStyles.addIcon.color}
-                size={55 * scale}
+            <FirstAid
+                color={
+                    isSettingsActive
+                        ? bottomBarStyles.addIconDisabled.color
+                        : bottomBarStyles.addIcon.color
+                }
+                size={50 * scale}
                 weight="regular"
             />
             <Text
                 style={[
                     bottomBarStyles.addLabel,
                     { fontSize: 20 * scale, marginTop: 2 * scale },
+                    isSettingsActive && bottomBarStyles.addLabelDisabled,
                 ]}
             >
-                Add
+                {t('Add')}
             </Text>
         </Pressable>
     )
@@ -66,9 +80,11 @@ export const BottomBar = ({
             ]}
             accessibilityRole="tablist"
         >
-            {state.routes.map((route, index) => {
-                const isFocused = state.index === index
-                const label = descriptors[route.key].options.title ?? route.name
+            {visibleRoutes.map((route, index) => {
+                const isFocused = activeRouteName === route.name
+                const label = t(
+                    descriptors[route.key].options.title ?? route.name,
+                )
                 const onPress = () => navigation.navigate(route.name)
 
                 const iconColor = isFocused
@@ -78,25 +94,25 @@ export const BottomBar = ({
                     route.name === 'Habits' ? (
                         <Stack
                             color={iconColor}
-                            size={39 * scale}
+                            size={36 * scale}
                             weight={isFocused ? 'bold' : 'regular'}
                         />
                     ) : route.name === 'Schedule' ? (
                         <CalendarBlank
                             color={iconColor}
-                            size={38 * scale}
+                            size={35 * scale}
                             weight={isFocused ? 'bold' : 'regular'}
                         />
                     ) : route.name === 'Reminders' ? (
                         <Bell
                             color={iconColor}
-                            size={38 * scale}
+                            size={35 * scale}
                             weight={isFocused ? 'bold' : 'regular'}
                         />
                     ) : (
                         <CheckSquare
                             color={iconColor}
-                            size={38 * scale}
+                            size={35 * scale}
                             weight={isFocused ? 'bold' : 'regular'}
                         />
                     )
