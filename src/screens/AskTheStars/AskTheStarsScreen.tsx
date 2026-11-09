@@ -314,15 +314,33 @@ export const AskTheStarsScreen = ({
                 totalPoints={currentUser.totalPoints}
                 userName={currentUser.name}
             />
-            <Pressable
-                accessibilityLabel={t('Back to previous screen')}
-                accessibilityRole="button"
-                hitSlop={spacing.sm}
-                onPress={onClose}
-                style={styles.backButton}
-            >
-                <Text style={styles.backText}>{t('Back')}</Text>
-            </Pressable>
+            <View style={styles.headerActions}>
+                <Pressable
+                    accessibilityLabel={t('Back to previous screen')}
+                    accessibilityRole="button"
+                    hitSlop={spacing.sm}
+                    onPress={onClose}
+                    style={styles.backButton}
+                >
+                    <Text style={styles.backText}>{t('Back')}</Text>
+                </Pressable>
+                {isChatFlow ? (
+                    <Pressable
+                        accessibilityLabel={t('Clear chat')}
+                        accessibilityRole="button"
+                        disabled={aiChat.isLoading || aiChat.isSavingProposal}
+                        hitSlop={spacing.sm}
+                        onPress={aiChat.clearChat}
+                        style={[
+                            styles.clearChatButton,
+                            (aiChat.isLoading || aiChat.isSavingProposal) &&
+                                styles.clearChatButtonDisabled,
+                        ]}
+                    >
+                        <Text style={styles.backText}>{t('Clear chat')}</Text>
+                    </Pressable>
+                ) : null}
+            </View>
 
             <ScrollView
                 ref={scrollRef}
@@ -793,7 +811,22 @@ const styles = StyleSheet.create({
     backButton: {
         justifyContent: 'center',
         minHeight: spacing.touchTarget,
+    },
+    headerActions: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        minHeight: spacing.touchTarget,
         paddingHorizontal: spacing.lg,
+    },
+    clearChatButton: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: spacing.touchTarget,
+        paddingHorizontal: spacing.sm,
+    },
+    clearChatButtonDisabled: {
+        opacity: 0.5,
     },
     backText: {
         color: colors.onboardingMuted,

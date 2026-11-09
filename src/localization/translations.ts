@@ -419,6 +419,7 @@ const portuguese: Record<string, string> = {
     'This proposal cannot be applied because its target is no longer available for your account.':
         'Esta proposta não pode ser aplicada porque o item não está mais disponível para sua conta.',
     'Confirm proposal': 'Confirmar proposta',
+    'Clear chat': 'Limpar conversa',
     Date: 'Data',
     'Completion time': 'Horário de conclusão',
     Note: 'Observação',

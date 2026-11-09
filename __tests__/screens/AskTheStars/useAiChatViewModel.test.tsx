@@ -301,6 +301,20 @@ describe('useAiChatViewModel', () => {
         expect(mockApplyProposal).not.toHaveBeenCalled()
     })
 
+    it('clears the conversation and pending chat state to start over', async () => {
+        mockChat.mockResolvedValue({ reply: 'Sure.', proposal: null })
+        renderHook()
+        await send('How am I doing?')
+        act(() => viewModel.setInput('A new question'))
+
+        act(() => viewModel.clearChat())
+
+        expect(viewModel.messages).toEqual([])
+        expect(viewModel.input).toBe('')
+        expect(viewModel.errorMessage).toBeNull()
+        expect(viewModel.statisticsNotice).toBeNull()
+    })
+
     it('applies a confirmed action through local persistence only', async () => {
         mockChat.mockResolvedValue({
             reply: 'I can add this task.',

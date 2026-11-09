@@ -255,6 +255,15 @@ export const useAiChatViewModel = (userId: string) => {
         }
     }
 
+    const clearChat = () => {
+        if (sendLock.current || proposalSaveLock.current) return
+        setMessages([])
+        setInput('')
+        setErrorMessage(null)
+        setStatisticsNotice(null)
+        setCreateProposalMessageId(null)
+    }
+
     const cancelProposal = (messageId: string) => {
         setMessages(current =>
             current.map(message =>
@@ -367,6 +376,7 @@ export const useAiChatViewModel = (userId: string) => {
     return {
         cancelProposal,
         categoryOptions,
+        clearChat,
         statisticsNotice,
         closeCreateProposal,
         confirmUpdateProposal,

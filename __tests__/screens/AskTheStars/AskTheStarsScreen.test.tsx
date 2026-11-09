@@ -140,6 +140,21 @@ describe('AskTheStarsScreen analysis loading', () => {
         jest.restoreAllMocks()
     })
 
+    it('shows a clear-chat action beside the back action in chat flow', () => {
+        act(() => {
+            renderer = create(screen())
+        })
+
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Clear chat' }),
+        ).toBeTruthy()
+        expect(
+            renderer.root.findByProps({
+                accessibilityLabel: 'Back to previous screen',
+            }),
+        ).toBeTruthy()
+    })
+
     it.each(['events', 'completion_records'] as const)(
         'waits for %s before animating the analysis and keeps the moon stable',
         lastTable => {
