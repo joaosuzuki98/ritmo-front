@@ -3,6 +3,8 @@ import type { ComponentRef } from 'react'
 import { ArrowUp } from 'phosphor-react-native'
 import {
     ActivityIndicator,
+    Keyboard,
+    KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
@@ -116,6 +118,18 @@ export const AskTheStarsScreen = ({
         if (isChatFlow && aiChat.messages.length)
             scrollRef.current?.scrollToEnd({ animated: true })
     }, [aiChat.isLoading, aiChat.messages, isChatFlow])
+
+    useEffect(() => {
+        if (!isChatFlow) return
+        const eventName =
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
+        const subscription = Keyboard.addListener(eventName, () => {
+            requestAnimationFrame(() =>
+                scrollRef.current?.scrollToEnd({ animated: true }),
+            )
+        })
+        return () => subscription.remove()
+    }, [isChatFlow])
 
     useEffect(() => {
         if (shouldShowAnalysisLoading)
@@ -305,7 +319,16 @@ export const AskTheStarsScreen = ({
     }
 
     return (
-        <View style={styles.root}>
+        <KeyboardAvoidingView
+            behavior={
+                isChatFlow
+                    ? Platform.OS === 'ios'
+                        ? 'padding'
+                        : 'height'
+                    : undefined
+            }
+            style={styles.root}
+        >
             <StarBackground />
             <TopBar
                 onMenuPress={onMenuPress}
@@ -799,7 +822,7 @@ export const AskTheStarsScreen = ({
                     onCreateHabit={aiChat.createHabitFromProposal}
                 />
             ) : null}
-        </View>
+        </KeyboardAvoidingView>
     )
 }
 
