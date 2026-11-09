@@ -7,12 +7,15 @@ import { API_BASE_URL } from '../constants/api'
 import { createSyncManager } from '../database/sync'
 import type { User } from '../database'
 import { StartYourDayScreen } from '../screens/StartYourDay/StartYourDayScreen'
+import { AskTheStarsScreen } from '../screens/AskTheStars/AskTheStarsScreen'
 import { colors } from '../styles/colors'
 import { AppDrawerContent } from './AppDrawerContent'
 import { AppDrawerLogoutContext } from './AppDrawerLogoutContext'
 import { AppNavigator } from './AppNavigator'
 import type { RootParamList } from './types'
 import { useDailyAccess } from './useDailyAccess'
+import { startLocalReminderManager } from '../notifications/localNotifications'
+import { useTranslation } from '../localization/useTranslation'
 
 type AppDrawerNavigatorProps = {
     currentUser: User
@@ -25,6 +28,7 @@ export const AppDrawerNavigator = ({
     currentUser,
     onLogout,
 }: AppDrawerNavigatorProps) => {
+    const { t } = useTranslation()
     useEffect(() => {
         const syncManager = createSyncManager({
             baseUrl: API_BASE_URL,
@@ -38,6 +42,8 @@ export const AppDrawerNavigator = ({
 
         return syncManager.stop
     }, [currentUser.id])
+
+    useEffect(() => startLocalReminderManager(currentUser.id), [currentUser.id])
 
     const { access, hasError, finishStart, retry } = useDailyAccess(
         currentUser.id,
@@ -58,7 +64,7 @@ export const AppDrawerNavigator = ({
                 {hasError ? (
                     <Pressable accessibilityRole="button" onPress={retry}>
                         <Text className="text-white">
-                            Unable to load today. Tap to retry.
+                            {t('Unable to load today. Tap to retry.')}
                         </Text>
                     </Pressable>
                 ) : (
@@ -112,6 +118,35 @@ export const AppDrawerNavigator = ({
                         )}
                     </Drawer.Screen>
                 ) : null}
+                <Drawer.Screen name="AskTheStars">
+                    {({ navigation, route }) => (
+                        <AskTheStarsScreen
+                            currentUser={currentUser}
+                            initialHabitId={route.params?.habitId}
+                            isWeeklyLoadAnalysis={
+                                route.params?.mode === 'weeklyLoad'
+                            }
+                            onClose={() => {
+                                if (navigation.canGoBack()) {
+                                    navigation.goBack()
+                                    return
+                                }
+
+                                navigation.navigate('Main', {
+                                    screen: 'Habits',
+                                })
+                            }}
+                            onMenuPress={() => navigation.openDrawer()}
+                            onScheduleAccepted={weekDay =>
+                                navigation.navigate('Main', {
+                                    screen: 'Habits',
+                                    params: { weekDay },
+                                })
+                            }
+                            totalAccessDays={access.totalAccessDays}
+                        />
+                    )}
+                </Drawer.Screen>
             </Drawer.Navigator>
         </AppDrawerLogoutContext.Provider>
     )

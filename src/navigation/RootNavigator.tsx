@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react'
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native'
+import notifee, { EventType } from '@notifee/react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+    ActivityIndicator,
+    AppState,
+    Platform,
+    StyleSheet,
+    View,
+} from 'react-native'
 import {
     NavigationContainer,
     createNavigationContainerRef,
@@ -10,6 +17,10 @@ import type { User } from '../database'
 import { logoutUser, restoreLocalSession } from '../services/auth'
 import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen'
 import { colors } from '../styles/colors'
+import {
+    consumePendingHabitAnalysis,
+    consumePendingWeeklyLoadAnalysis,
+} from '../notifications/localNotificationEvents'
 import type { OnboardingIdentity } from '../types/onboarding'
 import type { RootParamList } from './types'
 
@@ -26,6 +37,188 @@ export const RootNavigator = () => {
         useState<AuthInitialRoute | null>(null)
     const [registrationIdentity, setRegistrationIdentity] =
         useState<OnboardingIdentity>()
+    const currentUserId = currentUser?.id
+    const currentUserIdRef = useRef(currentUserId)
+    currentUserIdRef.current = currentUserId
+    const pendingHabitAnalysis = useRef<{
+        habitId: string
+        userId?: string
+    } | null>(null)
+    const pendingWeeklyLoadAnalysis = useRef<{ userId?: string } | null>(null)
+
+    const dispatchPendingHabitAnalysis = useCallback(() => {
+        const pending = pendingHabitAnalysis.current
+        if (!pending || !currentUserIdRef.current || !navigationRef.isReady())
+            return
+
+        pendingHabitAnalysis.current = null
+        if (pending.userId && pending.userId !== currentUserIdRef.current)
+            return
+
+        navigationRef.navigate('AskTheStars', {
+            habitId: pending.habitId,
+            mode: undefined,
+        })
+    }, [])
+
+    const openHabitAnalysis = useCallback(
+        (habitId: string, notificationUserId?: string) => {
+            const activeUserId = currentUserIdRef.current
+            if (
+                activeUserId &&
+                notificationUserId &&
+                notificationUserId !== activeUserId
+            )
+                return
+
+            if (!activeUserId || !navigationRef.isReady()) {
+                pendingHabitAnalysis.current = {
+                    habitId,
+                    ...(notificationUserId
+                        ? { userId: notificationUserId }
+                        : {}),
+                }
+                return
+            }
+
+            const currentRoute = navigationRef.getCurrentRoute()
+            const currentParams = currentRoute?.params as
+                | { habitId?: string }
+                | undefined
+            if (
+                currentRoute?.name === 'AskTheStars' &&
+                currentParams?.habitId === habitId
+            )
+                return
+
+            navigationRef.navigate('AskTheStars', {
+                habitId,
+                mode: undefined,
+            })
+        },
+        [],
+    )
+
+    const openWeeklyLoadAnalysis = useCallback(
+        (notificationUserId?: string) => {
+            const activeUserId = currentUserIdRef.current
+            if (
+                activeUserId &&
+                notificationUserId &&
+                notificationUserId !== activeUserId
+            )
+                return
+
+            if (!activeUserId || !navigationRef.isReady()) {
+                pendingWeeklyLoadAnalysis.current = notificationUserId
+                    ? { userId: notificationUserId }
+                    : {}
+                return
+            }
+
+            navigationRef.navigate('AskTheStars', {
+                habitId: undefined,
+                mode: 'weeklyLoad',
+            })
+        },
+        [],
+    )
+
+    const dispatchPendingWeeklyLoadAnalysis = useCallback(() => {
+        const pending = pendingWeeklyLoadAnalysis.current
+        if (!pending || !currentUserIdRef.current || !navigationRef.isReady())
+            return
+
+        pendingWeeklyLoadAnalysis.current = null
+        if (pending.userId && pending.userId !== currentUserIdRef.current)
+            return
+        navigationRef.navigate('AskTheStars', {
+            habitId: undefined,
+            mode: 'weeklyLoad',
+        })
+    }, [])
+
+    useEffect(() => {
+        dispatchPendingHabitAnalysis()
+    }, [currentUserId, dispatchPendingHabitAnalysis])
+
+    useEffect(() => {
+        dispatchPendingWeeklyLoadAnalysis()
+    }, [currentUserId, dispatchPendingWeeklyLoadAnalysis])
+
+    useEffect(() => {
+        const unsubscribe = notifee.onForegroundEvent(({ type, detail }) => {
+            if (type !== EventType.PRESS) return
+            const data = detail.notification?.data
+            if (
+                data?.type === 'low_success_habit' &&
+                typeof data.habitId === 'string'
+            )
+                openHabitAnalysis(
+                    data.habitId,
+                    typeof data.userId === 'string' ? data.userId : undefined,
+                )
+            if (data?.type === 'weekly_habit_load')
+                openWeeklyLoadAnalysis(
+                    typeof data.userId === 'string' ? data.userId : undefined,
+                )
+        })
+
+        notifee
+            .getInitialNotification()
+            .then(initialNotification => {
+                const data = initialNotification?.notification.data
+                if (
+                    data?.type === 'low_success_habit' &&
+                    typeof data.habitId === 'string'
+                )
+                    openHabitAnalysis(
+                        data.habitId,
+                        typeof data.userId === 'string'
+                            ? data.userId
+                            : undefined,
+                    )
+                if (data?.type === 'weekly_habit_load')
+                    openWeeklyLoadAnalysis(
+                        typeof data.userId === 'string'
+                            ? data.userId
+                            : undefined,
+                    )
+            })
+            .catch(() => undefined)
+
+        return unsubscribe
+    }, [openHabitAnalysis, openWeeklyLoadAnalysis])
+
+    useEffect(() => {
+        const userId = currentUser?.id
+        if (!userId) return
+        let isActive = true
+
+        const openPendingHabitAnalysis = async () => {
+            const [habitId, hasPendingWeeklyLoadAnalysis] = await Promise.all([
+                consumePendingHabitAnalysis(userId),
+                consumePendingWeeklyLoadAnalysis(userId),
+            ])
+            if (!isActive) return
+            if (hasPendingWeeklyLoadAnalysis) openWeeklyLoadAnalysis(userId)
+            else if (habitId) openHabitAnalysis(habitId, userId)
+        }
+
+        openPendingHabitAnalysis().catch(() => undefined)
+        const appStateSubscription = AppState.addEventListener(
+            'change',
+            state => {
+                if (state === 'active')
+                    openPendingHabitAnalysis().catch(() => undefined)
+            },
+        )
+
+        return () => {
+            isActive = false
+            appStateSubscription.remove()
+        }
+    }, [currentUser?.id, openHabitAnalysis, openWeeklyLoadAnalysis])
 
     useEffect(() => {
         restoreLocalSession()
@@ -70,7 +263,13 @@ export const RootNavigator = () => {
     return (
         // A new native view guarantees a layout event after session restoration.
         <View key="ready" className="flex-1" onLayout={handleInitialLayout}>
-            <NavigationContainer ref={navigationRef}>
+            <NavigationContainer
+                onReady={() => {
+                    dispatchPendingHabitAnalysis()
+                    dispatchPendingWeeklyLoadAnalysis()
+                }}
+                ref={navigationRef}
+            >
                 {currentUser ? (
                     <AppDrawerNavigator
                         key={currentUser.id}

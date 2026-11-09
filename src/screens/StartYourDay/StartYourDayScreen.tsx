@@ -20,6 +20,7 @@ import { getResponsiveScale } from '../../styles/responsive'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { useStartYourDayViewModel } from './useStartYourDayViewModel'
+import { useTranslation } from '../../localization/useTranslation'
 
 type StartYourDayScreenProps = {
     currentUser: User
@@ -36,6 +37,7 @@ export const StartYourDayScreen = ({
     onMenuPress,
     onContinue,
 }: StartYourDayScreenProps) => {
+    const { t } = useTranslation()
     const { width, height } = useWindowDimensions()
     const { top, bottom } = useSafeAreaInsets()
     const scale = getResponsiveScale(width)
@@ -92,7 +94,7 @@ export const StartYourDayScreen = ({
                 pointerEvents="box-none"
             >
                 <Pressable
-                    accessibilityLabel="Open menu"
+                    accessibilityLabel={t('Open menu')}
                     accessibilityRole="button"
                     hitSlop={spacing.xs}
                     onPress={onMenuPress}
@@ -145,9 +147,11 @@ export const StartYourDayScreen = ({
                             },
                         ]}
                     >
-                        Start your day
+                        {t('Start your day')}
                     </Text>
-                    <Text style={styles.dayNumber}>Day n° {dayNumber}</Text>
+                    <Text style={styles.dayNumber}>
+                        {t('Day n° {{dayNumber}}', { dayNumber })}
+                    </Text>
                 </View>
 
                 <View
@@ -175,8 +179,8 @@ export const StartYourDayScreen = ({
                     >
                         <Text style={styles.focusTitle}>
                             {selectedGroups.length
-                                ? 'Habits to focus today'
-                                : 'Choose habits to focus today'}
+                                ? t('Habits to focus today')
+                                : t('Choose habits to focus today')}
                         </Text>
                         <ScrollView
                             nestedScrollEnabled
@@ -215,7 +219,7 @@ export const StartYourDayScreen = ({
                             style={styles.addButton}
                             testID="open-habit-picker"
                         >
-                            <Text style={styles.addText}>Add</Text>
+                            <Text style={styles.addText}>{t('Add')}</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -242,7 +246,7 @@ export const StartYourDayScreen = ({
                     style={[styles.continueContent, { opacity: continueBlink }]}
                 >
                     <Animated.Text style={styles.continueText}>
-                        {isSavingSelection ? 'Saving…' : 'Continue'}
+                        {isSavingSelection ? t('Saving…') : t('Continue')}
                     </Animated.Text>
                     <ArrowFatLinesRight
                         color={colors.white}
@@ -253,12 +257,12 @@ export const StartYourDayScreen = ({
             </Pressable>
 
             <BottomSheetLayout
-                closeAccessibilityLabel="Close add habits modal"
+                closeAccessibilityLabel={t('Close add habits modal')}
                 heightMode="max"
                 heightRatio={0.5}
                 isVisible={isHabitSheetVisible}
                 onClose={() => setIsHabitSheetVisible(false)}
-                title="Add habits"
+                title={t('Add habits')}
             >
                 <ScrollView
                     contentContainerStyle={styles.habitOptions}
@@ -266,7 +270,7 @@ export const StartYourDayScreen = ({
                 >
                     {status === 'loading' ? (
                         <Text style={styles.habitOptionText}>
-                            Loading habits…
+                            {t('Loading habits…')}
                         </Text>
                     ) : null}
                     {status === 'error' ? (
@@ -275,21 +279,24 @@ export const StartYourDayScreen = ({
                                 accessibilityLiveRegion="polite"
                                 style={styles.habitOptionText}
                             >
-                                Unable to load habits. Please try again.
+                                {t('Unable to load habits. Please try again.')}
                             </Text>
                             <Pressable
                                 accessibilityRole="button"
                                 onPress={retry}
                                 style={styles.addButton}
                             >
-                                <Text style={styles.addText}>Try again</Text>
+                                <Text style={styles.addText}>
+                                    {t('Try again')}
+                                </Text>
                             </Pressable>
                         </View>
                     ) : null}
                     {status === 'success' && groups.length === 0 ? (
                         <Text style={styles.habitOptionText}>
-                            Create a habit in Habits to choose your focus for
-                            today.
+                            {t(
+                                'Create a habit in Habits to choose your focus for today.',
+                            )}
                         </Text>
                     ) : null}
                     {groups.map(group => (
@@ -306,7 +313,13 @@ export const StartYourDayScreen = ({
                                         accessibilityLabel={habit.label}
                                         accessibilityHint={
                                             habit.parentLabel
-                                                ? `Depends on ${habit.parentLabel}`
+                                                ? t(
+                                                      'Depends on {{parentLabel}}',
+                                                      {
+                                                          parentLabel:
+                                                              habit.parentLabel,
+                                                      },
+                                                  )
                                                 : undefined
                                         }
                                         accessibilityRole="checkbox"

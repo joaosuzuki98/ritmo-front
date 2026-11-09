@@ -2,12 +2,24 @@
   "migIndex": 1,
   "data": [
     {
+      "path": "src/assets/fonts/mountains-of-christmas-license.txt",
+      "sha1": "47b573e3824cd5e02a1a3ae99e2735b49e0256e4"
+    },
+    {
+      "path": "src/assets/fonts/mountains-of-christmas-regular.ttf",
+      "sha1": "66a91646d40bf2c24817ed3199836d3fb707f245"
+    },
+    {
       "path": "src/assets/fonts/quattrocento-sans-OFL.txt",
       "sha1": "6188f4e990614bf13e1c3b89e9a14c35eef89d96"
     },
     {
       "path": "src/assets/fonts/quattrocento-sans.ttf",
       "sha1": "d9f091af10c0941bd3ecfb3b652dc4b05a3fba00"
+    },
+    {
+      "path": "src/assets/fonts/quicksand-semibold.ttf",
+      "sha1": "e34cb699719685fec79f480ac4a96f8448b19d24"
     },
     {
       "path": "src/assets/fonts/quicksand.ttf",

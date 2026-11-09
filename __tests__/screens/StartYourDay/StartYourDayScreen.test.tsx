@@ -183,11 +183,7 @@ describe('StartYourDayScreen', () => {
         expect(
             renderer.root
                 .findAllByType(Text)
-                .some(
-                    text =>
-                        Array.isArray(text.props.children) &&
-                        text.props.children.join('') === 'Day n° 7',
-                ),
+                .some(text => text.props.children === 'Day n° 7'),
         ).toBe(true)
         expect(onContinue).not.toHaveBeenCalled()
         expect(StyleSheet.flatten(continueButton.props.style).right).toBe(

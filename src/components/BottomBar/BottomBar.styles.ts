@@ -37,6 +37,7 @@ export const bottomBarStyles = StyleSheet.create({
         width: 108,
     },
     addIcon: { color: colors.text },
+    addIconDisabled: { color: colors.bottomBarMuted },
     addLabel: {
         color: colors.text,
         fontFamily: typography.fontFamily,
@@ -44,4 +45,5 @@ export const bottomBarStyles = StyleSheet.create({
         fontWeight: '300',
         marginTop: 2,
     },
+    addLabelDisabled: { color: colors.bottomBarMuted },
 })

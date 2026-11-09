@@ -18,6 +18,7 @@ import { CalendarModal } from './components/CalendarModal'
 import { AddScheduleItemModal } from './components/AddScheduleItemModal'
 import { ScheduleTimeline } from './components/ScheduleTimeline'
 import { useScheduleViewModel } from './useScheduleViewModel'
+import { useTranslation } from '../../localization/useTranslation'
 
 type ScheduleScreenProps = {
     currentUser: User
@@ -36,6 +37,7 @@ export const ScheduleScreen = ({
 }: ScheduleScreenProps) => {
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const { t } = useTranslation()
     const viewModel = useScheduleViewModel(currentUser.id)
     const [isCalendarVisible, setIsCalendarVisible] = useState(false)
     const [editingEvent, setEditingEvent] = useState<Event | null>(null)
@@ -59,10 +61,10 @@ export const ScheduleScreen = ({
 
     return (
         <ScreenLayout
-            title="Schedule"
+            title={t('Schedule')}
             titleAccessory={
                 <Pressable
-                    accessibilityLabel="Open calendar"
+                    accessibilityLabel={t('Open calendar')}
                     accessibilityRole="button"
                     onPress={() => setIsCalendarVisible(true)}
                     hitSlop={{
@@ -93,7 +95,7 @@ export const ScheduleScreen = ({
                     ]}
                 >
                     <Pressable
-                        accessibilityLabel="Previous day"
+                        accessibilityLabel={t('Previous day')}
                         onPress={() => viewModel.moveDate(-1)}
                         style={[
                             styles.dateButton,
@@ -116,7 +118,7 @@ export const ScheduleScreen = ({
                         </ScreenSubtitle>
                     </View>
                     <Pressable
-                        accessibilityLabel="Next day"
+                        accessibilityLabel={t('Next day')}
                         onPress={() => viewModel.moveDate(1)}
                         style={[
                             styles.dateButton,

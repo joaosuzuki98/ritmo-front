@@ -27,6 +27,7 @@ export const colors = {
     success: '#79D99B',
     warning: '#F2C94C',
     danger: '#F2779A',
+    dayCount: '#E21E2A',
     priorityText: '#21134D',
     onboardingBackground: '#13141A',
     onboardingMuted: '#5A648E',

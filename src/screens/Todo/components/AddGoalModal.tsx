@@ -22,6 +22,7 @@ import { typography } from '../../../styles/typography'
 import { addGoalSchema, type AddGoalFormData } from '../addGoalSchema'
 import { goalTermOptions } from '../goalUtils'
 import type { TodoGoalHabitOption } from '../todoGoals.types'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type AddGoalModalProps = {
     isVisible: boolean
@@ -36,6 +37,7 @@ export const AddGoalModal = ({
     onClose,
     onCreateGoal,
 }: AddGoalModalProps) => {
+    const { t } = useTranslation()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -106,14 +108,14 @@ export const AddGoalModal = ({
 
     return (
         <BottomSheetLayout
-            closeAccessibilityLabel="Close goal form"
+            closeAccessibilityLabel={t('Close goal form')}
             closeIconSize={theme.bottomSheet.compactCloseIconSize}
             headerStyle={{ marginBottom: theme.spacing.sm }}
             isCloseDisabled={isSubmitting}
             isVisible={isVisible}
             onClose={handleClose}
             sheetStyle={{ paddingTop: theme.spacing.md }}
-            title="Set a goal"
+            title={t('Set a goal')}
             titleStyle={{
                 fontSize: theme.bottomSheet.compactTitle.fontSize * scale,
             }}
@@ -124,13 +126,13 @@ export const AddGoalModal = ({
                 showsVerticalScrollIndicator={false}
             >
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Goal type
+                    {t('Goal type')}
                 </Text>
                 <View style={styles.optionRow}>
                     {(
                         [
-                            ['habit', 'One habit'],
-                            ['group', 'Habit group'],
+                            ['habit', t('One habit')],
+                            ['group', t('Habit group')],
                         ] as const
                     ).map(([value, label]) => {
                         const isSelected = goalType === value
@@ -166,8 +168,8 @@ export const AddGoalModal = ({
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
                     {goalType === 'habit'
-                        ? 'Choose a habit'
-                        : 'Choose at least two habits'}
+                        ? t('Choose a habit')
+                        : t('Choose at least two habits')}
                 </Text>
                 <View style={styles.habitOptions}>
                     {habitOptions.map(habit => {
@@ -215,24 +217,24 @@ export const AddGoalModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.habitId.message}
+                        {t(errors.habitId.message ?? '')}
                     </Text>
                 ) : null}
                 {goalType === 'group' && errors.includedHabitIds ? (
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.includedHabitIds.message}
+                        {t(errors.includedHabitIds.message ?? '')}
                     </Text>
                 ) : null}
                 {habitOptions.length === 0 ? (
                     <Text style={styles.helperText}>
-                        Create a habit before setting a goal.
+                        {t('Create a habit before setting a goal.')}
                     </Text>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Time frame
+                    {t('Time frame')}
                 </Text>
                 <View style={styles.termOptions}>
                     {goalTermOptions.map(option => {
@@ -260,7 +262,7 @@ export const AddGoalModal = ({
                                         isSelected && styles.optionTextSelected,
                                     ]}
                                 >
-                                    {option.label}
+                                    {t(option.label)}
                                 </Text>
                             </Pressable>
                         )
@@ -268,18 +270,20 @@ export const AddGoalModal = ({
                 </View>
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Goal description
+                    {t('Goal description')}
                 </Text>
                 <Controller
                     control={control}
                     name="description"
                     render={({ field }) => (
                         <FormTextInput
-                            accessibilityLabel="Goal description"
+                            accessibilityLabel={t('Goal description')}
                             autoCapitalize="sentences"
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="e.g. Build a consistent reading habit"
+                            placeholder={t(
+                                'e.g. Build a consistent reading habit',
+                            )}
                             hasError={Boolean(errors.description)}
                             value={field.value}
                         />
@@ -289,14 +293,14 @@ export const AddGoalModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.description.message}
+                        {t(errors.description.message ?? '')}
                     </Text>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
                     {goalType === 'habit'
-                        ? 'Completed sessions to reach'
-                        : 'Consistency target (%)'}
+                        ? t('Completed sessions to reach')
+                        : t('Consistency target (%)')}
                 </Text>
                 <Controller
                     control={control}
@@ -309,8 +313,8 @@ export const AddGoalModal = ({
                         <FormTextInput
                             accessibilityLabel={
                                 goalType === 'habit'
-                                    ? 'Target completed sessions'
-                                    : 'Target consistency percentage'
+                                    ? t('Target completed sessions')
+                                    : t('Target consistency percentage')
                             }
                             keyboardType="number-pad"
                             onBlur={field.onBlur}
@@ -329,14 +333,14 @@ export const AddGoalModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.targetValue.message}
+                        {t(errors.targetValue.message ?? '')}
                     </Text>
                 ) : null}
                 {goalType === 'group' && errors.targetPercentage ? (
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.targetPercentage.message}
+                        {t(errors.targetPercentage.message ?? '')}
                     </Text>
                 ) : null}
 
@@ -344,15 +348,15 @@ export const AddGoalModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {submitError}
+                        {t(submitError)}
                     </Text>
                 ) : null}
                 <FormActionButton
-                    accessibilityLabel="Save goal"
+                    accessibilityLabel={t('Save goal')}
                     disabled={isSubmitting || habitOptions.length === 0}
                     isLoading={isSubmitting}
                     onPress={submitGoal}
-                    title="Save goal"
+                    title={t('Save goal')}
                     containerStyle={styles.submitButton}
                 />
             </ScrollView>
@@ -370,11 +374,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
-        borderRadius: 10,
+        borderRadius: 4,
         borderWidth: 1,
         flex: 1,
         justifyContent: 'center',
-        minHeight: 48,
+        minHeight: 40,
         paddingHorizontal: spacing.sm,
     },
     optionSelected: {
@@ -391,10 +395,10 @@ const styles = StyleSheet.create({
     habitOption: {
         backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
-        borderRadius: 9,
+        borderRadius: 4,
         borderWidth: 1,
         justifyContent: 'center',
-        minHeight: 42,
+        minHeight: 40,
         paddingHorizontal: spacing.sm,
         width: '48%',
     },
@@ -406,10 +410,10 @@ const styles = StyleSheet.create({
     termOption: {
         backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
-        borderRadius: 9,
+        borderRadius: 4,
         borderWidth: 1,
         justifyContent: 'center',
-        minHeight: 42,
+        minHeight: 40,
         marginBottom: spacing.xxs,
         paddingHorizontal: spacing.md,
     },

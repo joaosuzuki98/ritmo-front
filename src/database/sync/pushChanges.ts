@@ -89,6 +89,16 @@ const removeReadOnlyChanges = (
     return writableChanges as SyncDatabaseChangeSet
 }
 
+const removeLocalNotificationPreferenceChanges = (
+    changes: SyncDatabaseChangeSet,
+): SyncDatabaseChangeSet => {
+    const localChanges = {
+        ...(changes as Record<string, SyncTableChangeSet>),
+    }
+    delete localChanges.notification_preferences
+    return localChanges as SyncDatabaseChangeSet
+}
+
 const removeChangesWithLocalReasonIds = (changes: SyncDatabaseChangeSet) => {
     const localChanges = changes as Record<string, SyncTableChangeSet>
     const localReasons = localChanges.incompletion_reasons
@@ -158,7 +168,11 @@ export const createPushChanges =
         lastPulledAt,
     }: SyncPushArgs): Promise<SyncPushResult> => {
         const { changes: changesWithoutLocalReasonRefs, rejectedIds } =
-            removeChangesWithLocalReasonIds(removeLocalUserChanges(changes))
+            removeChangesWithLocalReasonIds(
+                removeLocalNotificationPreferenceChanges(
+                    removeLocalUserChanges(changes),
+                ),
+            )
         const safeChanges = removeReadOnlyChanges(changesWithoutLocalReasonRefs)
         if (countChanges(safeChanges) > maxPushChanges) {
             throw new Error('Sync push exceeds the 5,000-change limit.')

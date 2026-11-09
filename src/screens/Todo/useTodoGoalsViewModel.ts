@@ -21,6 +21,7 @@ import {
     getGroupGoalTermOption,
 } from './goalUtils'
 import type { TodoGoalCardData, TodoGoalHabitOption } from './todoGoals.types'
+import { createHabitGoalLocally } from './habitGoalPersistence'
 
 export const useTodoGoalsViewModel = (currentUserId: string) => {
     const [habits, setHabits] = useState<Habit[]>([])
@@ -197,22 +198,14 @@ export const useTodoGoalsViewModel = (currentUserId: string) => {
         if (formData.goalType === 'habit') {
             const habit = ownedHabits.find(item => item.id === formData.habitId)
             if (!habit) throw new Error('Choose one of your habits.')
-
-            await database.write(async () => {
-                await database.get<Goal>('goals').create(record => {
-                    record.habitId = habit.id
-                    record.deadlineType = term.deadlineType
-                    record.description = formData.description.trim()
-                    record.targetValue = Number(formData.targetValue)
-                    record.currentValue = countCompletedHabitOccurrences(
-                        { habitId: habit.id, createdAt: today },
-                        completions,
-                        today,
-                    )
-                    record.status = 'in_progress'
-                    record.createdAt = today
-                    record.updatedAt = today
-                })
+            await createHabitGoalLocally(currentUserId, {
+                habitId: habit.id,
+                deadlineType: term.deadlineType as
+                    | 'short_term'
+                    | 'medium_term'
+                    | 'long_term',
+                description: formData.description,
+                targetValue: Number(formData.targetValue),
             })
             return
         }

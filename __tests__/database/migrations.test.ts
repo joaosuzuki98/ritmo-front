@@ -21,7 +21,7 @@ describe('local account database migration', () => {
             item => item.toVersion === 9,
         )
 
-        expect(databaseSchema.version).toBe(14)
+        expect(databaseSchema.version).toBe(18)
         expect(migration?.steps).toContainEqual({
             type: 'add_columns',
             table: 'users',
@@ -115,5 +115,140 @@ describe('local account database migration', () => {
                 },
             ],
         })
+    })
+
+    it('creates local notification preferences in version 15', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 15,
+        )
+
+        expect(migration?.steps).toContainEqual(
+            expect.objectContaining({
+                type: 'create_table',
+                schema: expect.objectContaining({
+                    name: 'notification_preferences',
+                }),
+            }),
+        )
+        expect(
+            databaseSchema.tables.notification_preferences.columnArray,
+        ).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ name: 'user_id', type: 'string' }),
+                expect.objectContaining({
+                    name: 'notify_habit_start',
+                    type: 'boolean',
+                }),
+                expect.objectContaining({
+                    name: 'notify_daily_focus',
+                    type: 'boolean',
+                }),
+                expect.objectContaining({
+                    name: 'notify_priority_habits',
+                    type: 'boolean',
+                }),
+            ]),
+        )
+    })
+
+    it('adds low-success notification settings in version 16', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 16,
+        )
+
+        expect(migration?.steps).toContainEqual({
+            type: 'add_columns',
+            table: 'notification_preferences',
+            columns: [
+                {
+                    name: 'notify_low_success_habits',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                {
+                    name: 'low_success_notification_state',
+                    type: 'string',
+                    isOptional: true,
+                },
+            ],
+        })
+        expect(
+            databaseSchema.tables.notification_preferences.columnArray,
+        ).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    name: 'notify_low_success_habits',
+                    type: 'boolean',
+                    isOptional: true,
+                }),
+                expect.objectContaining({
+                    name: 'low_success_notification_state',
+                    type: 'string',
+                    isOptional: true,
+                }),
+            ]),
+        )
+    })
+
+    it('adds the pending habit-analysis route in version 17', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 17,
+        )
+
+        expect(migration?.steps).toContainEqual({
+            type: 'add_columns',
+            table: 'notification_preferences',
+            columns: [
+                {
+                    name: 'pending_habit_analysis_id',
+                    type: 'string',
+                    isOptional: true,
+                },
+            ],
+        })
+        expect(
+            databaseSchema.tables.notification_preferences.columnArray,
+        ).toContainEqual({
+            name: 'pending_habit_analysis_id',
+            type: 'string',
+            isOptional: true,
+        })
+    })
+
+    it('adds weekly habit-load notification fields in version 18', () => {
+        const migration = databaseMigrations.sortedMigrations.find(
+            item => item.toVersion === 18,
+        )
+
+        expect(migration?.steps).toContainEqual({
+            type: 'add_columns',
+            table: 'notification_preferences',
+            columns: [
+                {
+                    name: 'notify_weekly_habit_load',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+                {
+                    name: 'pending_weekly_habit_load',
+                    type: 'boolean',
+                    isOptional: true,
+                },
+            ],
+        })
+        expect(
+            databaseSchema.tables.notification_preferences.columnArray,
+        ).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    name: 'notify_weekly_habit_load',
+                    type: 'boolean',
+                }),
+                expect.objectContaining({
+                    name: 'pending_weekly_habit_load',
+                    type: 'boolean',
+                }),
+            ]),
+        )
     })
 })

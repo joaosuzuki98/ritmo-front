@@ -5,31 +5,32 @@ import {
 
 describe('preferredTime', () => {
     it.each([
-        ['00', 'AM', 0],
-        ['09', 'AM', 9],
-        ['12', 'AM', 0],
-        ['00', 'PM', 12],
-        ['09', 'PM', 21],
-        ['12', 'PM', 12],
-    ] as const)(
-        'parses %s %s into 24-hour time',
-        (hour, period, expectedHour) => {
-            const parsed = parsePreferredTime(hour, period)
+        ['00:00', 0, 0],
+        ['09:35', 9, 35],
+        ['23:55', 23, 55],
+    ] as const)('parses %s into local time', (value, hour, minute) => {
+        const parsed = parsePreferredTime(value)
 
-            expect(parsed?.getHours()).toBe(expectedHour)
-            expect(parsed?.getMinutes()).toBe(0)
+        expect(parsed?.getHours()).toBe(hour)
+        expect(parsed?.getMinutes()).toBe(minute)
+    })
+
+    it.each(['24:00', '09:60', '9:05', ''])(
+        'rejects invalid time %s',
+        value => {
+            expect(parsePreferredTime(value)).toBeUndefined()
         },
     )
 
-    it('formats stored 24-hour values for the input', () => {
+    it('formats stored time values for the picker', () => {
         const date = new Date()
         date.setHours(0, 5, 0, 0)
-        expect(formatPreferredTime(date)).toEqual({ hour: '00', period: 'AM' })
+        expect(formatPreferredTime(date)).toBe('00:05')
 
         date.setHours(13, 45, 0, 0)
-        expect(formatPreferredTime(date)).toEqual({ hour: '01', period: 'PM' })
+        expect(formatPreferredTime(date)).toBe('13:45')
 
         date.setHours(12, 0, 0, 0)
-        expect(formatPreferredTime(date)).toEqual({ hour: '12', period: 'PM' })
+        expect(formatPreferredTime(date)).toBe('12:00')
     })
 })

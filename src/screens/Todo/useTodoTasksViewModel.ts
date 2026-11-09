@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 
 import { database, type TodoTask } from '../../database'
 import type { TodoTaskCategory } from './todoTask.types'
+import {
+    createTodoTaskLocally,
+    updateTodoTaskLocally,
+} from './todoTaskPersistence'
 
 export const useTodoTasksViewModel = (currentUserId: string) => {
     const [tasks, setTasks] = useState<TodoTask[]>([])
@@ -37,15 +41,10 @@ export const useTodoTasksViewModel = (currentUserId: string) => {
 
     const toggleTask = async (taskId: string) => {
         try {
-            await database.write(async () => {
-                const task = await database
-                    .get<TodoTask>('todo_tasks')
-                    .find(taskId)
-                if (task.userId !== currentUserId) return
-                await task.update(record => {
-                    record.isComplete = !record.isComplete
-                    record.updatedAt = new Date()
-                })
+            const task = tasks.find(item => item.id === taskId)
+            if (!task || task.userId !== currentUserId) return
+            await updateTodoTaskLocally(currentUserId, taskId, {
+                isComplete: !task.isComplete,
             })
         } catch {
             setLoadError('Unable to update this task. Please try again.')
@@ -54,17 +53,7 @@ export const useTodoTasksViewModel = (currentUserId: string) => {
 
     const createTask = async (title: string, category: TodoTaskCategory) => {
         if (!category.trim()) throw new Error('Choose a category first.')
-        const createdAt = new Date()
-        await database.write(async () => {
-            await database.get<TodoTask>('todo_tasks').create(record => {
-                record.userId = currentUserId
-                record.title = title.trim()
-                record.category = category
-                record.isComplete = false
-                record.createdAt = createdAt
-                record.updatedAt = createdAt
-            })
-        })
+        await createTodoTaskLocally(currentUserId, title, category)
     }
 
     return { createTask, isLoading, loadError, tasks, toggleTask }

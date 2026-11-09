@@ -116,8 +116,10 @@ describe('useRemindersViewModel event persistence', () => {
             await viewModel.addEvent({
                 title: 'Dentist',
                 startHour: '09',
+                startMinute: '35',
                 startPeriod: 'AM',
                 endHour: '10',
+                endMinute: '45',
                 endPeriod: 'AM',
                 location: 'Downtown clinic',
                 description: 'Bring insurance card',
@@ -132,6 +134,8 @@ describe('useRemindersViewModel event persistence', () => {
             conversionOrigin: 'reminders',
             reminderType: 'holiday',
         })
+        expect(createdRecord?.dateTime.getMinutes()).toBe(35)
+        expect(createdRecord?.endTime?.getMinutes()).toBe(45)
     })
 
     it('updates and deletes a persisted reminder event', async () => {
@@ -148,8 +152,10 @@ describe('useRemindersViewModel event persistence', () => {
             await viewModel.updateEvent('event-1', {
                 title: 'Dentist appointment',
                 startHour: '11',
+                startMinute: '20',
                 startPeriod: 'AM',
                 endHour: '12',
+                endMinute: '30',
                 endPeriod: 'PM',
                 location: 'New clinic',
                 description: 'Use the side entrance',
@@ -164,7 +170,9 @@ describe('useRemindersViewModel event persistence', () => {
             reminderType: 'important_day',
         })
         expect(event.dateTime.getHours()).toBe(11)
+        expect(event.dateTime.getMinutes()).toBe(20)
         expect(event.endTime?.getHours()).toBe(12)
+        expect(event.endTime?.getMinutes()).toBe(30)
 
         await act(async () => {
             await viewModel.deleteEvent('event-1')

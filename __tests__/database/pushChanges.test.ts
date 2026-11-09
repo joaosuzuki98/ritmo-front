@@ -1,6 +1,37 @@
 import { createPushChanges } from '../../src/database/sync/pushChanges'
 
 describe('pushChanges', () => {
+    it('keeps device-local notification preferences out of server sync', async () => {
+        const post = jest.fn().mockResolvedValue({ data: {} })
+        const pushChanges = createPushChanges({
+            api: { post } as never,
+            path: '/sync/push',
+        })
+
+        await pushChanges({
+            changes: {
+                notification_preferences: {
+                    created: [
+                        {
+                            id: 'preferences-1',
+                            user_id: 'user-1',
+                            notify_habit_start: true,
+                        },
+                    ],
+                    updated: [],
+                    deleted: [],
+                },
+            },
+            lastPulledAt: null,
+        } as never)
+
+        expect(post).toHaveBeenCalledWith(
+            '/sync/push',
+            { changes: {}, lastPulledAt: null },
+            { headers: undefined },
+        )
+    })
+
     it('filters local fields, read-only reasons, and unsupported user mutations', async () => {
         const post = jest.fn().mockResolvedValue({ data: {} })
         const pushChanges = createPushChanges({

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import UserMascot from '../../assets/images/mascot/default-mascot.svg'
 import { topBarStyles } from './TopBar.styles'
 import { getResponsiveScale } from '../../styles/responsive'
+import { useTranslation } from '../../localization/useTranslation'
 
 export type TopBarProps = {
     userName: string
@@ -23,6 +24,7 @@ export const TopBar = ({
 }: TopBarProps) => {
     const { width } = useWindowDimensions()
     const { top } = useSafeAreaInsets()
+    const { t } = useTranslation()
     const scale = getResponsiveScale(width)
 
     return (
@@ -38,7 +40,7 @@ export const TopBar = ({
             accessibilityRole="header"
         >
             <Pressable
-                accessibilityLabel="Open user profile"
+                accessibilityLabel={t('Open user profile')}
                 accessibilityRole="button"
                 onPress={onProfilePress}
                 style={[
@@ -93,7 +95,7 @@ export const TopBar = ({
                 </View>
             </View>
             <Pressable
-                accessibilityLabel="Open menu"
+                accessibilityLabel={t('Open menu')}
                 accessibilityRole="button"
                 onPress={onMenuPress}
                 style={[
