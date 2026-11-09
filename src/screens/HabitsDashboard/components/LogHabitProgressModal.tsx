@@ -36,6 +36,7 @@ import {
     type LogHabitProgressFormData,
 } from '../logHabitProgressSchema'
 import { useTranslation } from '../../../localization/useTranslation'
+import { useFocusedInputScroll } from '../../../hooks/useFocusedInputScroll'
 
 type LogHabitProgressModalProps = {
     habit: HabitCardViewData | null
@@ -89,6 +90,8 @@ export const LogHabitProgressModal = ({
     const { language, t } = useTranslation()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const { scrollRef, ensureFocusedInputVisible, handleScroll, resetScroll } =
+        useFocusedInputScroll()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const [isTimePickerVisible, setIsTimePickerVisible] = useState(false)
@@ -109,11 +112,12 @@ export const LogHabitProgressModal = ({
 
     useEffect(() => {
         if (isVisible) {
+            resetScroll()
             reset(getInitialValues(habit, selectedDate))
             setSubmitError('')
             setIsTimePickerVisible(false)
         }
-    }, [habit, isVisible, reset, selectedDate])
+    }, [habit, isVisible, reset, resetScroll, selectedDate])
 
     const handleTimeChange = (date: Date) => {
         setValue('time', formatPreferredTime(date), { shouldValidate: true })
@@ -160,7 +164,7 @@ export const LogHabitProgressModal = ({
         <BottomSheetLayout
             backdropColor={theme.colors.bottomSheetBackdropStrong}
             closeAccessibilityLabel={t('Close progress form')}
-            heightRatio={theme.bottomSheet.progressHeightRatio}
+            heightRatio={theme.bottomSheet.heightRatio}
             isVisible={isVisible}
             onClose={onClose}
             sheetStyle={styles.sheet}
@@ -170,7 +174,13 @@ export const LogHabitProgressModal = ({
             </Text>
             <Text style={styles.habitTitle}>{habit?.title}</Text>
             <ScrollView
+                ref={scrollRef}
                 keyboardShouldPersistTaps="handled"
+                onContentSizeChange={ensureFocusedInputVisible}
+                onFocus={ensureFocusedInputVisible}
+                onLayout={ensureFocusedInputVisible}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
                 showsVerticalScrollIndicator={false}
             >
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
@@ -305,7 +315,9 @@ export const LogHabitProgressModal = ({
                             multiline
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
+                            onFocus={ensureFocusedInputVisible}
                             placeholder={t('Add a note about today')}
+                            scrollEnabled={false}
                             containerStyle={styles.noteContainer}
                             hasError={Boolean(errors.note)}
                             style={styles.noteText}

@@ -38,23 +38,44 @@ export const AiHabitProposalCard = ({
     onCancel,
 }: AiHabitProposalCardProps) => {
     const { t } = useTranslation()
-    const values =
-        proposal.type === 'habit.create'
-            ? {
-                  ...proposal.habit,
-                  weekDays:
-                      proposal.habit.frequencyType === 'daily'
-                          ? [1, 2, 3, 4, 5, 6, 7]
-                          : proposal.habit.weekDays ?? [],
-                  priority: proposal.habit.priority ?? 'medium',
-                  status: proposal.habit.status ?? 'pending',
-              }
-            : proposal.changes.frequencyType === 'daily'
-            ? {
-                  ...proposal.changes,
-                  weekDays: [1, 2, 3, 4, 5, 6, 7],
-              }
-            : proposal.changes
+    const values: Record<string, unknown> = (() => {
+        switch (proposal.type) {
+            case 'habit.create':
+                return {
+                    ...proposal.habit,
+                    weekDays:
+                        proposal.habit.frequencyType === 'daily'
+                            ? [1, 2, 3, 4, 5, 6, 7]
+                            : proposal.habit.weekDays ?? [],
+                }
+            case 'habit.update':
+                return {
+                    ...proposal.changes,
+                    ...(proposal.changes.frequencyType === 'daily'
+                        ? { weekDays: [1, 2, 3, 4, 5, 6, 7] }
+                        : {}),
+                }
+            case 'habit.completion.create':
+                return {
+                    habitId: proposal.habitId,
+                    date: proposal.date,
+                    completionTime: proposal.completionTime,
+                    note: proposal.note,
+                }
+            case 'todo.create':
+                return proposal.task
+            case 'todo.update':
+                return { ...proposal.changes }
+            case 'event.create':
+                return proposal.event
+            case 'event.update':
+                return { ...proposal.changes }
+            case 'goal.create':
+                return proposal.goal
+            case 'goal.update':
+                return { ...proposal.changes }
+        }
+    })()
     const labels: Record<string, string> = {
         name: 'Habit name',
         description: 'Habit description',
@@ -64,6 +85,21 @@ export const AiHabitProposalCard = ({
         preferredTime: 'Preferred time',
         priority: 'Priority',
         status: 'Status',
+        categoryName: 'Category',
+        category: 'Category',
+        habitId: 'Habit ID',
+        date: 'Date',
+        completionTime: 'Completion time',
+        note: 'Note',
+        isComplete: 'Completed',
+        targetValue: 'Target',
+        deadlineType: 'Deadline',
+        dateTime: 'Starts',
+        endTime: 'Ends',
+        location: 'Location',
+        taskId: 'Task ID',
+        eventId: 'Event ID',
+        goalId: 'Goal ID',
     }
     const rows = (Object.entries(values) as [string, unknown][]).map(
         ([key, value]) => {
@@ -117,6 +153,16 @@ export const AiHabitProposalCard = ({
             )
         },
     )
+    const target =
+        proposal.type === 'habit.update'
+            ? habitName ?? `${t('Habit ID')}: ${proposal.entityId}`
+            : proposal.type === 'todo.update'
+            ? `${t('Task ID')}: ${proposal.entityId}`
+            : proposal.type === 'event.update'
+            ? `${t('Event ID')}: ${proposal.entityId}`
+            : proposal.type === 'goal.update'
+            ? `${t('Goal ID')}: ${proposal.entityId}`
+            : null
 
     return (
         <View style={styles.card}>
@@ -127,11 +173,7 @@ export const AiHabitProposalCard = ({
                         : 'Suggested change',
                 )}
             </Text>
-            {proposal.type === 'habit.update' ? (
-                <Text style={styles.target}>
-                    {habitName ?? `${t('Habit ID')}: ${proposal.entityId}`}
-                </Text>
-            ) : null}
+            {target ? <Text style={styles.target}>{target}</Text> : null}
             {rows}
             {state === 'applied' ? (
                 <Text style={styles.statusText}>
@@ -148,7 +190,7 @@ export const AiHabitProposalCard = ({
             {state === 'invalid' ? (
                 <Text style={styles.errorText}>
                     {t(
-                        'This proposal cannot be applied because the habit was not included in the request.',
+                        'This proposal cannot be applied because its target is no longer available for your account.',
                     )}
                 </Text>
             ) : null}
@@ -159,7 +201,7 @@ export const AiHabitProposalCard = ({
                         accessibilityLabel={t(
                             proposal.type === 'habit.create'
                                 ? 'Review and complete details'
-                                : 'Confirm change',
+                                : 'Confirm proposal',
                         )}
                         disabled={isSaving}
                         onPress={
@@ -178,7 +220,7 @@ export const AiHabitProposalCard = ({
                                 : t(
                                       proposal.type === 'habit.create'
                                           ? 'Review and complete details'
-                                          : 'Confirm change',
+                                          : 'Confirm proposal',
                                   )}
                         </Text>
                     </Pressable>

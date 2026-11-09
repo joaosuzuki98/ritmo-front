@@ -1,4 +1,5 @@
 import type { Habit } from '../../../src/database'
+jest.mock('../../../src/database', () => ({ database: { get: jest.fn() } }))
 import {
     buildAiChatContext,
     getRecentAiChatHistory,

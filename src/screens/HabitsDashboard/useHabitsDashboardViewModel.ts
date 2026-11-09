@@ -46,6 +46,7 @@ import {
     getConditionStatus,
     updateHabitLocally,
 } from './habitPersistence'
+import { recordHabitCompletionLocally } from './completionPersistence'
 import {
     calculateHabitStreak,
     getConditionEligibleDateKeys,
@@ -102,7 +103,10 @@ export const getDateForWeekDay = (
     return resolved
 }
 
-const updateHabitStreak = async (habitId: string, today = new Date()) => {
+export const updateHabitStreak = async (
+    habitId: string,
+    today = new Date(),
+) => {
     const [habit, records, streaks, conditions] = await Promise.all([
         database
             .get<Habit>('habits')
@@ -150,7 +154,7 @@ const updateHabitStreak = async (habitId: string, today = new Date()) => {
     })
 }
 
-const completeAfterHabitChain = async (
+export const completeAfterHabitChain = async (
     completedHabitId: string,
     userId: string,
     completionDate: Date,
@@ -1035,40 +1039,12 @@ export const useHabitsDashboardViewModel = (
             return true
         }
 
-        const records = await database
-            .get<CompletionRecord>('completion_records')
-            .query()
-            .fetch()
-        const currentRecord = records
-            .filter(
-                record =>
-                    record.habitId === habitId &&
-                    localDateKey(record.date) === dateKey,
-            )
-            .sort(
-                (left, right) =>
-                    (right.updatedAt?.getTime() ?? right.date.getTime()) -
-                    (left.updatedAt?.getTime() ?? left.date.getTime()),
-            )[0]
-        await database.write(async () => {
-            if (currentRecord) {
-                await currentRecord.update(record => {
-                    record.status = 'completed'
-                    record.completionTime = completionTime
-                    record.incompletionReasonId = undefined
-                })
-            } else {
-                await database
-                    .get<CompletionRecord>('completion_records')
-                    .create(record => {
-                        record.habitId = habitId
-                        record.date = completionTime
-                        record.status = 'completed'
-                        record.completionTime = completionTime
-                        record.distractionLockEnabled = false
-                    })
-            }
-        })
+        await recordHabitCompletionLocally(
+            currentUserId,
+            habitId,
+            completionTime,
+            completionTime,
+        )
         await updateHabitStreak(habitId, now)
         await completeAfterHabitChain(
             habitId,
@@ -1131,48 +1107,60 @@ export const useHabitsDashboardViewModel = (
         if (persistedHabit && persistedHabit.userId !== currentUserId) return
 
         if (persistedHabit) {
-            const reasons = reasonDescription
-                ? await database
-                      .get<IncompletionReason>('incompletion_reasons')
-                      .query()
-                      .fetch()
-                : []
-            const syncedReasons = reasons.filter(
-                reason => reason.syncStatus === 'synced',
-            )
-            const incompletionReasonId = findIncompletionReasonId(
-                syncedReasons,
-                formData.reason,
-            )
-            if (reasonDescription && !incompletionReasonId) {
-                throw new Error(
-                    'This reason is not available yet. Sync the app and try again.',
+            if (formData.status === 'completed') {
+                await recordHabitCompletionLocally(
+                    currentUserId,
+                    habitId,
+                    date,
+                    completionTime,
+                    note,
+                    true,
                 )
-            }
+            } else {
+                const reasons = reasonDescription
+                    ? await database
+                          .get<IncompletionReason>('incompletion_reasons')
+                          .query()
+                          .fetch()
+                    : []
+                const syncedReasons = reasons.filter(
+                    reason => reason.syncStatus === 'synced',
+                )
+                const incompletionReasonId = findIncompletionReasonId(
+                    syncedReasons,
+                    formData.reason,
+                )
+                if (reasonDescription && !incompletionReasonId) {
+                    throw new Error(
+                        'This reason is not available yet. Sync the app and try again.',
+                    )
+                }
 
-            await database.write(async () => {
-                if (currentRecord) {
-                    await currentRecord.update(record => {
-                        record.date = date
-                        record.status = formData.status
-                        record.completionTime = completionTime
-                        record.incompletionReasonId = incompletionReasonId
-                        record.note = note
-                    })
-                } else {
-                    await database
-                        .get<CompletionRecord>('completion_records')
-                        .create(record => {
-                            record.habitId = habitId
+                await database.write(async () => {
+                    if (currentRecord) {
+                        await currentRecord.update(record => {
                             record.date = date
                             record.status = formData.status
                             record.completionTime = completionTime
                             record.incompletionReasonId = incompletionReasonId
                             record.note = note
-                            record.distractionLockEnabled = false
                         })
-                }
-            })
+                    } else {
+                        await database
+                            .get<CompletionRecord>('completion_records')
+                            .create(record => {
+                                record.habitId = habitId
+                                record.date = date
+                                record.status = formData.status
+                                record.completionTime = completionTime
+                                record.incompletionReasonId =
+                                    incompletionReasonId
+                                record.note = note
+                                record.distractionLockEnabled = false
+                            })
+                    }
+                })
+            }
             await updateHabitStreak(habitId, now)
             if (formData.status === 'completed')
                 await completeAfterHabitChain(

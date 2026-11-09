@@ -464,6 +464,11 @@ export const AskTheStarsScreen = ({
                                 {t(aiChat.errorMessage)}
                             </Text>
                         ) : null}
+                        {aiChat.statisticsNotice ? (
+                            <Text style={styles.chatStatusText}>
+                                {t(aiChat.statisticsNotice)}
+                            </Text>
+                        ) : null}
                     </View>
                 ) : null}
 

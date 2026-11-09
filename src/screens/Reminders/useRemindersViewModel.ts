@@ -1,10 +1,10 @@
 import { Q } from '@nozbe/watermelondb'
 import { useEffect, useMemo, useState } from 'react'
 
-import { database, type Event, type Habit } from '../../database'
+import { database, type Event } from '../../database'
 import type { AddScheduleItemFormData } from '../Schedule/addScheduleItemSchema'
-import { findEventScheduleConflict } from '../../utils/scheduleConflict'
 import { getScheduleDateTime } from '../Schedule/scheduleTime'
+import { createEventLocally, updateEventLocally } from './eventPersistence'
 
 const startOfDay = (date: Date): Date => {
     const value = new Date(date)
@@ -124,37 +124,13 @@ export const useRemindersViewModel = (currentUserId: string) => {
             data.endPeriod,
             data.endMinute,
         )
-        const [existingEvents, existingHabits] = await Promise.all([
-            database
-                .get<Event>('events')
-                .query(Q.where('user_id', currentUserId))
-                .fetch(),
-            database
-                .get<Habit>('habits')
-                .query(Q.where('user_id', currentUserId))
-                .fetch(),
-        ])
-        const conflict = findEventScheduleConflict(
-            { dateTime, endTime },
-            existingEvents,
-            existingHabits,
-        )
-        if (conflict)
-            throw new Error(`This time overlaps with “${conflict.title}”.`)
-
-        await database.write(async () => {
-            await database.get<Event>('events').create(event => {
-                event.userId = currentUserId
-                event.title = data.title.trim()
-                event.dateTime = dateTime
-                event.endTime = endTime
-                event.location = data.location?.trim() || undefined
-                event.description = data.description?.trim() || undefined
-                event.recurrence = 'none'
-                event.countdownEnabled = false
-                event.conversionOrigin = 'reminders'
-                event.reminderType = data.reminderType ?? 'normal'
-            })
+        await createEventLocally(currentUserId, {
+            title: data.title,
+            dateTime,
+            endTime,
+            location: data.location,
+            description: data.description,
+            reminderType: data.reminderType,
         })
     }
 
@@ -162,8 +138,6 @@ export const useRemindersViewModel = (currentUserId: string) => {
         eventId: string,
         data: AddScheduleItemFormData,
     ) => {
-        const event = await database.get<Event>('events').find(eventId)
-        if (event.userId !== currentUserId) return
         const dateTime = getScheduleDateTime(
             selectedDate,
             data.startHour,
@@ -176,34 +150,13 @@ export const useRemindersViewModel = (currentUserId: string) => {
             data.endPeriod,
             data.endMinute,
         )
-        const [existingEvents, existingHabits] = await Promise.all([
-            database
-                .get<Event>('events')
-                .query(Q.where('user_id', currentUserId))
-                .fetch(),
-            database
-                .get<Habit>('habits')
-                .query(Q.where('user_id', currentUserId))
-                .fetch(),
-        ])
-        const conflict = findEventScheduleConflict(
-            { id: eventId, dateTime, endTime },
-            existingEvents,
-            existingHabits,
-        )
-        if (conflict)
-            throw new Error(`This time overlaps with “${conflict.title}”.`)
-
-        await database.write(async () => {
-            await event.update(record => {
-                record.title = data.title.trim()
-                record.dateTime = dateTime
-                record.endTime = endTime
-                record.location = data.location?.trim() || undefined
-                record.description = data.description?.trim() || undefined
-                record.reminderType = data.reminderType ?? 'normal'
-                record.updatedAt = new Date()
-            })
+        await updateEventLocally(currentUserId, eventId, {
+            title: data.title,
+            dateTime,
+            endTime,
+            location: data.location,
+            description: data.description,
+            reminderType: data.reminderType ?? 'normal',
         })
     }
 

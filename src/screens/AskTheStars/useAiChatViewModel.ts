@@ -7,105 +7,30 @@ import {
     database,
     type Category,
     type Habit,
-    type HabitCondition,
-    type HabitDependency,
+    type CompletionRecord,
+    type Event,
+    type Goal,
+    type IncompletionReason,
+    type TodoTask,
 } from '../../database'
 import type { HabitOption } from '../HabitsDashboard/habitDashboard.types'
-import {
-    addHabitSchema,
-    type AddHabitFormData,
-} from '../HabitsDashboard/addHabitSchema'
+import type { AddHabitFormData } from '../HabitsDashboard/addHabitSchema'
 import {
     createHabitLocally,
-    getConditionStatus,
     updateHabitLocally,
 } from '../HabitsDashboard/habitPersistence'
-import { formatPreferredTime } from '../HabitsDashboard/preferredTime'
 import { aiEndpoints } from '../../services/endpoints/ai'
-import type { AiHabitProposal } from '../../services/endpoints/ai'
 import { AiChatError } from '../../services/aiChatError'
 import {
     buildAiChatContext,
     getRecentAiChatHistory,
+    getAiHabitUpdateFormData,
+    isStatisticsQuestion,
     toCreateHabitFormData,
     type AiConversationMessage,
 } from './aiChatUtils'
-
-type HabitUpdateProposal = Extract<AiHabitProposal, { type: 'habit.update' }>
-type HabitUpdateChanges = HabitUpdateProposal['changes']
-
-const getHabitUpdateFormData = async (
-    userId: string,
-    habitId: string,
-    changes: HabitUpdateChanges,
-): Promise<AddHabitFormData> => {
-    const habit = await database
-        .get<Habit>('habits')
-        .find(habitId)
-        .catch(() => null)
-    if (!habit || habit.userId !== userId)
-        throw new Error('This habit is no longer available.')
-
-    const [categories, dependencies, conditions] = await Promise.all([
-        database
-            .get<Category>('categories')
-            .query(Q.where('user_id', userId))
-            .fetch(),
-        database
-            .get<HabitDependency>('habit_dependencies')
-            .query(Q.where('habit_id', habitId))
-            .fetch(),
-        database
-            .get<HabitCondition>('habit_conditions')
-            .query(Q.where('habit_id', habitId))
-            .fetch(),
-    ])
-    const dependency = dependencies.find(
-        item => item.type === 'after_completion',
-    )
-    const condition = conditions.find(
-        item => item.conditionType === 'habit_status',
-    )
-    const weekDay = clampWeekDay(new Date().getDay() || 7)
-    const formData: AddHabitFormData = {
-        name: habit.name,
-        description: habit.description ?? '',
-        categoryName:
-            categories.find(category => category.id === habit.categoryId)
-                ?.name ?? '',
-        frequencyType: habit.frequencyType === 'weekly' ? 'weekly' : 'daily',
-        weekDays: habit.weekDays.length ? habit.weekDays : [weekDay],
-        priority:
-            habit.priority === 'low' || habit.priority === 'high'
-                ? habit.priority
-                : 'medium',
-        estimatedDurationMinutes:
-            habit.estimatedDurationMinutes === undefined
-                ? ''
-                : String(habit.estimatedDurationMinutes),
-        preferredTime: formatPreferredTime(habit.preferredTime),
-        dependencyHabitId: dependency?.triggerHabitId ?? '',
-        conditionHabitId: condition?.conditionHabitId ?? '',
-        conditionStatus: getConditionStatus(condition?.conditionRule) ?? '',
-    }
-
-    if (changes.name !== undefined) formData.name = changes.name
-    if (changes.description !== undefined)
-        formData.description = changes.description ?? ''
-    if (changes.frequencyType !== undefined)
-        formData.frequencyType = changes.frequencyType
-    if (changes.weekDays !== undefined) formData.weekDays = changes.weekDays
-    if (changes.estimatedDurationMinutes !== undefined)
-        formData.estimatedDurationMinutes =
-            changes.estimatedDurationMinutes === null
-                ? ''
-                : String(changes.estimatedDurationMinutes)
-    if (changes.preferredTime !== undefined)
-        formData.preferredTime = changes.preferredTime ?? ''
-    if (changes.priority !== undefined) formData.priority = changes.priority
-
-    return addHabitSchema.parse(formData)
-}
+import { buildAiChatStatistics } from './aiChatStatistics'
+import { applyAiProposalLocally } from './aiProposalPersistence'
 
 const makeMessageId = (counter: number) => `${Date.now()}-${counter}`
 
@@ -119,6 +44,9 @@ export const useAiChatViewModel = (userId: string) => {
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [habitOptions, setHabitOptions] = useState<HabitOption[]>([])
     const [categoryOptions, setCategoryOptions] = useState<string[]>([])
+    const [statisticsNotice, setStatisticsNotice] = useState<string | null>(
+        null,
+    )
     const [createProposalMessageId, setCreateProposalMessageId] = useState<
         string | null
     >(null)
@@ -133,6 +61,7 @@ export const useAiChatViewModel = (userId: string) => {
         setCreateProposalMessageId(null)
         setHabitOptions([])
         setCategoryOptions([])
+        setStatisticsNotice(null)
     }, [userId])
 
     const createProposalMessage = useMemo(
@@ -166,6 +95,7 @@ export const useAiChatViewModel = (userId: string) => {
         sendLock.current = true
         setIsLoading(true)
         setErrorMessage(null)
+        setStatisticsNotice(null)
         setInput('')
         const userMessage: AiConversationMessage = {
             id: getNextMessageId(),
@@ -175,13 +105,38 @@ export const useAiChatViewModel = (userId: string) => {
         setMessages(current => [...current, userMessage])
 
         try {
-            const [habits, categories] = await Promise.all([
+            const [
+                habits,
+                categories,
+                completions,
+                goals,
+                reasons,
+                tasks,
+                events,
+            ] = await Promise.all([
                 database
                     .get<Habit>('habits')
                     .query(Q.where('user_id', userId))
                     .fetch(),
                 database
                     .get<Category>('categories')
+                    .query(Q.where('user_id', userId))
+                    .fetch(),
+                database
+                    .get<CompletionRecord>('completion_records')
+                    .query()
+                    .fetch(),
+                database.get<Goal>('goals').query().fetch(),
+                database
+                    .get<IncompletionReason>('incompletion_reasons')
+                    .query()
+                    .fetch(),
+                database
+                    .get<TodoTask>('todo_tasks')
+                    .query(Q.where('user_id', userId))
+                    .fetch(),
+                database
+                    .get<Event>('events')
                     .query(Q.where('user_id', userId))
                     .fetch(),
             ])
@@ -200,19 +155,79 @@ export const useAiChatViewModel = (userId: string) => {
             )
 
             const history = getRecentAiChatHistory(messages)
+            const statisticsMode = isStatisticsQuestion(message)
+            const statistics = statisticsMode
+                ? buildAiChatStatistics({
+                      habits,
+                      completions: completions.filter(record =>
+                          habits.some(
+                              habit =>
+                                  habit.id === record.habitId &&
+                                  habit.userId === userId,
+                          ),
+                      ),
+                      categories,
+                      goals: goals.filter(goal =>
+                          habits.some(
+                              habit =>
+                                  habit.id === goal.habitId &&
+                                  habit.userId === userId,
+                          ),
+                      ),
+                      reasons,
+                  })
+                : undefined
             const response = await aiEndpoints.chat({
                 message,
+                mode: statisticsMode ? 'statistics' : 'chat',
                 history: history.length ? history : undefined,
-                context: { habits: contextHabits },
+                context: {
+                    habits: contextHabits,
+                    ...(statistics ? { statistics } : {}),
+                },
             })
+            if (statisticsMode && response.proposal)
+                throw new AiChatError({
+                    stage: 'response',
+                    fields: ['proposal'],
+                })
+            setStatisticsNotice(
+                statisticsMode &&
+                    !statistics?.periods?.some(period => period.planned > 0)
+                    ? 'There is not enough local history to calculate reliable statistics.'
+                    : null,
+            )
             const proposal = response.proposal
-            const proposalState =
-                proposal?.type === 'habit.update' &&
-                !contextHabits.some(habit => habit.id === proposal.entityId)
-                    ? 'invalid'
-                    : proposal
+            const ownsHabit = (id: string) =>
+                habits.some(habit => habit.id === id && habit.userId === userId)
+            const proposalTargetExists = !proposal
+                ? false
+                : proposal.type === 'habit.update' ||
+                  proposal.type === 'todo.update' ||
+                  proposal.type === 'event.update' ||
+                  proposal.type === 'goal.update'
+                ? (proposal.type === 'habit.update' &&
+                      ownsHabit(proposal.entityId)) ||
+                  (proposal.type === 'todo.update' &&
+                      tasks.some(task => task.id === proposal.entityId)) ||
+                  (proposal.type === 'event.update' &&
+                      events.some(event => event.id === proposal.entityId)) ||
+                  (proposal.type === 'goal.update' &&
+                      goals.some(
+                          goal =>
+                              goal.id === proposal.entityId &&
+                              ownsHabit(goal.habitId),
+                      ))
+                : proposal.type === 'habit.completion.create'
+                ? ownsHabit(proposal.habitId)
+                : proposal.type === 'goal.create'
+                ? ownsHabit(proposal.goal.habitId)
+                : true
+            const proposalState = proposal
+                ? proposalTargetExists
                     ? 'pending'
-                    : undefined
+                    : 'invalid'
+                : undefined
             const assistantMessage: AiConversationMessage = {
                 id: getNextMessageId(),
                 role: 'assistant',
@@ -298,7 +313,8 @@ export const useAiChatViewModel = (userId: string) => {
     const confirmUpdateProposal = async (messageId: string) => {
         const message = messages.find(item => item.id === messageId)
         if (
-            message?.proposal?.type !== 'habit.update' ||
+            !message?.proposal ||
+            message.proposal.type === 'habit.create' ||
             message.proposalState !== 'pending' ||
             proposalSaveLock.current
         )
@@ -308,18 +324,27 @@ export const useAiChatViewModel = (userId: string) => {
         setIsSavingProposal(true)
         setErrorMessage(null)
         try {
-            const formData = await getHabitUpdateFormData(
-                userId,
-                message.proposal.entityId,
-                message.proposal.changes,
-            )
-            const status = message.proposal.changes.status
-            await updateHabitLocally(
-                userId,
-                message.proposal.entityId,
-                formData,
-                status,
-            )
+            if (message.proposal.type === 'habit.update') {
+                const habit = await database
+                    .get<Habit>('habits')
+                    .find(message.proposal.entityId)
+                    .catch(() => null)
+                if (!habit || habit.userId !== userId)
+                    throw new Error('Habit is no longer available.')
+                const formData = await getAiHabitUpdateFormData(
+                    userId,
+                    habit,
+                    message.proposal.changes,
+                )
+                await updateHabitLocally(
+                    userId,
+                    habit.id,
+                    formData,
+                    message.proposal.changes.status,
+                )
+            } else {
+                await applyAiProposalLocally(userId, message.proposal)
+            }
             setMessages(current =>
                 current.map(item =>
                     item.id === messageId
@@ -327,8 +352,12 @@ export const useAiChatViewModel = (userId: string) => {
                         : item,
                 ),
             )
-        } catch {
-            setErrorMessage('Unable to save this change. Please try again.')
+        } catch (error) {
+            setErrorMessage(
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to save this change. Please try again.',
+            )
         } finally {
             proposalSaveLock.current = false
             setIsSavingProposal(false)
@@ -338,6 +367,7 @@ export const useAiChatViewModel = (userId: string) => {
     return {
         cancelProposal,
         categoryOptions,
+        statisticsNotice,
         closeCreateProposal,
         confirmUpdateProposal,
         createHabitFromProposal,

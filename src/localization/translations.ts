@@ -416,6 +416,29 @@ const portuguese: Record<string, string> = {
     'Proposal cancelled.': 'Proposta cancelada.',
     'This proposal cannot be applied because the habit was not included in the request.':
         'Esta proposta não pode ser aplicada porque o hábito não foi incluído na solicitação.',
+    'This proposal cannot be applied because its target is no longer available for your account.':
+        'Esta proposta não pode ser aplicada porque o item não está mais disponível para sua conta.',
+    'Confirm proposal': 'Confirmar proposta',
+    Date: 'Data',
+    'Completion time': 'Horário de conclusão',
+    Note: 'Observação',
+    Target: 'Meta',
+    Deadline: 'Prazo',
+    Starts: 'Início',
+    Ends: 'Término',
+    'There is not enough local history to calculate reliable statistics.':
+        'Ainda não há histórico local suficiente para calcular estatísticas confiáveis.',
+    'Habit is no longer available.': 'Este hábito não está mais disponível.',
+    'Task ID': 'ID da tarefa',
+    'Event ID': 'ID do evento',
+    'Goal ID': 'ID da meta',
+    'Task is no longer available.': 'Esta tarefa não está mais disponível.',
+    'Event is no longer available.': 'Este evento não está mais disponível.',
+    'Goal is no longer available.': 'Esta meta não está mais disponível.',
+    'The proposed completion date is invalid.':
+        'A data proposta para a conclusão é inválida.',
+    'The proposed event time is invalid.':
+        'O horário proposto para o evento é inválido.',
     'I’m reviewing your weekly routine and completion history.':
         'Estou analisando sua rotina semanal e seu histórico de conclusão.',
     'I need at least 5 active habits and 10 planned sessions per week, with enough history across three full weeks, before I can recommend changing your total load. You currently have {{activeHabitCount}} active habits and {{occurrenceCount}} planned sessions in the last full week.':

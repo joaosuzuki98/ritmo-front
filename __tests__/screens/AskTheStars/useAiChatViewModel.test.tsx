@@ -11,6 +11,7 @@ import {
 import { useAiChatViewModel } from '../../../src/screens/AskTheStars/useAiChatViewModel'
 import type { AiChatRequest } from '../../../src/services/endpoints/ai'
 import { AiChatError } from '../../../src/services/aiChatError'
+import { applyAiProposalLocally } from '../../../src/screens/AskTheStars/aiProposalPersistence'
 
 const mockCreateHabitLocally = jest.mocked(createHabitLocally)
 const mockUpdateHabitLocally = jest.mocked(updateHabitLocally)
@@ -30,10 +31,14 @@ jest.mock('../../../src/screens/HabitsDashboard/habitPersistence', () => ({
     getConditionStatus: jest.fn(() => undefined),
     updateHabitLocally: jest.fn(),
 }))
+jest.mock('../../../src/screens/AskTheStars/aiProposalPersistence', () => ({
+    applyAiProposalLocally: jest.fn(),
+}))
 
 const mockedGet = database.get as jest.Mock
 const mockUseNetInfo = jest.mocked(useNetInfo)
 const mockChat = jest.mocked(aiEndpoints.chat)
+const mockApplyProposal = jest.mocked(applyAiProposalLocally)
 
 const habit = (id: string, status = 'pending') =>
     ({
@@ -74,6 +79,7 @@ describe('useAiChatViewModel', () => {
         mockChat.mockResolvedValue({ reply: 'Sure.', proposal: null })
         mockCreateHabitLocally.mockResolvedValue(habit('local-id'))
         mockUpdateHabitLocally.mockResolvedValue(habit('habit-1'))
+        mockApplyProposal.mockResolvedValue(undefined)
         mockedGet.mockImplementation((table: string) => ({
             query: () => ({
                 fetch: async () =>
@@ -277,5 +283,70 @@ describe('useAiChatViewModel', () => {
         )
         expect(viewModel.messages[1].proposalState).toBe('applied')
         expect(mockChat).toHaveBeenCalledTimes(1)
+    })
+
+    it('requires confirmation for new action proposals and cancellation performs no writes', async () => {
+        mockChat.mockResolvedValue({
+            reply: 'I can add this task.',
+            proposal: { type: 'todo.create', task: { title: 'Buy food' } },
+        })
+        renderHook()
+        await send()
+
+        const proposalMessage = viewModel.messages[1]
+        expect(proposalMessage.proposalState).toBe('pending')
+        expect(mockApplyProposal).not.toHaveBeenCalled()
+        act(() => viewModel.cancelProposal(proposalMessage.id))
+        expect(viewModel.messages[1].proposalState).toBe('cancelled')
+        expect(mockApplyProposal).not.toHaveBeenCalled()
+    })
+
+    it('applies a confirmed action through local persistence only', async () => {
+        mockChat.mockResolvedValue({
+            reply: 'I can add this task.',
+            proposal: { type: 'todo.create', task: { title: 'Buy food' } },
+        })
+        renderHook()
+        await send()
+        await act(async () =>
+            viewModel.confirmUpdateProposal(viewModel.messages[1].id),
+        )
+
+        expect(mockApplyProposal).toHaveBeenCalledWith('user-1', {
+            type: 'todo.create',
+            task: { title: 'Buy food' },
+        })
+        expect(viewModel.messages[1].proposalState).toBe('applied')
+        expect(mockChat).toHaveBeenCalledTimes(1)
+    })
+
+    it('requests statistics mode with aggregates and without raw completion rows', async () => {
+        renderHook()
+        await send('What is my completion rate this week?')
+
+        const request = mockChat.mock.calls[0][0] as AiChatRequest
+        expect(request.mode).toBe('statistics')
+        expect(request.context?.statistics).toMatchObject({
+            periods: expect.any(Array),
+            habits: expect.any(Array),
+            weeklyLoad: expect.any(Object),
+        })
+        expect(request.context).not.toHaveProperty('completionRecords')
+        expect(request.context?.habits).not.toHaveProperty('completionHistory')
+    })
+
+    it('rejects proposals returned in statistics mode', async () => {
+        mockChat.mockResolvedValue({
+            reply: 'I can add a task.',
+            proposal: { type: 'todo.create', task: { title: 'Buy food' } },
+        })
+        renderHook()
+        await send('Show me my statistics')
+
+        expect(viewModel.messages).toHaveLength(1)
+        expect(viewModel.errorMessage).toBe(
+            'The AI response does not match the expected format.',
+        )
+        expect(mockApplyProposal).not.toHaveBeenCalled()
     })
 })
