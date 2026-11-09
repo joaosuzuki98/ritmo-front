@@ -3,11 +3,29 @@ jest.mock('../../../src/database', () => ({ database: { get: jest.fn() } }))
 import {
     buildAiChatContext,
     getRecentAiChatHistory,
+    isStatisticsQuestion,
     toCreateHabitFormData,
     type AiConversationMessage,
 } from '../../../src/screens/AskTheStars/aiChatUtils'
 
 describe('Ask the Stars chat helpers', () => {
+    it.each([
+        'Quantos hábitos concluí nesta semana?',
+        'Quais hábitos eu completei ontem?',
+        'Como está minha conclusão de hábitos?',
+        'Show my habit completion history',
+    ])('recognizes completion analytics: %s', message => {
+        expect(isStatisticsQuestion(message)).toBe(true)
+    })
+
+    it('keeps a direct request to record completion in chat mode', () => {
+        expect(
+            isStatisticsQuestion(
+                'Registre a conclusão do hábito Caminhada hoje',
+            ),
+        ).toBe(false)
+    })
+
     it('maps the proposed category to the existing creation form', () => {
         const values = toCreateHabitFormData(
             {

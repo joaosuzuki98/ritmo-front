@@ -336,7 +336,7 @@ describe('useAiChatViewModel', () => {
 
     it('requests statistics mode with aggregates and without raw completion rows', async () => {
         renderHook()
-        await send('What is my completion rate this week?')
+        await send('Quantos hábitos concluí nesta semana?')
 
         const request = mockChat.mock.calls[0][0] as AiChatRequest
         expect(request.mode).toBe('statistics')

@@ -69,10 +69,27 @@ export const toCreateHabitFormData = (
     conditionStatus: '',
 })
 
-export const isStatisticsQuestion = (message: string) =>
-    /\b(stats?|statistics|analys[ei]s|how many|how often|trend|progress|streak|correlation|completion rate|estat[ií]stic|an[aá]lise|quantos|quantas|frequ[eê]ncia|progresso|sequ[eê]ncia|taxa de conclus[aã]o|correla[cç][aã]o)\b/i.test(
-        message,
-    )
+export const isStatisticsQuestion = (message: string) => {
+    const normalized = message
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase()
+    const asksForAction =
+        /^\s*(?:(?:please|por favor)\s+)?(?:mark|log|record|register|complete|add|create|update|set|marque|registre|anote|lance|complete|adicione|crie|atualize|edite|defina)\b/.test(
+            normalized,
+        )
+    const asksForMetric =
+        /\b(how many|how often|when|quantos|quantas|quais|qual|quantas vezes|taxa|percentual|historico|resumo|estatisticas|analise|progresso|tendencia|sequencia|correlacao|streak|trend|progress|statistics|analysis|completion rate)\b/.test(
+            normalized,
+        )
+    const mentionsCompletions =
+        /\b(complet\w*|conclus\w*|conclu\w*|finaliz\w*|done|missed|skipped)\b/.test(
+            normalized,
+        )
+
+    if (asksForAction && !asksForMetric) return false
+    return asksForMetric || mentionsCompletions
+}
 
 export const getAiHabitUpdateFormData = async (
     userId: string,
