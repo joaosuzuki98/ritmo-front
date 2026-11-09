@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ComponentRef } from 'react'
 import { ArrowUp } from 'phosphor-react-native'
 import {
+    ActivityIndicator,
     Platform,
     Pressable,
     ScrollView,
@@ -30,10 +31,13 @@ import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { AnimatedStarMessage } from './components/AnimatedStarMessage'
 import { AnimatedSuggestionCard } from './components/AnimatedSuggestionCard'
+import { AiHabitProposalCard } from './components/AiHabitProposalCard'
 import { StarMoonAnimation } from './components/StarMoonAnimation'
 import { useAskTheStarsViewModel } from './useAskTheStarsViewModel'
+import { useAiChatViewModel } from './useAiChatViewModel'
 import { useAnalysisLoading } from './useAnalysisLoading'
 import { useTranslation } from '../../localization/useTranslation'
+import { AddHabitModal } from '../HabitsDashboard/components/AddHabitModal'
 
 type AskTheStarsScreenProps = {
     currentUser: User
@@ -85,6 +89,7 @@ export const AskTheStarsScreen = ({
         selectedHabit,
         weeklyLoadAnalysis,
     } = useAskTheStarsViewModel(currentUser.id, initialHabitId)
+    const aiChat = useAiChatViewModel(currentUser.id)
     const [suggestionSelection, setSuggestionSelection] = useState<{
         habitId: string | undefined
         index: number
@@ -96,6 +101,7 @@ export const AskTheStarsScreen = ({
     const isFocused = useIsFocused()
     const isAnalysisFlow = Boolean(initialHabitId)
     const isWeeklyLoadFlow = isWeeklyLoadAnalysis && !isAnalysisFlow
+    const isChatFlow = !isAnalysisFlow && !isWeeklyLoadFlow
     const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
     const shouldShowAnalysisLoading = useAnalysisLoading({
         habitId: isAnalysisFlow
@@ -104,6 +110,12 @@ export const AskTheStarsScreen = ({
         isLoading,
         hasLoadError,
     })
+    const currentWeekDay = clampWeekDay(new Date().getDay() || 7)
+
+    useEffect(() => {
+        if (isChatFlow && aiChat.messages.length)
+            scrollRef.current?.scrollToEnd({ animated: true })
+    }, [aiChat.isLoading, aiChat.messages, isChatFlow])
 
     useEffect(() => {
         if (shouldShowAnalysisLoading)
@@ -316,9 +328,11 @@ export const AskTheStarsScreen = ({
                 ref={scrollRef}
                 contentContainerStyle={[
                     styles.scrollContent,
-                    isWeeklyLoadFlow && {
-                        paddingBottom: bottom + spacing.xl,
-                    },
+                    isWeeklyLoadFlow
+                        ? { paddingBottom: bottom + spacing.xl }
+                        : isChatFlow
+                        ? { paddingBottom: 160 + bottom + spacing.lg }
+                        : null,
                 ]}
                 showsVerticalScrollIndicator={false}
                 style={styles.scrollView}
@@ -357,7 +371,7 @@ export const AskTheStarsScreen = ({
                         </Text>
                     </View>
                 ) : null}
-                {canShowStarMessage ? (
+                {canShowStarMessage && !isChatFlow ? (
                     <AnimatedStarMessage
                         key={messageKey}
                         message={starMessage}
@@ -366,6 +380,91 @@ export const AskTheStarsScreen = ({
                             setCompletedMessageKey(messageKey)
                         }
                     />
+                ) : null}
+
+                {isChatFlow ? (
+                    <View style={styles.chatTranscript}>
+                        {!aiChat.messages.length ? (
+                            <Text style={styles.chatWelcome}>
+                                {t(
+                                    'Tell me what you would like to change or add to your habit routine.',
+                                )}
+                            </Text>
+                        ) : null}
+                        {aiChat.messages.map(message => {
+                            const updateProposal =
+                                message.proposal?.type === 'habit.update'
+                                    ? message.proposal
+                                    : null
+                            const habitName = updateProposal
+                                ? aiChat.habitOptions.find(
+                                      option =>
+                                          option.id === updateProposal.entityId,
+                                  )?.title
+                                : undefined
+
+                            return (
+                                <View
+                                    key={message.id}
+                                    style={[
+                                        styles.chatMessage,
+                                        message.role === 'user'
+                                            ? styles.userMessage
+                                            : styles.assistantMessage,
+                                    ]}
+                                >
+                                    <Text style={styles.chatMessageText}>
+                                        {message.content}
+                                    </Text>
+                                    {message.proposal ? (
+                                        <AiHabitProposalCard
+                                            habitName={habitName}
+                                            isSaving={aiChat.isSavingProposal}
+                                            onCancel={() =>
+                                                aiChat.cancelProposal(
+                                                    message.id,
+                                                )
+                                            }
+                                            onConfirmCreate={() =>
+                                                aiChat.openCreateProposal(
+                                                    message.id,
+                                                )
+                                            }
+                                            onConfirmUpdate={() =>
+                                                aiChat.confirmUpdateProposal(
+                                                    message.id,
+                                                )
+                                            }
+                                            proposal={message.proposal}
+                                            state={message.proposalState}
+                                        />
+                                    ) : null}
+                                </View>
+                            )
+                        })}
+                        {aiChat.isLoading ? (
+                            <View
+                                accessibilityLabel={t('AI is responding')}
+                                accessibilityState={{ busy: true }}
+                                style={styles.chatLoading}
+                            >
+                                <ActivityIndicator
+                                    color={colors.onboardingPurple}
+                                />
+                                <Text style={styles.chatStatusText}>
+                                    {t('Thinking…')}
+                                </Text>
+                            </View>
+                        ) : null}
+                        {aiChat.errorMessage ? (
+                            <Text
+                                accessibilityRole="alert"
+                                style={styles.errorMessage}
+                            >
+                                {t(aiChat.errorMessage)}
+                            </Text>
+                        ) : null}
+                    </View>
                 ) : null}
 
                 {isAnalysisFlow ? (
@@ -552,26 +651,63 @@ export const AskTheStarsScreen = ({
                 </View>
             ) : (
                 <View
-                    style={[styles.composer, { bottom: spacing.md + bottom }]}
+                    style={[
+                        styles.composerArea,
+                        { bottom: spacing.md + bottom },
+                    ]}
                 >
-                    <TextInput
-                        accessibilityLabel={t(
-                            'Ask your star, available in a future update',
-                        )}
-                        accessibilityState={{ disabled: true }}
-                        editable={false}
-                        placeholder={t('Ask a question about your habits')}
-                        placeholderTextColor={colors.onboardingMuted}
-                        style={styles.composerInput}
-                    />
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityState={{ disabled: true }}
-                        disabled
-                        style={styles.composerButton}
-                    >
-                        <ArrowUp color={colors.white} size={32 * scale} />
-                    </Pressable>
+                    {!aiChat.isOnline ? (
+                        <Text style={styles.offlineMessage}>
+                            {t(
+                                'An internet connection is required for a new AI response.',
+                            )}
+                        </Text>
+                    ) : null}
+                    <View style={styles.composer}>
+                        <TextInput
+                            accessibilityLabel={t(
+                                'Ask a question about your habits',
+                            )}
+                            accessibilityState={{
+                                disabled: !aiChat.isOnline || aiChat.isLoading,
+                            }}
+                            editable={aiChat.isOnline && !aiChat.isLoading}
+                            maxLength={2000}
+                            multiline
+                            onChangeText={aiChat.setInput}
+                            onSubmitEditing={aiChat.handleSend}
+                            placeholder={t('Ask a question about your habits')}
+                            placeholderTextColor={colors.onboardingMuted}
+                            returnKeyType="send"
+                            style={styles.composerInput}
+                            value={aiChat.input}
+                        />
+                        <Pressable
+                            accessibilityLabel={t('Send message')}
+                            accessibilityRole="button"
+                            accessibilityState={{
+                                disabled:
+                                    !aiChat.isOnline ||
+                                    aiChat.isLoading ||
+                                    !aiChat.input.trim(),
+                            }}
+                            disabled={
+                                !aiChat.isOnline ||
+                                aiChat.isLoading ||
+                                !aiChat.input.trim()
+                            }
+                            onPress={aiChat.handleSend}
+                            style={[
+                                styles.composerButton,
+                                (!aiChat.isOnline ||
+                                    aiChat.isLoading ||
+                                    !aiChat.input.trim()) &&
+                                    styles.disabledButton,
+                            ]}
+                        >
+                            <ArrowUp color={colors.white} size={32 * scale} />
+                        </Pressable>
+                    </View>
                 </View>
             )}
 
@@ -629,6 +765,17 @@ export const AskTheStarsScreen = ({
                     )}
                 </ScrollView>
             </BottomSheetLayout>
+            {isChatFlow ? (
+                <AddHabitModal
+                    categoryOptions={aiChat.categoryOptions}
+                    habitOptions={aiChat.habitOptions}
+                    initialFormData={aiChat.createInitialFormData}
+                    initialWeekDay={currentWeekDay}
+                    isVisible={aiChat.createProposalMessage !== null}
+                    onClose={aiChat.closeCreateProposal}
+                    onCreateHabit={aiChat.createHabitFromProposal}
+                />
+            ) : null}
         </View>
     )
 }
@@ -776,6 +923,57 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         marginVertical: spacing.sm,
     },
+    chatTranscript: {
+        alignSelf: 'stretch',
+        gap: spacing.sm,
+        marginTop: spacing.md,
+    },
+    chatWelcome: {
+        alignSelf: 'stretch',
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+        lineHeight: 22,
+        textAlign: 'center',
+    },
+    chatMessage: {
+        borderRadius: spacing.md,
+        maxWidth: '90%',
+        padding: spacing.md,
+    },
+    userMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: colors.onboardingAction,
+    },
+    assistantMessage: {
+        alignSelf: 'flex-start',
+        backgroundColor: colors.onboardingSurface,
+    },
+    chatMessageText: {
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+        lineHeight: 21,
+    },
+    chatLoading: {
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
+        gap: spacing.sm,
+        padding: spacing.sm,
+    },
+    chatStatusText: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 13,
+    },
+    offlineMessage: {
+        color: colors.textMuted,
+        fontFamily: typography.fontFamily,
+        fontSize: 12,
+        marginBottom: spacing.xs,
+        textAlign: 'center',
+    },
     analysisActions: {
         alignSelf: 'stretch',
         gap: spacing.sm,
@@ -805,19 +1003,23 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily,
         fontSize: 15,
     },
-    composer: {
-        backgroundColor: colors.onboardingSurface,
-        borderRadius: spacing.md,
-        flexDirection: 'row',
-        height: 132,
+    composerArea: {
         left: spacing.lg,
-        padding: spacing.md,
         position: 'absolute',
         right: spacing.lg,
     },
+    composer: {
+        backgroundColor: colors.onboardingSurface,
+        borderColor: colors.border,
+        borderRadius: spacing.md,
+        borderWidth: 1,
+        flexDirection: 'row',
+        height: 132,
+        padding: spacing.md,
+    },
     composerInput: {
         alignSelf: 'stretch',
-        color: colors.textMuted,
+        color: colors.text,
         flex: 1,
         fontFamily: typography.fontFamily,
         fontSize: 16,

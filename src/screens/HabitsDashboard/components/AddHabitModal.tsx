@@ -42,6 +42,7 @@ type AddHabitModalProps = {
     isVisible: boolean
     initialWeekDay: WeekDay
     habit?: HabitCardViewData | null
+    initialFormData?: AddHabitFormData
     habitOptions: readonly HabitOption[]
     categoryOptions: readonly string[]
     onClose: () => void
@@ -52,25 +53,28 @@ type AddHabitModalProps = {
 const getInitialValues = (
     initialWeekDay: WeekDay,
     habit?: HabitCardViewData | null,
-): AddHabitFormData => ({
-    name: habit?.title ?? '',
-    description: habit?.description ?? '',
-    categoryName: habit?.categoryLabel ?? '',
-    frequencyType: habit?.frequencyType === 'weekly' ? 'weekly' : 'daily',
-    weekDays: habit?.weekDays.length ? habit.weekDays : [initialWeekDay],
-    priority:
-        habit?.priority === 'low' || habit?.priority === 'high'
-            ? habit.priority
-            : 'medium',
-    estimatedDurationMinutes: habit?.estimatedDurationMinutes
-        ? String(habit.estimatedDurationMinutes)
-        : '',
-    preferredTime: formatPreferredTime(habit?.preferredTime),
-    dependencyHabitId: habit?.dependencyHabitId ?? '',
-    conditionHabitId: habit?.conditionHabitId ?? '',
-    conditionStatus:
-        (habit?.conditionStatus as AddHabitFormData['conditionStatus']) ?? '',
-})
+    initialFormData?: AddHabitFormData,
+): AddHabitFormData =>
+    initialFormData ?? {
+        name: habit?.title ?? '',
+        description: habit?.description ?? '',
+        categoryName: habit?.categoryLabel ?? '',
+        frequencyType: habit?.frequencyType === 'weekly' ? 'weekly' : 'daily',
+        weekDays: habit?.weekDays.length ? habit.weekDays : [initialWeekDay],
+        priority:
+            habit?.priority === 'low' || habit?.priority === 'high'
+                ? habit.priority
+                : 'medium',
+        estimatedDurationMinutes: habit?.estimatedDurationMinutes
+            ? String(habit.estimatedDurationMinutes)
+            : '',
+        preferredTime: formatPreferredTime(habit?.preferredTime),
+        dependencyHabitId: habit?.dependencyHabitId ?? '',
+        conditionHabitId: habit?.conditionHabitId ?? '',
+        conditionStatus:
+            (habit?.conditionStatus as AddHabitFormData['conditionStatus']) ??
+            '',
+    }
 
 const durationOptions = [
     { label: 'Not set', value: '' },
@@ -94,6 +98,7 @@ export const AddHabitModal = ({
     isVisible,
     initialWeekDay,
     habit = null,
+    initialFormData,
     habitOptions,
     categoryOptions,
     onClose,
@@ -117,7 +122,7 @@ export const AddHabitModal = ({
         setValue,
         watch,
     } = useForm<AddHabitFormData>({
-        defaultValues: getInitialValues(initialWeekDay, habit),
+        defaultValues: getInitialValues(initialWeekDay, habit, initialFormData),
         resolver: zodResolver(addHabitSchema),
     })
     const frequencyType = watch('frequencyType')
@@ -132,15 +137,15 @@ export const AddHabitModal = ({
 
     useEffect(() => {
         if (isVisible) {
-            reset(getInitialValues(initialWeekDay, habit))
+            reset(getInitialValues(initialWeekDay, habit, initialFormData))
             setIsPreferredTimePickerVisible(false)
             setIsEnteringNewCategory(false)
         }
-    }, [habit, initialWeekDay, isVisible, reset])
+    }, [habit, initialFormData, initialWeekDay, isVisible, reset])
 
     const handleClose = () => {
         if (isSubmitting) return
-        reset(getInitialValues(initialWeekDay))
+        reset(getInitialValues(initialWeekDay, null, initialFormData))
         setSubmitError('')
         setIsPreferredTimePickerVisible(false)
         setIsEnteringNewCategory(false)

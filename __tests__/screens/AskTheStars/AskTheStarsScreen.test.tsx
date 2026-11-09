@@ -3,6 +3,8 @@ import type { ReactTestRenderer } from 'react-test-renderer'
 import { Text, TextInput } from 'react-native'
 import LottieView from 'lottie-react-native'
 import { useIsFocused } from '@react-navigation/native'
+import { useNetInfo } from '@react-native-community/netinfo'
+import type { NetInfoState } from '@react-native-community/netinfo'
 
 import { database, type Habit, type User } from '../../../src/database'
 import { AskTheStarsScreen } from '../../../src/screens/AskTheStars/AskTheStarsScreen'
@@ -10,6 +12,7 @@ import { AnimatedStarMessage } from '../../../src/screens/AskTheStars/components
 import { AnimatedSuggestionCard } from '../../../src/screens/AskTheStars/components/AnimatedSuggestionCard'
 import * as scheduleAnalysis from '../../../src/habits/habitScheduleAnalysis'
 import * as loadAnalysis from '../../../src/habits/habitLoadAnalysis'
+import { aiEndpoints } from '../../../src/services/endpoints/ai'
 
 jest.mock('../../../src/database', () => ({
     database: { get: jest.fn(), write: jest.fn() },
@@ -17,6 +20,12 @@ jest.mock('../../../src/database', () => ({
 jest.mock('lottie-react-native', () => ({
     __esModule: true,
     default: jest.fn(() => null),
+}))
+jest.mock('@react-native-community/netinfo', () => ({
+    useNetInfo: jest.fn(),
+}))
+jest.mock('../../../src/services/endpoints/ai', () => ({
+    aiEndpoints: { chat: jest.fn() },
 }))
 jest.mock('../../../src/components/StarBackground/StarBackground', () => ({
     StarBackground: () => null,
@@ -27,6 +36,10 @@ jest.mock('../../../src/components/TopBar/TopBar', () => ({
 jest.mock('../../../src/components/BottomSheetLayout', () => ({
     BottomSheetLayout: () => null,
 }))
+jest.mock(
+    '../../../src/screens/HabitsDashboard/components/AddHabitModal',
+    () => ({ AddHabitModal: () => null }),
+)
 jest.mock('@react-navigation/native', () => ({
     useIsFocused: jest.fn(() => true),
 }))
@@ -93,10 +106,19 @@ describe('AskTheStarsScreen analysis loading', () => {
         jest.clearAllMocks()
         jest.useFakeTimers()
         jest.mocked(useIsFocused).mockReturnValue(true)
+        jest.mocked(useNetInfo).mockReturnValue({
+            isConnected: true,
+            isInternetReachable: true,
+        } as NetInfoState)
+        jest.mocked(aiEndpoints.chat).mockResolvedValue({
+            reply: 'Here is a suggestion.',
+            proposal: null,
+        })
         observers = {}
         subscriptions = []
         ;(database.get as jest.Mock).mockImplementation((table: TableName) => ({
             query: () => ({
+                fetch: async () => [],
                 observeWithColumns: () => ({
                     subscribe: (observer: Observer) => {
                         observers[table] = observer
@@ -147,24 +169,82 @@ describe('AskTheStarsScreen analysis loading', () => {
         },
     )
 
-    it('keeps the menu flow on the coming soon message', () => {
+    it('shows the chat composer in the general Ask the Stars flow', () => {
         act(() => {
             renderer = create(screen())
         })
         expect(renderer.root.findAllByType(TextInput)).toHaveLength(1)
-        expect(new Set(messages())).toEqual(
-            new Set([
-                'Coming soon! Ask the stars for guidance with your habits.',
-            ]),
-        )
+        expect(
+            renderer.root
+                .findAllByType(Text)
+                .some(
+                    node =>
+                        node.props.children ===
+                        'Tell me what you would like to change or add to your habit routine.',
+                ),
+        ).toBe(true)
+        expect(messages()).toEqual([])
         emit('habits', [])
         emit('events', [])
         emit('completion_records', [])
 
-        expect(new Set(messages())).toEqual(
-            new Set([
-                'Coming soon! Ask the stars for guidance with your habits.',
-            ]),
+        expect(messages()).toEqual([])
+    })
+
+    it('disables the composer and explains the offline requirement', () => {
+        jest.mocked(useNetInfo).mockReturnValue({
+            isConnected: false,
+            isInternetReachable: false,
+        } as NetInfoState)
+        act(() => {
+            renderer = create(screen())
+        })
+
+        expect(renderer.root.findByType(TextInput).props.editable).toBe(false)
+        expect(
+            renderer.root
+                .findAllByType(Text)
+                .some(
+                    node =>
+                        node.props.children ===
+                        'An internet connection is required for a new AI response.',
+                ),
+        ).toBe(true)
+    })
+
+    it('renders sent and returned messages and displays request errors', async () => {
+        act(() => {
+            renderer = create(screen())
+        })
+        const input = renderer.root.findByType(TextInput)
+        act(() => input.props.onChangeText('Help me make a routine'))
+        const sendButton = renderer.root.findByProps({
+            accessibilityLabel: 'Send message',
+        })
+        await act(async () => sendButton.props.onPress())
+
+        const visibleTexts = () =>
+            renderer.root.findAllByType(Text).map(node => node.props.children)
+        expect(visibleTexts()).toContain('Help me make a routine')
+        expect(visibleTexts()).toContain('Here is a suggestion.')
+        expect(aiEndpoints.chat).toHaveBeenCalledTimes(1)
+
+        jest.mocked(aiEndpoints.chat).mockRejectedValueOnce(
+            new Error('Network error'),
+        )
+        act(() =>
+            renderer.root
+                .findByType(TextInput)
+                .props.onChangeText('Another question'),
+        )
+        await act(async () =>
+            renderer.root
+                .findByProps({ accessibilityLabel: 'Send message' })
+                .props.onPress(),
+        )
+
+        expect(visibleTexts()).toContain(
+            'Unable to get an AI response. Please try again.',
         )
     })
 

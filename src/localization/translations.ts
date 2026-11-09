@@ -375,6 +375,47 @@ const portuguese: Record<string, string> = {
         'Este horário conflita com “{{eventTitle}}”.',
     'Coming soon! Ask the stars for guidance with your habits.':
         'Em breve! Peça orientação às estrelas sobre seus hábitos.',
+    'Tell me what you would like to change or add to your habit routine.':
+        'Conte o que você gostaria de mudar ou adicionar à sua rotina de hábitos.',
+    'Send message': 'Enviar mensagem',
+    'AI is responding': 'A IA está respondendo',
+    'Thinking…': 'Pensando…',
+    'An internet connection is required for a new AI response.':
+        'É necessária uma conexão com a internet para receber uma nova resposta da IA.',
+    'Unable to get an AI response. Please try again.':
+        'Não foi possível obter uma resposta da IA. Tente novamente.',
+    'Unable to prepare the AI request. Check the chat data.':
+        'Não foi possível preparar a solicitação à IA. Verifique os dados do chat.',
+    'The AI response does not match the expected format.':
+        'A resposta da IA não corresponde ao formato esperado.',
+    'Unable to authenticate the AI request. Please sign in again.':
+        'Não foi possível autenticar a solicitação à IA. Entre novamente.',
+    'The server rejected the AI request. Check the chat API contract.':
+        'O servidor rejeitou a solicitação à IA. Verifique o contrato da API de chat.',
+    'The AI chat endpoint was not found on the server.':
+        'A rota de chat da IA não foi encontrada no servidor.',
+    'Too many AI requests. Please try again later.':
+        'Muitas solicitações à IA. Tente novamente mais tarde.',
+    'The AI service failed on the server. Please try again later.':
+        'O serviço de IA falhou no servidor. Tente novamente mais tarde.',
+    'Unable to save this change. Please try again.':
+        'Não foi possível salvar esta alteração. Tente novamente.',
+    'Suggested habit': 'Hábito sugerido',
+    'Suggested change': 'Alteração sugerida',
+    'Habit ID': 'ID do hábito',
+    'Will be cleared': 'Será removido',
+    'Choose days in form': 'Escolha os dias no formulário',
+    Daily: 'Todos os dias',
+    Weekly: 'Semanal',
+    minutes: 'minutos',
+    'Review and complete details': 'Revisar e completar detalhes',
+    'Confirm change': 'Confirmar alteração',
+    'Cancel proposal': 'Cancelar proposta',
+    'Saved on this device. It will sync when internet is available.':
+        'Salvo neste dispositivo. Será sincronizado quando houver internet.',
+    'Proposal cancelled.': 'Proposta cancelada.',
+    'This proposal cannot be applied because the habit was not included in the request.':
+        'Esta proposta não pode ser aplicada porque o hábito não foi incluído na solicitação.',
     'I’m reviewing your weekly routine and completion history.':
         'Estou analisando sua rotina semanal e seu histórico de conclusão.',
     'I need at least 5 active habits and 10 planned sessions per week, with enough history across three full weeks, before I can recommend changing your total load. You currently have {{activeHabitCount}} active habits and {{occurrenceCount}} planned sessions in the last full week.':
