@@ -1,5 +1,73 @@
 # Changelog
 
+## [2.0.0](https://github.com/joaosuzuki98/ritmo-front/compare/v1.2.0...v2.0.0) (2026-11-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* Local authentication and session restoration now require server auth. The v14 migration permanently removes local password fields. Existing local records are not remapped to server user IDs.
+
+### Features
+
+* add adaptive habit schedule coaching ([35376ef](https://github.com/joaosuzuki98/ritmo-front/commit/35376efbc6ac7918166dc62159d08254d172b00f))
+* add AI habit coaching chat ([713cc53](https://github.com/joaosuzuki98/ritmo-front/commit/713cc53f40fa2364630dbf5831a699c47406b603))
+* add button to clear chat ([c768b52](https://github.com/joaosuzuki98/ritmo-front/commit/c768b52f741fedb2259a30a014bfd1ed2b22650d))
+* Add daily app access and focus flow ([2481675](https://github.com/joaosuzuki98/ritmo-front/commit/2481675d6ebf902ad1ff6a626d3fc857856619d5))
+* add functions to more actions ([e517267](https://github.com/joaosuzuki98/ritmo-front/commit/e51726791a01c94373dc9c0c7b022fbe9ae6e3bf))
+* Add habit coaching and notification settings ([d72c20f](https://github.com/joaosuzuki98/ritmo-front/commit/d72c20f0089071f838c24e64dac53eb4d9bc99dd))
+* add habit time pickers ([4001678](https://github.com/joaosuzuki98/ritmo-front/commit/400167858af31a45485dd4c156b9faa91cbb3985))
+* add mascot icons to notifications ([e5e688b](https://github.com/joaosuzuki98/ritmo-front/commit/e5e688bb9ea7f77fd8081a4f644361cf43f01f7f))
+* add Portuguese localization settings ([7b9d8bc](https://github.com/joaosuzuki98/ritmo-front/commit/7b9d8bc16800626dca3bdba805ded61bc3f910d7))
+* add safespace to the ask the stars chat ([24858c3](https://github.com/joaosuzuki98/ritmo-front/commit/24858c3fb88992cf61f77d9f8c699da8bd416661))
+* Add server authentication and data sync ([5084285](https://github.com/joaosuzuki98/ritmo-front/commit/508428555b334ed42d8bdae9f58962d8d42f50b5))
+* add settings and local notifications ([c090912](https://github.com/joaosuzuki98/ritmo-front/commit/c0909121bbc2c3bb83c98ff918e966a00e8b75b3))
+* add shop to drawer menu ([5bbe2bc](https://github.com/joaosuzuki98/ritmo-front/commit/5bbe2bc90777fa1be5c117efcf38625ebbb2b06b))
+* add signup password visibility toggle ([0aeb9d1](https://github.com/joaosuzuki98/ritmo-front/commit/0aeb9d1172b8f8d32316a91852593f40263616b3))
+* add start-your-day focus selection ([9800971](https://github.com/joaosuzuki98/ritmo-front/commit/9800971ec62e2b53fb102f48048ee47913e4bbfc))
+* add weekly habit load notifications ([8d6a6e9](https://github.com/joaosuzuki98/ritmo-front/commit/8d6a6e9306156c483e803ba9b7dc25c7ffa87d3e))
+* add weekly habit load recommendations ([1ad5e69](https://github.com/joaosuzuki98/ritmo-front/commit/1ad5e69bc518a2c0626cbc80d6f5f52f8c1d0b0d))
+* animate Ask the Stars message ([4c80e42](https://github.com/joaosuzuki98/ritmo-front/commit/4c80e429ab184377247767c1a7ebbcdac01fdc7e))
+* **habits:** improve toolbar and requirement pickers ([3b48c75](https://github.com/joaosuzuki98/ritmo-front/commit/3b48c75aa7f7383a2f83c3842933e1756d2e8a94))
+* improve Ask the Stars experience ([f871859](https://github.com/joaosuzuki98/ritmo-front/commit/f871859fd683377532fc32087e03b04f4c78acb1))
+* improve habit details modal ([f79cdb2](https://github.com/joaosuzuki98/ritmo-front/commit/f79cdb25b98b521f18b5286bbb173a9908417258))
+* improve habit modal controls ([f16da07](https://github.com/joaosuzuki98/ritmo-front/commit/f16da079496cb9f356f3459017d2a8927687789c))
+* load API URLs from environment ([f1c0492](https://github.com/joaosuzuki98/ritmo-front/commit/f1c0492e05540d4f8e594bfb75d691f140aa93f8))
+* make focus flag list scroll after three rows ([7159dd3](https://github.com/joaosuzuki98/ritmo-front/commit/7159dd36bfc0ebd51546a61aa3abefd584d0b043))
+* move authentication to the server ([aad7828](https://github.com/joaosuzuki98/ritmo-front/commit/aad7828ae21e517492208b1dfc579421d6c2fcc2))
+* notify users about low-success habits ([2907953](https://github.com/joaosuzuki98/ritmo-front/commit/2907953e76ccbe159362e6a514592b57c69f3d6c))
+* polish weekly habit analysis presentation ([034bc10](https://github.com/joaosuzuki98/ritmo-front/commit/034bc104b806f6b7b70622faa82a0418dc4d69c5))
+* refine Ask the Stars analysis flow ([55652ae](https://github.com/joaosuzuki98/ritmo-front/commit/55652ae7d4e4277d8d9638c24306d500ebed35cd))
+* refresh drawer navigation options ([478d562](https://github.com/joaosuzuki98/ritmo-front/commit/478d562b38677a7667dd3cc714bd9e23032aab05))
+* remove analysis loading spinner ([7eecef1](https://github.com/joaosuzuki98/ritmo-front/commit/7eecef1887ed7e19b38114593a167e44e5b00ee0))
+* save daily focus on continue ([8077ee1](https://github.com/joaosuzuki98/ritmo-front/commit/8077ee1ccaae1579bda7dbcfea78c1c127d628dd))
+* show all habits in category heat map ([3ba7d82](https://github.com/joaosuzuki98/ritmo-front/commit/3ba7d82c6b2bf991e08d2260451575232da95c7a))
+* show daily start screen when habits exist ([c2dc44d](https://github.com/joaosuzuki98/ritmo-front/commit/c2dc44df0a689120d04672fc1a27ff66a0b8c320))
+* show login days in top bar ([b6a78c5](https://github.com/joaosuzuki98/ritmo-front/commit/b6a78c59ca8730f94a6349672c8b198d030a0c74))
+* show tree markers for conditional habits ([2045259](https://github.com/joaosuzuki98/ritmo-front/commit/2045259886aeecbb426598bf634f1cc04d12b190))
+* show user mascot in profile navigation ([fa61a4a](https://github.com/joaosuzuki98/ritmo-front/commit/fa61a4a4fede7b40378998f20ecbe3fcff241799))
+* standardize schedule and reminder modals ([3cad7c3](https://github.com/joaosuzuki98/ritmo-front/commit/3cad7c3ee85706b433dcac28b9d619781b55aa7b))
+* tailor habit analysis messages by success rate ([c15b81a](https://github.com/joaosuzuki98/ritmo-front/commit/c15b81a8819ff16d5d765a2fb58ff865bae551a7))
+* update bottom bar icons ([f40a87d](https://github.com/joaosuzuki98/ritmo-front/commit/f40a87dd2f80756b06d9e2dfce34cc7fba621429))
+* use native pickers for progress fields ([6987a9a](https://github.com/joaosuzuki98/ritmo-front/commit/6987a9a0c288cdbfd0e481661d27d6b8ab07a57b))
+* wire authenticated database sync ([d9ff868](https://github.com/joaosuzuki98/ritmo-front/commit/d9ff868dc639e2fb988770d168835933ebfa6266))
+
+
+### Bug Fixes
+
+* align habit toolbar with cards ([e3744d0](https://github.com/joaosuzuki98/ritmo-front/commit/e3744d069d35ff3f077dffb8b57aca26ddc33f96))
+* avoid recommending occupied habit slots ([0927db0](https://github.com/joaosuzuki98/ritmo-front/commit/0927db0f0cc91612e5444f92778aed6e0ad114c0))
+* clarify low-success notification settings ([539a799](https://github.com/joaosuzuki98/ritmo-front/commit/539a799eea36ed7e6c032898cbc7611c9b350ad6))
+* fix erros with statistics ([2ccc6fa](https://github.com/joaosuzuki98/ritmo-front/commit/2ccc6fab36f7e9350282cb8cc1619dc35a628d03))
+* match notification option text size ([91aee21](https://github.com/joaosuzuki98/ritmo-front/commit/91aee21920a7cc96362136e3da00734ff2e406e7))
+* migrate pending habit analysis column ([a496379](https://github.com/joaosuzuki98/ritmo-front/commit/a4963796fa4d59f81a3eb4e3aa0b437dc9f2009a))
+* navigate after closing the drawer ([e6fe399](https://github.com/joaosuzuki98/ritmo-front/commit/e6fe399632d1f69e86631536fcd008b09d700a0f))
+* prevent schedule actions from covering suggestions ([163f151](https://github.com/joaosuzuki98/ritmo-front/commit/163f1510cf909b93703eeaed879177eaf6eb6a4d))
+* refresh habit cards after schedule changes ([8f44260](https://github.com/joaosuzuki98/ritmo-front/commit/8f44260872d54b920d04e64da5b6309e072701e3))
+* remove double-tap hint popup ([7be28e0](https://github.com/joaosuzuki98/ritmo-front/commit/7be28e0124aa1a7e7d0baee3052b702cdc27616a))
+* translate notification setting labels ([f2de213](https://github.com/joaosuzuki98/ritmo-front/commit/f2de21320c8e7de60ce9bb064ff2c0089c75fb38))
+* translate progress status prompt ([8d65e76](https://github.com/joaosuzuki98/ritmo-front/commit/8d65e76fc152e464bfe79b9af38a5cf6c14254ec))
+* use server reason ids for completions ([2af76b5](https://github.com/joaosuzuki98/ritmo-front/commit/2af76b5e8d0d5ab0c866d61700bb6c90533211bc))
+
 ## [1.2.0](https://github.com/joaosuzuki98/ritmo-front/compare/v1.1.0...v1.2.0) (2026-10-28)
 
 
