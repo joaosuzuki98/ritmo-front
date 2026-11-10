@@ -8,11 +8,12 @@ import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLa
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
 import { FormActionButton } from '../../components/FormActionButton'
 import type { User } from '../../database'
-import { authenticateLocalUser } from '../../database/localAuth'
+import { authenticateUser } from '../../services/auth'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { loginSchema, type LoginFormData } from './loginSchema'
+import { useTranslation } from '../../localization/useTranslation'
 
 type LoginScreenProps = {
     onForgotPasswordPress: () => void
@@ -25,6 +26,7 @@ export const LoginScreen = ({
     onLoginSuccess,
     onRegisterPress,
 }: LoginScreenProps) => {
+    const { t } = useTranslation()
     const [submitError, setSubmitError] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -42,7 +44,7 @@ export const LoginScreen = ({
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            const user = await authenticateLocalUser(email, password)
+            const user = await authenticateUser(email, password)
             onLoginSuccess(user)
         } catch (error) {
             setSubmitError(
@@ -57,20 +59,22 @@ export const LoginScreen = ({
 
     return (
         <AuthScreenLayout
-            description="Sign in to keep building a routine that works for you."
+            description={t(
+                'Sign in to keep building a routine that works for you.',
+            )}
             footer={
                 <Text style={styles.footerText}>
-                    Don’t have an account?{' '}
+                    {t('Don’t have an account?')}{' '}
                     <Text
                         accessibilityRole="link"
                         onPress={onRegisterPress}
                         style={styles.footerLink}
                     >
-                        Sign up
+                        {t('Sign up')}
                     </Text>
                 </Text>
             }
-            title="Welcome back"
+            title={t('Welcome back')}
         >
             <View>
                 <Controller
@@ -81,10 +85,10 @@ export const LoginScreen = ({
                             autoComplete="email"
                             error={errors.email?.message}
                             keyboardType="email-address"
-                            label="Email"
+                            label={t('Email')}
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="you@example.com"
+                            placeholder={t('you@example.com')}
                             returnKeyType="next"
                             textContentType="emailAddress"
                             value={field.value}
@@ -98,16 +102,16 @@ export const LoginScreen = ({
                         <AuthTextInput
                             autoComplete="current-password"
                             error={errors.password?.message}
-                            label="Password"
+                            label={t('Password')}
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Your password"
+                            placeholder={t('Your password')}
                             rightAccessory={
                                 <Pressable
                                     accessibilityLabel={
                                         isPasswordVisible
-                                            ? 'Hide password'
-                                            : 'Show password'
+                                            ? t('Hide password')
+                                            : t('Show password')
                                     }
                                     accessibilityRole="button"
                                     accessibilityState={{
@@ -143,17 +147,19 @@ export const LoginScreen = ({
                     onPress={onForgotPasswordPress}
                     style={styles.forgotButton}
                 >
-                    <Text style={styles.forgotText}>Forgot password?</Text>
+                    <Text style={styles.forgotText}>
+                        {t('Forgot password?')}
+                    </Text>
                 </Pressable>
                 {submitError ? (
                     <Text accessibilityLiveRegion="polite" style={styles.error}>
-                        {submitError}
+                        {t(submitError)}
                     </Text>
                 ) : null}
                 <FormActionButton
                     disabled={isSubmitting}
                     onPress={handleSubmit(handleLogin)}
-                    title={isSubmitting ? 'Signing in…' : 'Sign in'}
+                    title={t(isSubmitting ? 'Signing in…' : 'Sign in')}
                 />
             </View>
         </AuthScreenLayout>

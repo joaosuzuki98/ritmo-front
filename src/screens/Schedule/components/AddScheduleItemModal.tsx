@@ -22,8 +22,9 @@ import { spacing } from '../../../styles/spacing'
 import { typography } from '../../../styles/typography'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
-import { getScheduleTimeParts } from '../scheduleTime'
+import { getScheduleMinuteParts, getScheduleTimeParts } from '../scheduleTime'
 import { ScheduleTimeInput } from './ScheduleTimeInput'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type AddScheduleItemModalProps = {
     initialStartHour: number
@@ -56,7 +57,7 @@ const getInitialValues = (
     if (!item || !item.endTime)
         defaultEnd.setHours(
             (item?.dateTime.getHours() ?? startHour) + 1,
-            0,
+            item?.dateTime.getMinutes() ?? 0,
             0,
             0,
         )
@@ -65,8 +66,10 @@ const getInitialValues = (
 
     return {
         endHour: initialEnd.hour,
+        endMinute: getScheduleMinuteParts(endDate.getMinutes()),
         endPeriod: initialEnd.period,
         startHour: initialStart.hour,
+        startMinute: getScheduleMinuteParts(item?.dateTime.getMinutes() ?? 0),
         startPeriod: initialStart.period,
         title: item?.title ?? '',
         location: item?.location ?? '',
@@ -92,6 +95,7 @@ export const AddScheduleItemModal = ({
     showEventDetails = false,
     showReminderType = false,
 }: AddScheduleItemModalProps) => {
+    const { t } = useTranslation()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const {
@@ -142,38 +146,44 @@ export const AddScheduleItemModal = ({
     }
     const handleDelete = () => {
         if (!onDeleteItem) return
-        Alert.alert('Delete schedule item?', 'This action cannot be undone.', [
-            { style: 'cancel', text: 'Cancel' },
-            {
-                onPress: () => {
-                    setIsSubmitting(true)
-                    setSubmitError('')
-                    onDeleteItem()
-                        .then(() => {
-                            reset(getInitialValues(initialStartHour))
-                            onClose()
-                        })
-                        .catch(() =>
-                            setSubmitError(
-                                'Unable to delete this schedule item. Please retry.',
-                            ),
-                        )
-                        .finally(() => setIsSubmitting(false))
+        Alert.alert(
+            t('Delete schedule item?'),
+            t('This action cannot be undone.'),
+            [
+                { style: 'cancel', text: t('Cancel') },
+                {
+                    onPress: () => {
+                        setIsSubmitting(true)
+                        setSubmitError('')
+                        onDeleteItem()
+                            .then(() => {
+                                reset(getInitialValues(initialStartHour))
+                                onClose()
+                            })
+                            .catch(() =>
+                                setSubmitError(
+                                    'Unable to delete this schedule item. Please retry.',
+                                ),
+                            )
+                            .finally(() => setIsSubmitting(false))
+                    },
+                    style: 'destructive',
+                    text: t('Delete'),
                 },
-                style: 'destructive',
-                text: 'Delete',
-            },
-        ])
+            ],
+        )
     }
 
     return (
         <BottomSheetLayout
-            closeAccessibilityLabel="Close schedule item modal"
+            closeAccessibilityLabel={t('Close schedule item modal')}
             heightMode="fixed"
             isCloseDisabled={isSubmitting}
             isVisible={isVisible}
             onClose={handleClose}
-            title={title ?? (item ? 'Edit schedule item' : 'Add schedule item')}
+            title={
+                title ?? t(item ? 'Edit schedule item' : 'Add schedule item')
+            }
         >
             <ScrollView
                 style={styles.formScroll}
@@ -183,18 +193,18 @@ export const AddScheduleItemModal = ({
             >
                 <View>
                     <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                        Item name
+                        {t('Item name')}
                     </Text>
                     <Controller
                         control={control}
                         name="title"
                         render={({ field }) => (
                             <FormTextInput
-                                accessibilityLabel="Schedule item name"
+                                accessibilityLabel={t('Schedule item name')}
                                 autoCapitalize="sentences"
                                 onBlur={field.onBlur}
                                 onChangeText={field.onChange}
-                                placeholder="e.g. Team meeting"
+                                placeholder={t('e.g. Team meeting')}
                                 hasError={Boolean(errors.title)}
                                 value={field.value}
                             />
@@ -207,7 +217,7 @@ export const AddScheduleItemModal = ({
                                 styles.errorText,
                             ]}
                         >
-                            {errors.title.message}
+                            {t(errors.title.message ?? '')}
                         </Text>
                     ) : null}
                     {showEventDetails ? (
@@ -218,18 +228,18 @@ export const AddScheduleItemModal = ({
                                     styles.label,
                                 ]}
                             >
-                                Location
+                                {t('Location')}
                             </Text>
                             <Controller
                                 control={control}
                                 name="location"
                                 render={({ field }) => (
                                     <FormTextInput
-                                        accessibilityLabel="Event location"
+                                        accessibilityLabel={t('Event location')}
                                         autoCapitalize="words"
                                         onBlur={field.onBlur}
                                         onChangeText={field.onChange}
-                                        placeholder="e.g. Main office"
+                                        placeholder={t('e.g. Main office')}
                                         value={field.value ?? ''}
                                     />
                                 )}
@@ -240,14 +250,16 @@ export const AddScheduleItemModal = ({
                                     styles.label,
                                 ]}
                             >
-                                Description
+                                {t('Description')}
                             </Text>
                             <Controller
                                 control={control}
                                 name="description"
                                 render={({ field }) => (
                                     <FormTextInput
-                                        accessibilityLabel="Event description"
+                                        accessibilityLabel={t(
+                                            'Event description',
+                                        )}
                                         autoCapitalize="sentences"
                                         containerStyle={
                                             styles.descriptionContainer
@@ -255,7 +267,7 @@ export const AddScheduleItemModal = ({
                                         multiline
                                         onBlur={field.onBlur}
                                         onChangeText={field.onChange}
-                                        placeholder="Add details"
+                                        placeholder={t('Add details')}
                                         style={styles.descriptionInput}
                                         textAlignVertical="top"
                                         value={field.value ?? ''}
@@ -272,7 +284,7 @@ export const AddScheduleItemModal = ({
                                     styles.label,
                                 ]}
                             >
-                                Reminder type
+                                {t('Reminder type')}
                             </Text>
                             <View style={styles.reminderTypes}>
                                 {reminderTypeOptions.map(([value, label]) => {
@@ -280,7 +292,7 @@ export const AddScheduleItemModal = ({
                                         selectedReminderType === value
                                     return (
                                         <Pressable
-                                            accessibilityRole="button"
+                                            accessibilityRole="radio"
                                             accessibilityState={{
                                                 selected: isSelected,
                                             }}
@@ -295,13 +307,14 @@ export const AddScheduleItemModal = ({
                                             ]}
                                         >
                                             <Text
+                                                numberOfLines={1}
                                                 style={[
                                                     styles.reminderTypeText,
                                                     isSelected &&
                                                         styles.selectedReminderTypeText,
                                                 ]}
                                             >
-                                                {label}
+                                                {t(label)}
                                             </Text>
                                         </Pressable>
                                     )
@@ -317,12 +330,15 @@ export const AddScheduleItemModal = ({
                                     styles.label,
                                 ]}
                             >
-                                Starts at
+                                {t('Starts at')}
                             </Text>
                             <ScheduleTimeInput
-                                accessibilityLabel="Schedule item start hour"
+                                accessibilityLabel={t(
+                                    'Schedule item start hour',
+                                )}
                                 control={control}
                                 hourName="startHour"
+                                minuteName="startMinute"
                                 periodName="startPeriod"
                             />
                         </View>
@@ -333,12 +349,13 @@ export const AddScheduleItemModal = ({
                                     styles.label,
                                 ]}
                             >
-                                Ends at
+                                {t('Ends at')}
                             </Text>
                             <ScheduleTimeInput
-                                accessibilityLabel="Schedule item end hour"
+                                accessibilityLabel={t('Schedule item end hour')}
                                 control={control}
                                 hourName="endHour"
+                                minuteName="endMinute"
                                 periodName="endPeriod"
                             />
                         </View>
@@ -352,29 +369,29 @@ export const AddScheduleItemModal = ({
                                 styles.errorText,
                             ]}
                         >
-                            {submitError}
+                            {t(submitError)}
                         </Text>
                     ) : null}
                     {item && onDeleteItem ? (
                         <FormActionButton
-                            accessibilityLabel="Delete schedule item"
+                            accessibilityLabel={t('Delete schedule item')}
                             disabled={isSubmitting}
                             onPress={handleDelete}
-                            title="Delete item"
+                            title={t('Delete item')}
                             variant="destructive"
                         />
                     ) : null}
                     <FormActionButton
                         accessibilityLabel={
                             item
-                                ? 'Save schedule item changes'
-                                : 'Add schedule item'
+                                ? t('Save schedule item changes')
+                                : t('Add schedule item')
                         }
                         disabled={isSubmitting}
                         isLoading={isSubmitting}
                         onPress={() => handleSubmit(handleSave)()}
                         title={
-                            submitLabel ?? (item ? 'Save changes' : 'Add item')
+                            submitLabel ?? t(item ? 'Save changes' : 'Add item')
                         }
                     />
                 </View>
@@ -391,7 +408,7 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
     },
     label: {
-        marginTop: 20,
+        marginTop: spacing.md,
     },
     errorText: { marginTop: 5 },
     timeRow: { flexDirection: 'row', gap: spacing.md },
@@ -402,17 +419,21 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
     },
     descriptionInput: { minHeight: 78, textAlignVertical: 'top' },
-    reminderTypes: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    reminderTypes: { flexDirection: 'row', gap: spacing.sm },
     reminderType: {
+        alignItems: 'center',
+        backgroundColor: colors.surfaceMuted,
         borderColor: colors.border,
-        borderRadius: 18,
+        borderRadius: 4,
         borderWidth: 1,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
+        flex: 1,
+        justifyContent: 'center',
+        minHeight: 40,
+        paddingHorizontal: spacing.xs,
     },
     selectedReminderType: {
         backgroundColor: colors.accent,
-        borderColor: colors.accent,
+        borderColor: colors.accentStrong,
     },
     reminderTypeText: {
         color: colors.textMuted,

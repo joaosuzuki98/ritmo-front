@@ -5,6 +5,7 @@ import { spacing } from '../../../styles/spacing'
 import { remindersAnimation } from '../remindersAnimation'
 import { welcomingAnimation } from '../welcomingAnimation'
 import { WelcomingAnimation } from './WelcomingAnimation'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type OnboardingAnimationProps = {
     page: number
@@ -69,6 +70,7 @@ export const getOnboardingAnimationHeight = (
 }
 
 export const OnboardingAnimation = ({ page }: OnboardingAnimationProps) => {
+    const { t } = useTranslation()
     const { width: screenWidth } = useWindowDimensions()
     const animation = animationSources[page as keyof typeof animationSources]
 
@@ -86,7 +88,9 @@ export const OnboardingAnimation = ({ page }: OnboardingAnimationProps) => {
 
     return (
         <View
-            accessibilityLabel={`Illustration for onboarding page ${page}`}
+            accessibilityLabel={t('Illustration for onboarding page {{page}}', {
+                page,
+            })}
             style={[styles.container, { height, width }]}
         >
             {page === 2 ? (

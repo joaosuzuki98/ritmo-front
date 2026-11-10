@@ -2,13 +2,13 @@ import { act, create } from 'react-test-renderer'
 import type { ReactTestRenderer } from 'react-test-renderer'
 import { Text, TextInput } from 'react-native'
 
-import { registerLocalUser } from '../../../src/database/localAuth'
+import { registerUser } from '../../../src/services/auth'
 import { AuthScreenLayout } from '../../../src/components/AuthScreenLayout/AuthScreenLayout'
 import { RegisterScreen } from '../../../src/screens/Register/RegisterScreen'
 import type { OnboardingIdentity } from '../../../src/types/onboarding'
 
-jest.mock('../../../src/database/localAuth', () => ({
-    registerLocalUser: jest.fn(),
+jest.mock('../../../src/services/auth', () => ({
+    registerUser: jest.fn(),
 }))
 
 describe('RegisterScreen', () => {
@@ -21,7 +21,9 @@ describe('RegisterScreen', () => {
     const onRegisterSuccess = jest.fn()
 
     const findSubmitButton = () =>
-        renderer.root.findByProps({ accessibilityRole: 'button' })
+        renderer.root
+            .findAllByProps({ accessibilityRole: 'button' })
+            .find(button => button.props.accessibilityLabel === undefined)!
 
     beforeEach(() => {
         jest.clearAllMocks()
@@ -32,7 +34,7 @@ describe('RegisterScreen', () => {
     })
 
     it('renders only email and password and includes the onboarding identity in registration', async () => {
-        jest.mocked(registerLocalUser).mockResolvedValue({
+        jest.mocked(registerUser).mockResolvedValue({
             id: 'user-1',
         } as never)
 
@@ -72,7 +74,7 @@ describe('RegisterScreen', () => {
             await findSubmitButton().props.onPress()
         })
 
-        expect(registerLocalUser).toHaveBeenCalledWith({
+        expect(registerUser).toHaveBeenCalledWith({
             email: 'ana@example.com',
             password: 'password123!',
             ...identity,
@@ -102,8 +104,50 @@ describe('RegisterScreen', () => {
         expect(layout.props.keyboardRevealRef).toBeUndefined()
     })
 
+    it('allows the password to be shown and hidden', async () => {
+        await act(async () => {
+            renderer = create(
+                <RegisterScreen
+                    identity={identity}
+                    onBack={onBack}
+                    onRegisterSuccess={onRegisterSuccess}
+                />,
+            )
+        })
+
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Password' }).props
+                .secureTextEntry,
+        ).toBe(true)
+
+        await act(async () => {
+            renderer.root
+                .findByProps({ accessibilityLabel: 'Show password' })
+                .props.onPress()
+        })
+
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Password' }).props
+                .secureTextEntry,
+        ).toBe(false)
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Hide password' }),
+        ).toBeTruthy()
+
+        await act(async () => {
+            renderer.root
+                .findByProps({ accessibilityLabel: 'Hide password' })
+                .props.onPress()
+        })
+
+        expect(
+            renderer.root.findByProps({ accessibilityLabel: 'Password' }).props
+                .secureTextEntry,
+        ).toBe(true)
+    })
+
     it('keeps the credentials and onboarding identity available after a failed submission', async () => {
-        jest.mocked(registerLocalUser).mockRejectedValue(new Error('Offline'))
+        jest.mocked(registerUser).mockRejectedValue(new Error('Offline'))
 
         await act(async () => {
             renderer = create(
@@ -130,7 +174,7 @@ describe('RegisterScreen', () => {
             renderer.root.findByProps({ accessibilityLabel: 'Email' }).props
                 .value,
         ).toBe('ana@example.com')
-        expect(registerLocalUser).toHaveBeenCalledWith({
+        expect(registerUser).toHaveBeenCalledWith({
             email: 'ana@example.com',
             password: 'password123!',
             ...identity,

@@ -8,6 +8,7 @@ import { typography } from '../../../styles/typography'
 import type { AddGoalFormData } from '../addGoalSchema'
 import type { TodoGoalCardData, TodoGoalHabitOption } from '../todoGoals.types'
 import { AddGoalModal } from './AddGoalModal'
+import { useTranslation } from '../../../localization/useTranslation'
 
 type GoalsSectionProps = {
     goals: readonly TodoGoalCardData[]
@@ -22,8 +23,8 @@ const getStatusLabel = (status: string) => {
     return 'In progress'
 }
 
-const formatDate = (date: Date) =>
-    date.toLocaleDateString(undefined, {
+const formatDate = (date: Date, language: 'en' | 'pt') =>
+    date.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -35,19 +36,20 @@ export const GoalsSection = ({
     onCreateGoal,
     onDeleteGoal,
 }: GoalsSectionProps) => {
+    const { language, t } = useTranslation()
     const [isAddGoalModalVisible, setIsAddGoalModalVisible] = useState(false)
 
     const confirmDelete = (goal: TodoGoalCardData) => {
-        Alert.alert('Delete goal?', 'This goal will be removed.', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('Delete goal?'), t('This goal will be removed.'), [
+            { text: t('Cancel'), style: 'cancel' },
             {
-                text: 'Delete',
+                text: t('Delete'),
                 style: 'destructive',
                 onPress: () => {
                     onDeleteGoal(goal).catch(() =>
                         Alert.alert(
-                            'Unable to delete goal',
-                            'Please try again.',
+                            t('Unable to delete goal'),
+                            t('Please try again.'),
                         ),
                     )
                 },
@@ -59,13 +61,13 @@ export const GoalsSection = ({
         <View style={styles.section}>
             <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleBlock}>
-                    <Text style={styles.sectionTitle}>Goals</Text>
+                    <Text style={styles.sectionTitle}>{t('Goals')}</Text>
                     <Text style={styles.sectionSubtitle}>
-                        Track progress for one habit or a group.
+                        {t('Track progress for one habit or a group.')}
                     </Text>
                 </View>
                 <Pressable
-                    accessibilityLabel="Add goal"
+                    accessibilityLabel={t('Add goal')}
                     accessibilityRole="button"
                     disabled={habitOptions.length === 0}
                     onPress={() => setIsAddGoalModalVisible(true)}
@@ -75,7 +77,7 @@ export const GoalsSection = ({
                     ]}
                 >
                     <Plus color={colors.accentStrong} size={18} weight="bold" />
-                    <Text style={styles.addButtonText}>Add goal</Text>
+                    <Text style={styles.addButtonText}>{t('Add goal')}</Text>
                 </Pressable>
             </View>
 
@@ -96,11 +98,14 @@ export const GoalsSection = ({
                                         {goal.title}
                                     </Text>
                                     <Text style={styles.goalTerm}>
-                                        {goal.termLabel}
+                                        {t(goal.termLabel)}
                                     </Text>
                                 </View>
                                 <Pressable
-                                    accessibilityLabel={`Delete ${goal.title} goal`}
+                                    accessibilityLabel={t(
+                                        'Delete {{goalTitle}} goal',
+                                        { goalTitle: goal.title },
+                                    )}
                                     accessibilityRole="button"
                                     onPress={() => confirmDelete(goal)}
                                     style={styles.deleteButton}
@@ -113,7 +118,17 @@ export const GoalsSection = ({
                                 </Pressable>
                             </View>
                             <Text style={styles.goalDescription}>
-                                {goal.description}
+                                {goal.type === 'group'
+                                    ? t(
+                                          '{{actualPercentage}}% consistency · {{targetPercentage}}% target',
+                                          {
+                                              actualPercentage:
+                                                  goal.actualPercentage,
+                                              targetPercentage:
+                                                  goal.targetPercentage,
+                                          },
+                                      )
+                                    : goal.description}
                             </Text>
                             {goal.type === 'group' ? (
                                 <Text style={styles.habitNames}>
@@ -123,15 +138,33 @@ export const GoalsSection = ({
                             <View style={styles.progressHeader}>
                                 <Text style={styles.progressCaption}>
                                     {goal.type === 'habit'
-                                        ? `${goal.currentValue} of ${goal.targetValue} sessions`
-                                        : `${goal.actualPercentage}% consistency · ${goal.targetPercentage}% target`}
+                                        ? t(
+                                              '{{currentValue}} of {{targetValue}} sessions',
+                                              {
+                                                  currentValue:
+                                                      goal.currentValue,
+                                                  targetValue: goal.targetValue,
+                                              },
+                                          )
+                                        : t(
+                                              '{{actualPercentage}}% consistency · {{targetPercentage}}% target',
+                                              {
+                                                  actualPercentage:
+                                                      goal.actualPercentage,
+                                                  targetPercentage:
+                                                      goal.targetPercentage,
+                                              },
+                                          )}
                                 </Text>
                                 <Text style={styles.progressPercent}>
                                     {goal.progress}%
                                 </Text>
                             </View>
                             <View
-                                accessibilityLabel={`${goal.progress}% of goal reached`}
+                                accessibilityLabel={t(
+                                    '{{progress}}% of goal reached',
+                                    { progress: goal.progress },
+                                )}
                                 accessibilityRole="progressbar"
                                 style={styles.progressTrack}
                             >
@@ -152,10 +185,15 @@ export const GoalsSection = ({
                                             styles.overdueStatus,
                                     ]}
                                 >
-                                    {getStatusLabel(goal.status)}
+                                    {t(getStatusLabel(goal.status))}
                                 </Text>
                                 <Text style={styles.dueDate}>
-                                    Due {formatDate(goal.dueDate)}
+                                    {t('Due {{date}}', {
+                                        date: formatDate(
+                                            goal.dueDate,
+                                            language,
+                                        ),
+                                    })}
                                 </Text>
                             </View>
                         </View>
@@ -163,9 +201,11 @@ export const GoalsSection = ({
                 </View>
             ) : (
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyTitle}>No goals yet</Text>
+                    <Text style={styles.emptyTitle}>{t('No goals yet')}</Text>
                     <Text style={styles.emptyText}>
-                        Set a target and follow your habit progress over time.
+                        {t(
+                            'Set a target and follow your habit progress over time.',
+                        )}
                     </Text>
                 </View>
             )}

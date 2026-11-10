@@ -28,15 +28,19 @@ describe('schedule date helpers', () => {
         expect(
             addScheduleItemSchema.parse({
                 endHour: '10',
+                endMinute: '00',
                 endPeriod: 'AM',
                 startHour: '09',
+                startMinute: '00',
                 startPeriod: 'AM',
                 title: 'Team meeting',
             }),
         ).toEqual({
             endHour: '10',
+            endMinute: '00',
             endPeriod: 'AM',
             startHour: '09',
+            startMinute: '00',
             startPeriod: 'AM',
             title: 'Team meeting',
         })
@@ -46,8 +50,10 @@ describe('schedule date helpers', () => {
     it('rejects an item whose end is not after its start', () => {
         const result = addScheduleItemSchema.safeParse({
             endHour: '09',
+            endMinute: '00',
             endPeriod: 'AM',
             startHour: '09',
+            startMinute: '00',
             startPeriod: 'AM',
             title: 'Team meeting',
         })
@@ -59,8 +65,10 @@ describe('schedule date helpers', () => {
         expect(
             addScheduleItemSchema.safeParse({
                 endHour: '01',
+                endMinute: '00',
                 endPeriod: 'PM',
                 startHour: '11',
+                startMinute: '00',
                 startPeriod: 'AM',
                 title: 'Appointment',
             }).success,
@@ -68,8 +76,21 @@ describe('schedule date helpers', () => {
         expect(
             addScheduleItemSchema.safeParse({
                 endHour: '13',
+                endMinute: '00',
                 endPeriod: 'PM',
                 startHour: '11',
+                startMinute: '00',
+                startPeriod: 'AM',
+                title: 'Appointment',
+            }).success,
+        ).toBe(false)
+        expect(
+            addScheduleItemSchema.safeParse({
+                endHour: '12',
+                endMinute: '60',
+                endPeriod: 'PM',
+                startHour: '11',
+                startMinute: '00',
                 startPeriod: 'AM',
                 title: 'Appointment',
             }).success,
@@ -77,8 +98,10 @@ describe('schedule date helpers', () => {
         expect(
             addScheduleItemSchema.safeParse({
                 endHour: '9',
+                endMinute: '00',
                 endPeriod: 'AM',
                 startHour: '8',
+                startMinute: '00',
                 startPeriod: 'AM',
                 title: 'Appointment',
             }).success,

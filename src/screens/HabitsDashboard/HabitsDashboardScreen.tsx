@@ -27,8 +27,8 @@ import { DaySelector } from './components/DaySelector'
 import { AddHabitModal } from './components/AddHabitModal'
 import { HabitCard } from './components/HabitCard'
 import { HabitToolbar } from './components/HabitToolbar'
+import { HabitCategoryDistributionSheet } from './components/HabitCategoryDistributionSheet'
 import { HabitDetailsModal } from './components/HabitDetailsModal'
-import { DoubleTapHintModal } from './components/DoubleTapHintModal'
 import { LogHabitProgressModal } from './components/LogHabitProgressModal'
 import { SearchInput } from './components/SearchInput'
 import type {
@@ -37,23 +37,28 @@ import type {
 } from './habitDashboard.types'
 import { useHabitsDashboardViewModel } from './useHabitsDashboardViewModel'
 import { getHabitCardOffset } from './habitDragUtils'
+import { useTranslation } from '../../localization/useTranslation'
 
 export const HabitsDashboardScreen = ({
     currentUser,
+    totalAccessDays,
     title = 'Habits',
     initialWeekDay,
     isAddHabitModalVisible = false,
     onMenuPress = () => undefined,
+    onAnalyzeSchedule,
+    onWeeklyLoadAnalysis = () => undefined,
     onOpenAddHabitModal = () => undefined,
     onCloseAddHabitModal = () => undefined,
-    isDoubleTapHintVisible = true,
-    onCloseDoubleTapHint = () => undefined,
 }: HabitsDashboardScreenProps) => {
+    const { t } = useTranslation()
     const viewModel = useHabitsDashboardViewModel(
         currentUser.id,
         initialWeekDay,
     )
     const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const [isCategoryDistributionVisible, setIsCategoryDistributionVisible] =
+        useState(false)
     const [selectedHabit, setSelectedHabit] =
         useState<HabitCardViewData | null>(null)
     const [habitBeingEdited, setHabitBeingEdited] =
@@ -128,12 +133,14 @@ export const HabitsDashboardScreen = ({
 
     const handleDeleteHabit = (habit: HabitCardViewData) => {
         Alert.alert(
-            'Delete habit?',
-            `“${habit.title}” will be removed from your habits.`,
+            t('Delete habit?'),
+            t('“{{habitTitle}}” will be removed from your habits.', {
+                habitTitle: habit.title,
+            }),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('Cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: t('Delete'),
                     style: 'destructive',
                     onPress: () => {
                         viewModel
@@ -141,8 +148,8 @@ export const HabitsDashboardScreen = ({
                             .then(() => setSelectedHabit(null))
                             .catch(() =>
                                 Alert.alert(
-                                    'Unable to delete habit',
-                                    'Please try again.',
+                                    t('Unable to delete habit'),
+                                    t('Please try again.'),
                                 ),
                             )
                     },
@@ -163,8 +170,8 @@ export const HabitsDashboardScreen = ({
             }))
         if (completed === false)
             Alert.alert(
-                'Cannot complete habit',
-                'You can only complete a habit for today.',
+                t('Cannot complete habit'),
+                t('You can only complete a habit for today.'),
             )
     }
 
@@ -184,8 +191,8 @@ export const HabitsDashboardScreen = ({
             }))
         if (saved === false)
             Alert.alert(
-                'Cannot complete habit',
-                'You can only complete a habit for today.',
+                t('Cannot complete habit'),
+                t('You can only complete a habit for today.'),
             )
         return saved
     }
@@ -212,7 +219,7 @@ export const HabitsDashboardScreen = ({
 
     return (
         <ScreenLayout
-            title={title}
+            title={t(title)}
             subtitle={
                 <DaySelector
                     weekDay={viewModel.weekDay}
@@ -224,7 +231,7 @@ export const HabitsDashboardScreen = ({
                 />
             }
             userName={currentUser.name}
-            level={currentUser.level}
+            totalAccessDays={totalAccessDays}
             totalPoints={currentUser.totalPoints}
             onProfilePress={() => undefined}
             onMenuPress={onMenuPress}
@@ -237,6 +244,10 @@ export const HabitsDashboardScreen = ({
                 <HabitToolbar
                     isSearchOpen={isSearchOpen}
                     sort={viewModel.sort}
+                    onCategoriesPress={() =>
+                        setIsCategoryDistributionVisible(true)
+                    }
+                    onWeeklyLoadPress={onWeeklyLoadAnalysis}
                     onSearch={() => setIsSearchOpen(true)}
                     onSort={viewModel.setSort}
                 />
@@ -269,7 +280,7 @@ export const HabitsDashboardScreen = ({
                                     paddingVertical: spacing.lg,
                                 }}
                             >
-                                Loading habits…
+                                {t('Loading habits…')}
                             </Text>
                         ) : null}
                         {viewModel.state === 'error' ? (
@@ -281,10 +292,12 @@ export const HabitsDashboardScreen = ({
                                         paddingVertical: spacing.md,
                                     }}
                                 >
-                                    Unable to load habits.
+                                    {t('Unable to load habits.')}
                                 </Text>
                                 <Pressable
-                                    accessibilityLabel="Retry loading habits"
+                                    accessibilityLabel={t(
+                                        'Retry loading habits',
+                                    )}
                                     onPress={() => viewModel.moveDay(0)}
                                 >
                                     <Text
@@ -293,7 +306,7 @@ export const HabitsDashboardScreen = ({
                                             fontFamily: typography.fontFamily,
                                         }}
                                     >
-                                        Retry
+                                        {t('Retry')}
                                     </Text>
                                 </Pressable>
                             </View>
@@ -317,12 +330,14 @@ export const HabitsDashboardScreen = ({
                                     }}
                                 >
                                     {viewModel.hasAnyHabits
-                                        ? 'No habits for this day.'
-                                        : 'No habits yet. Create your first habit to get started.'}
+                                        ? t('No habits for this day.')
+                                        : t(
+                                              'No habits yet. Create your first habit to get started.',
+                                          )}
                                 </Text>
                                 {!viewModel.hasAnyHabits ? (
                                     <Pressable
-                                        accessibilityLabel="Add a habit"
+                                        accessibilityLabel={t('Add a habit')}
                                         onPress={onOpenAddHabitModal}
                                     >
                                         <Text
@@ -332,7 +347,7 @@ export const HabitsDashboardScreen = ({
                                                     typography.fontFamily,
                                             }}
                                         >
-                                            Add habit
+                                            {t('Add habit')}
                                         </Text>
                                     </Pressable>
                                 ) : null}
@@ -347,10 +362,10 @@ export const HabitsDashboardScreen = ({
                                         paddingVertical: spacing.lg,
                                     }}
                                 >
-                                    No habits match your search.
+                                    {t('No habits match your search.')}
                                 </Text>
                                 <Pressable
-                                    accessibilityLabel="Clear search"
+                                    accessibilityLabel={t('Clear search')}
                                     onPress={viewModel.clearSearch}
                                 >
                                     <Text
@@ -359,7 +374,7 @@ export const HabitsDashboardScreen = ({
                                             fontFamily: typography.fontFamily,
                                         }}
                                     >
-                                        Clear search
+                                        {t('Clear search')}
                                     </Text>
                                 </Pressable>
                             </View>
@@ -414,6 +429,11 @@ export const HabitsDashboardScreen = ({
                     </Animated.View>
                 </PanGestureHandler>
             </ScrollView>
+            <HabitCategoryDistributionSheet
+                habits={viewModel.categoryHabits}
+                isVisible={isCategoryDistributionVisible}
+                onClose={() => setIsCategoryDistributionVisible(false)}
+            />
             <AddHabitModal
                 habitOptions={viewModel.habitOptions}
                 categoryOptions={viewModel.categoryOptions}
@@ -442,6 +462,12 @@ export const HabitsDashboardScreen = ({
                     setHabitToLog(selectedHabit)
                     setSelectedHabit(null)
                 }}
+                onAnalyzeSchedule={() => {
+                    if (!selectedHabit) return
+                    const habitId = selectedHabit.id
+                    setSelectedHabit(null)
+                    onAnalyzeSchedule?.(habitId)
+                }}
             />
             <LogHabitProgressModal
                 habit={habitToLog}
@@ -449,10 +475,6 @@ export const HabitsDashboardScreen = ({
                 selectedDate={viewModel.selectedDate}
                 onClose={() => setHabitToLog(null)}
                 onSave={handleSaveHabitProgress}
-            />
-            <DoubleTapHintModal
-                isVisible={isDoubleTapHintVisible}
-                onClose={onCloseDoubleTapHint}
             />
         </ScreenLayout>
     )

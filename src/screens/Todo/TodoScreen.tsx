@@ -24,9 +24,11 @@ import type { TodoTaskCategory } from './todoTask.types'
 import { useTodoGoalsViewModel } from './useTodoGoalsViewModel'
 import { useTodoCategoriesViewModel } from './useTodoCategoriesViewModel'
 import { useTodoTasksViewModel } from './useTodoTasksViewModel'
+import { useTranslation } from '../../localization/useTranslation'
 
 type TodoScreenProps = {
     currentUser: User
+    totalAccessDays: number
     isAddTaskModalVisible: boolean
     onMenuPress?: () => void
     onCloseAddTaskModal: () => void
@@ -34,10 +36,12 @@ type TodoScreenProps = {
 
 export const TodoScreen = ({
     currentUser,
+    totalAccessDays,
     isAddTaskModalVisible,
     onMenuPress = () => undefined,
     onCloseAddTaskModal,
 }: TodoScreenProps) => {
+    const { t } = useTranslation()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
     const [category, setCategory] = useState<TodoTaskCategory | null>(null)
@@ -56,13 +60,15 @@ export const TodoScreen = ({
         ? Math.round((completedCount / categoryTasks.length) * 100)
         : 0
     const tasksSubtitle = category
-        ? `${categoryTasks.length - completedCount} left to do`
+        ? t('{{count}} left to do', {
+              count: categoryTasks.length - completedCount,
+          })
         : categoriesViewModel.isLoading
-        ? 'Loading categories…'
-        : 'Create a category to get started'
+        ? t('Loading categories…')
+        : t('Create a category to get started')
     const addTask = (title: string) => {
         if (!category)
-            return Promise.reject(new Error('Choose a category first.'))
+            return Promise.reject(new Error(t('Choose a category first.')))
         return tasksViewModel.createTask(title, category)
     }
     const addCategory = async (name: string) => {
@@ -98,10 +104,12 @@ export const TodoScreen = ({
 
     return (
         <ScreenLayout
-            title="To-do"
-            subtitle={<ScreenSubtitle>Organize your next steps</ScreenSubtitle>}
+            title={t('To-do')}
+            subtitle={
+                <ScreenSubtitle>{t('Organize your next steps')}</ScreenSubtitle>
+            }
             userName={currentUser.name}
-            level={currentUser.level}
+            totalAccessDays={totalAccessDays}
             totalPoints={currentUser.totalPoints}
             onProfilePress={() => undefined}
             onMenuPress={onMenuPress}
@@ -117,15 +125,19 @@ export const TodoScreen = ({
                 <View style={styles.progressCard}>
                     <View style={styles.progressHeader}>
                         <View>
-                            <Text style={styles.progressEyebrow}>Progress</Text>
+                            <Text style={styles.progressEyebrow}>
+                                {t('Progress')}
+                            </Text>
                             <Text style={styles.progressTitle}>
-                                {category ?? 'No category selected'}
+                                {category ?? t('No category selected')}
                             </Text>
                         </View>
                         <Text style={styles.progressPercent}>{progress}%</Text>
                     </View>
                     <View
-                        accessibilityLabel={`${progress}% completed`}
+                        accessibilityLabel={`${progress}% ${t(
+                            'Completed',
+                        ).toLowerCase()}`}
                         accessibilityRole="progressbar"
                         style={styles.progressTrack}
                     >
@@ -138,11 +150,16 @@ export const TodoScreen = ({
                     </View>
                     <View style={styles.progressCaptionRow}>
                         <Text style={styles.progressCaption}>
-                            {completedCount} of {categoryTasks.length} tasks
-                            completed
+                            {t(
+                                '{{completedCount}} of {{totalCount}} tasks completed',
+                                {
+                                    completedCount,
+                                    totalCount: categoryTasks.length,
+                                },
+                            )}
                         </Text>
                         <Pressable
-                            accessibilityLabel="Choose task category"
+                            accessibilityLabel={t('Choose task category')}
                             accessibilityRole="button"
                             onPress={() => setIsCategoryPickerVisible(true)}
                             style={styles.categoryButton}
@@ -158,13 +175,13 @@ export const TodoScreen = ({
 
                 {tasksViewModel.loadError ? (
                     <Text style={styles.taskError}>
-                        {tasksViewModel.loadError}
+                        {t(tasksViewModel.loadError)}
                     </Text>
                 ) : null}
 
                 <View style={styles.tasksHeader}>
                     <View>
-                        <Text style={styles.tasksTitle}>Your tasks</Text>
+                        <Text style={styles.tasksTitle}>{t('Your tasks')}</Text>
                         <Text style={styles.tasksSubtitle}>
                             {tasksSubtitle}
                         </Text>
@@ -174,7 +191,9 @@ export const TodoScreen = ({
                 <View style={styles.taskList}>
                     {tasksViewModel.isLoading ? (
                         <View style={styles.emptyState}>
-                            <Text style={styles.emptyText}>Loading tasks…</Text>
+                            <Text style={styles.emptyText}>
+                                {t('Loading tasks…')}
+                            </Text>
                         </View>
                     ) : categoryTasks.length ? (
                         categoryTasks.map((task, index) => (
@@ -223,15 +242,17 @@ export const TodoScreen = ({
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyTitle}>
                                 {category
-                                    ? 'No tasks yet'
+                                    ? t('No tasks yet')
                                     : categoriesViewModel.isLoading
-                                    ? 'Loading categories…'
-                                    : 'No category yet'}
+                                    ? t('Loading categories…')
+                                    : t('No category yet')}
                             </Text>
                             <Text style={styles.emptyText}>
                                 {category
-                                    ? 'Add your first task to get started.'
-                                    : 'Create a category to organize your tasks.'}
+                                    ? t('Add your first task to get started.')
+                                    : t(
+                                          'Create a category to organize your tasks.',
+                                      )}
                             </Text>
                         </View>
                     )}
@@ -256,13 +277,13 @@ export const TodoScreen = ({
             >
                 <View style={styles.categoryModalOverlay}>
                     <Pressable
-                        accessibilityLabel="Close category picker"
+                        accessibilityLabel={t('Close category picker')}
                         onPress={() => setIsCategoryPickerVisible(false)}
                         style={styles.categoryModalBackdrop}
                     />
                     <View style={styles.categoryModal}>
                         <Text style={styles.categoryModalTitle}>
-                            Choose a category
+                            {t('Choose a category')}
                         </Text>
                         {categoriesViewModel.categories.map(item => {
                             const count = tasksViewModel.tasks.filter(
@@ -297,7 +318,7 @@ export const TodoScreen = ({
                                         {item.name}
                                     </Text>
                                     <Text style={styles.categoryOptionCount}>
-                                        {count} tasks
+                                        {t('{{count}} tasks', { count })}
                                     </Text>
                                 </Pressable>
                             )
@@ -305,8 +326,10 @@ export const TodoScreen = ({
                         {categoriesViewModel.categories.length === 0 ? (
                             <Text style={styles.categoryEmptyText}>
                                 {categoriesViewModel.isLoading
-                                    ? 'Loading categories…'
-                                    : 'No categories yet. Create one to organize your tasks.'}
+                                    ? t('Loading categories…')
+                                    : t(
+                                          'No categories yet. Create one to organize your tasks.',
+                                      )}
                             </Text>
                         ) : null}
                         <Pressable
@@ -318,7 +341,7 @@ export const TodoScreen = ({
                             style={styles.addCategoryButton}
                         >
                             <Text style={styles.addCategoryText}>
-                                + Add category
+                                {t('+ Add category')}
                             </Text>
                         </Pressable>
                     </View>

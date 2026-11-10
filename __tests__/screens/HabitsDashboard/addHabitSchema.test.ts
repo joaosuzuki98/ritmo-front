@@ -9,8 +9,6 @@ const habitForm = {
     priority: 'medium',
     estimatedDurationMinutes: '',
     preferredTime: '',
-    preferredTimePeriod: 'AM',
-    isFocusOfDay: false,
     dependencyHabitId: '',
     conditionHabitId: '',
     conditionStatus: '',
@@ -45,20 +43,40 @@ describe('addHabitSchema requirements', () => {
 })
 
 describe('addHabitSchema preferred time', () => {
-    it.each(['00', '0', '09', '12'])('accepts hour %s', hour => {
+    it.each(['00:00', '09:35', '23:55'])('accepts time %s', time => {
         expect(
             addHabitSchema.safeParse({
                 ...habitForm,
-                preferredTime: hour,
+                preferredTime: time,
             }).success,
         ).toBe(true)
     })
 
-    it.each(['13', '99', '09:00 AM', '-1'])('rejects hour %s', hour => {
+    it.each(['24:00', '09:60', '09:00 AM', '-1'])('rejects time %s', time => {
         expect(
             addHabitSchema.safeParse({
                 ...habitForm,
-                preferredTime: hour,
+                preferredTime: time,
+            }).success,
+        ).toBe(false)
+    })
+})
+
+describe('addHabitSchema duration', () => {
+    it.each(['10', '50', '60', '720'])('accepts %s minutes', duration => {
+        expect(
+            addHabitSchema.safeParse({
+                ...habitForm,
+                estimatedDurationMinutes: duration,
+            }).success,
+        ).toBe(true)
+    })
+
+    it.each(['5', '55', '725', '1440'])('rejects %s minutes', duration => {
+        expect(
+            addHabitSchema.safeParse({
+                ...habitForm,
+                estimatedDurationMinutes: duration,
             }).success,
         ).toBe(false)
     })

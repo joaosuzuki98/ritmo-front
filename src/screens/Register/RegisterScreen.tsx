@@ -2,19 +2,21 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRef, useState } from 'react'
 import type { ComponentRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Eye, EyeSlash } from 'phosphor-react-native'
 
 import { AuthScreenLayout } from '../../components/AuthScreenLayout/AuthScreenLayout'
 import { AuthTextInput } from '../../components/AuthTextInput/AuthTextInput'
 import { FormActionButton } from '../../components/FormActionButton'
 import type { User } from '../../database'
-import { registerLocalUser } from '../../database/localAuth'
+import { registerUser } from '../../services/auth'
 import type { OnboardingIdentity } from '../../types/onboarding'
 import { colors } from '../../styles/colors'
 import { spacing } from '../../styles/spacing'
 import { typography } from '../../styles/typography'
 import { registerSchema, type RegisterFormData } from './registerSchema'
 import { PasswordRequirementItem } from './components/PasswordRequirementItem'
+import { useTranslation } from '../../localization/useTranslation'
 
 type RegisterScreenProps = {
     identity: OnboardingIdentity
@@ -27,8 +29,10 @@ export const RegisterScreen = ({
     onBack,
     onRegisterSuccess,
 }: RegisterScreenProps) => {
+    const { t } = useTranslation()
     const [submitError, setSubmitError] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false)
     const [isPasswordFocused, setIsPasswordFocused] = useState(false)
     const passwordRequirementsRef = useRef<ComponentRef<typeof View>>(null)
     const {
@@ -45,10 +49,10 @@ export const RegisterScreen = ({
     })
     const password = watch('password')
     const passwordRequirements = [
-        { label: 'At least 8 characters', isMet: password.length >= 8 },
-        { label: 'At least one number', isMet: /\d/.test(password) },
+        { label: t('At least 8 characters'), isMet: password.length >= 8 },
+        { label: t('At least one number'), isMet: /\d/.test(password) },
         {
-            label: 'At least one special character',
+            label: t('At least one special character'),
             isMet: /[^a-zA-Z0-9]/.test(password),
         },
     ]
@@ -63,7 +67,7 @@ export const RegisterScreen = ({
         setIsSubmitting(true)
         setSubmitError('')
         try {
-            const user = await registerLocalUser({ ...data, ...identity })
+            const user = await registerUser({ ...data, ...identity })
             onRegisterSuccess(user)
         } catch (error) {
             setSubmitError(
@@ -78,20 +82,20 @@ export const RegisterScreen = ({
 
     return (
         <AuthScreenLayout
-            description="Start building a routine that works for you."
+            description={t('Start building a routine that works for you.')}
             footer={
                 <Text style={styles.footerText}>
-                    Already have an account?{' '}
+                    {t('Already have an account?')}{' '}
                     <Text
                         accessibilityRole="link"
                         onPress={onBack}
                         style={styles.footerLink}
                     >
-                        Sign in
+                        {t('Sign in')}
                     </Text>
                 </Text>
             }
-            title="Create your account"
+            title={t('Create your account')}
             keyboardRevealRef={
                 isPasswordFocused ? passwordRequirementsRef : undefined
             }
@@ -105,10 +109,10 @@ export const RegisterScreen = ({
                             autoComplete="email"
                             error={errors.email?.message}
                             keyboardType="email-address"
-                            label="Email"
+                            label={t('Email')}
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="you@example.com"
+                            placeholder={t('you@example.com')}
                             returnKeyType="done"
                             textContentType="emailAddress"
                             value={field.value}
@@ -123,19 +127,49 @@ export const RegisterScreen = ({
                             autoComplete="new-password"
                             error={errors.password?.message}
                             fieldStyle={styles.passwordField}
-                            label="Password"
+                            label={t('Password')}
                             onBlur={() => handlePasswordBlur(field.onBlur)}
                             onFocus={() => setIsPasswordFocused(true)}
                             onChangeText={field.onChange}
-                            placeholder="At least 8 characters"
-                            secureTextEntry
+                            placeholder={t('At least 8 characters')}
+                            rightAccessory={
+                                <Pressable
+                                    accessibilityLabel={
+                                        isPasswordVisible
+                                            ? t('Hide password')
+                                            : t('Show password')
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityState={{
+                                        selected: isPasswordVisible,
+                                    }}
+                                    hitSlop={spacing.sm}
+                                    onPress={() =>
+                                        setIsPasswordVisible(!isPasswordVisible)
+                                    }
+                                    style={styles.passwordVisibilityButton}
+                                >
+                                    {isPasswordVisible ? (
+                                        <EyeSlash
+                                            color={colors.onboardingBackground}
+                                            size={18}
+                                        />
+                                    ) : (
+                                        <Eye
+                                            color={colors.onboardingBackground}
+                                            size={18}
+                                        />
+                                    )}
+                                </Pressable>
+                            }
+                            secureTextEntry={!isPasswordVisible}
                             textContentType="newPassword"
                             value={field.value}
                         />
                     )}
                 />
                 <View
-                    accessibilityLabel="Password requirements"
+                    accessibilityLabel={t('Password requirements')}
                     ref={passwordRequirementsRef}
                     collapsable={false}
                     style={styles.passwordRequirements}
@@ -150,15 +184,15 @@ export const RegisterScreen = ({
                 </View>
                 {submitError ? (
                     <Text accessibilityLiveRegion="polite" style={styles.error}>
-                        {submitError}
+                        {t(submitError)}
                     </Text>
                 ) : null}
                 <FormActionButton
                     disabled={isSubmitting}
                     onPress={handleSubmit(handleRegister)}
-                    title={
-                        isSubmitting ? 'Creating account…' : 'Create account'
-                    }
+                    title={t(
+                        isSubmitting ? 'Creating account…' : 'Create account',
+                    )}
                 />
             </View>
         </AuthScreenLayout>
@@ -174,6 +208,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     footerLink: { color: colors.white, fontWeight: '700' },
+    passwordVisibilityButton: {
+        alignItems: 'center',
+        height: spacing.touchTarget,
+        justifyContent: 'center',
+        width: spacing.touchTarget,
+    },
     passwordField: { marginBottom: spacing.md },
     passwordRequirements: {
         gap: spacing.md,

@@ -16,7 +16,7 @@ Create a release pull request from `hml` into `main`. Include and describe every
 ## Set the pull request title
 
 - Use the project's title format `<type>: <English description>`, without a scope.
-- Use `chore` for this release promotion. The title must be exactly `chore: Promote hml to main`.
+- Use `release` for this release promotion. The title must be exactly `release: Promote hml to main`.
 - Do not end the title with a period.
 
 ## Write the pull request description
@@ -35,9 +35,9 @@ Create a release pull request from `hml` into `main`. Include and describe every
 
   # Checklist
 
-  - [ ] Included PRs merged into `dev` (#...)
+  - [ ] Included PRs merged into `dev`
   - [ ] Commits and diff reviewed for promotion to `hml`
-  - [ ] Database schema and migrations reviewed — [updated / no changes required]
+  - [ ] Database schema and migrations reviewed
   - [ ] Tests, lint, and Android build passing in CI
   - [ ] App validated in `hml`
   ```

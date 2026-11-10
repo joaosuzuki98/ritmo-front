@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import DateTimePicker, {
+    DateTimePickerAndroid,
+} from '@react-native-community/datetimepicker'
+import { Picker } from '@react-native-picker/picker'
 import { Controller, useForm } from 'react-hook-form'
 import {
     Pressable,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -17,6 +22,7 @@ import {
     type IncompletionReasonCode,
 } from '../../../constants/incompletionReasons'
 import { localDateKey } from '../../../utils/normalizeLocalDate'
+import { formatPreferredTime, parsePreferredTime } from '../preferredTime'
 import { FormActionButton } from '../../../components/FormActionButton'
 import { FormTextInput } from '../../../components/FormTextInput'
 import { colors } from '../../../styles/colors'
@@ -29,6 +35,8 @@ import {
     logHabitProgressSchema,
     type LogHabitProgressFormData,
 } from '../logHabitProgressSchema'
+import { useTranslation } from '../../../localization/useTranslation'
+import { useFocusedInputScroll } from '../../../hooks/useFocusedInputScroll'
 
 type LogHabitProgressModalProps = {
     habit: HabitCardViewData | null
@@ -79,10 +87,14 @@ export const LogHabitProgressModal = ({
     onClose,
     onSave,
 }: LogHabitProgressModalProps) => {
+    const { language, t } = useTranslation()
     const { width } = useWindowDimensions()
     const scale = getResponsiveScale(width)
+    const { scrollRef, ensureFocusedInputVisible, handleScroll, resetScroll } =
+        useFocusedInputScroll()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
+    const [isTimePickerVisible, setIsTimePickerVisible] = useState(false)
     const {
         control,
         formState: { errors },
@@ -96,13 +108,38 @@ export const LogHabitProgressModal = ({
     })
     const selectedStatus = watch('status')
     const selectedReason = watch('reason')
+    const selectedTime = watch('time')
 
     useEffect(() => {
         if (isVisible) {
+            resetScroll()
             reset(getInitialValues(habit, selectedDate))
             setSubmitError('')
+            setIsTimePickerVisible(false)
         }
-    }, [habit, isVisible, reset, selectedDate])
+    }, [habit, isVisible, reset, resetScroll, selectedDate])
+
+    const handleTimeChange = (date: Date) => {
+        setValue('time', formatPreferredTime(date), { shouldValidate: true })
+    }
+
+    const handleOpenTimePicker = () => {
+        if (Platform.OS === 'android') {
+            DateTimePickerAndroid.open({
+                display: 'clock',
+                is24Hour: false,
+                minuteInterval: 5,
+                mode: 'time',
+                onValueChange: (_event, date) => {
+                    if (date) handleTimeChange(date)
+                },
+                value: parsePreferredTime(selectedTime) ?? new Date(),
+            })
+            return
+        }
+
+        setIsTimePickerVisible(visible => !visible)
+    }
 
     const handleSave = async (data: LogHabitProgressFormData) => {
         if (!habit) return
@@ -111,8 +148,12 @@ export const LogHabitProgressModal = ({
         try {
             const saved = await onSave(habit.id, data)
             if (saved !== false) onClose()
-        } catch {
-            setSubmitError('Unable to save progress. Please try again.')
+        } catch (error) {
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to save progress. Please try again.',
+            )
         } finally {
             setIsSubmitting(false)
         }
@@ -122,55 +163,52 @@ export const LogHabitProgressModal = ({
     return (
         <BottomSheetLayout
             backdropColor={theme.colors.bottomSheetBackdropStrong}
-            closeAccessibilityLabel="Close progress form"
-            heightRatio={theme.bottomSheet.progressHeightRatio}
+            closeAccessibilityLabel={t('Close progress form')}
+            heightRatio={theme.bottomSheet.heightRatio}
             isVisible={isVisible}
             onClose={onClose}
             sheetStyle={styles.sheet}
         >
             <Text style={[styles.title, { fontSize: 28 * scale }]}>
-                Record today’s progress
+                {t('Record today’s progress')}
             </Text>
             <Text style={styles.habitTitle}>{habit?.title}</Text>
             <ScrollView
+                ref={scrollRef}
                 keyboardShouldPersistTaps="handled"
+                onContentSizeChange={ensureFocusedInputVisible}
+                onFocus={ensureFocusedInputVisible}
+                onLayout={ensureFocusedInputVisible}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
                 showsVerticalScrollIndicator={false}
             >
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    How did it go?
+                    {t('How did it go?')}
                 </Text>
-                <View style={styles.statusOptions}>
-                    {statusOptions.map(option => {
-                        const isSelected = selectedStatus === option.value
-                        return (
-                            <Pressable
-                                accessibilityRole="radio"
-                                accessibilityState={{
-                                    selected: isSelected,
-                                }}
+                <View style={styles.statusPickerContainer}>
+                    <Picker
+                        accessibilityLabel={t('How did it go?')}
+                        dropdownIconColor={colors.textMuted}
+                        dropdownIconRippleColor="transparent"
+                        mode="dropdown"
+                        onValueChange={value =>
+                            setValue('status', value, {
+                                shouldValidate: true,
+                            })
+                        }
+                        selectedValue={selectedStatus}
+                        style={styles.statusPicker}
+                    >
+                        {statusOptions.map(option => (
+                            <Picker.Item
                                 key={option.value}
-                                onPress={() =>
-                                    setValue('status', option.value, {
-                                        shouldValidate: true,
-                                    })
-                                }
-                                style={[
-                                    styles.statusOption,
-                                    isSelected && styles.statusOptionSelected,
-                                ]}
-                            >
-                                <Text
-                                    style={[
-                                        styles.statusOptionText,
-                                        isSelected &&
-                                            styles.statusOptionTextSelected,
-                                    ]}
-                                >
-                                    {option.label}
-                                </Text>
-                            </Pressable>
-                        )
-                    })}
+                                label={t(option.label)}
+                                style={styles.statusPickerItem}
+                                value={option.value}
+                            />
+                        ))}
+                    </Picker>
                 </View>
 
                 {selectedStatus !== 'completed' ? (
@@ -178,7 +216,7 @@ export const LogHabitProgressModal = ({
                         <Text
                             style={[globalStyles.formFieldLabel, styles.label]}
                         >
-                            What got in the way?
+                            {t('What got in the way?')}
                         </Text>
                         <View style={styles.statusOptions}>
                             {incompletionReasonOptions.map(option => {
@@ -213,7 +251,7 @@ export const LogHabitProgressModal = ({
                                                     styles.statusOptionTextSelected,
                                             ]}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                         </Text>
                                     </Pressable>
                                 )
@@ -226,51 +264,60 @@ export const LogHabitProgressModal = ({
                                     styles.errorText,
                                 ]}
                             >
-                                {errors.reason.message}
+                                {t(errors.reason.message ?? '')}
                             </Text>
                         ) : null}
                     </>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Time
+                    {t('Time')}
                 </Text>
-                <Controller
-                    control={control}
-                    name="time"
-                    render={({ field }) => (
-                        <FormTextInput
-                            accessibilityLabel="Progress time"
-                            keyboardType="numbers-and-punctuation"
-                            onBlur={field.onBlur}
-                            onChangeText={field.onChange}
-                            placeholder="HH:MM"
-                            hasError={Boolean(errors.time)}
-                            value={field.value}
-                        />
-                    )}
-                />
+                <Pressable
+                    accessibilityLabel={t('Time')}
+                    accessibilityRole="button"
+                    onPress={handleOpenTimePicker}
+                    style={styles.timePickerButton}
+                >
+                    <Text style={styles.timePickerText}>
+                        {parsePreferredTime(selectedTime)?.toLocaleTimeString(
+                            language === 'pt' ? 'pt-BR' : 'en-US',
+                            { hour: 'numeric', minute: '2-digit' },
+                        ) ?? selectedTime}
+                    </Text>
+                </Pressable>
+                {Platform.OS === 'ios' && isTimePickerVisible ? (
+                    <DateTimePicker
+                        display="spinner"
+                        minuteInterval={5}
+                        mode="time"
+                        onValueChange={(_event, date) => handleTimeChange(date)}
+                        value={parsePreferredTime(selectedTime) ?? new Date()}
+                    />
+                ) : null}
                 {errors.time ? (
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.time.message}
+                        {t(errors.time.message ?? '')}
                     </Text>
                 ) : null}
 
                 <Text style={[globalStyles.formFieldLabel, styles.label]}>
-                    Observation
+                    {t('Observation')}
                 </Text>
                 <Controller
                     control={control}
                     name="note"
                     render={({ field }) => (
                         <FormTextInput
-                            accessibilityLabel="Progress observation"
+                            accessibilityLabel={t('Progress observation')}
                             multiline
                             onBlur={field.onBlur}
                             onChangeText={field.onChange}
-                            placeholder="Add a note about today"
+                            onFocus={ensureFocusedInputVisible}
+                            placeholder={t('Add a note about today')}
+                            scrollEnabled={false}
                             containerStyle={styles.noteContainer}
                             hasError={Boolean(errors.note)}
                             style={styles.noteText}
@@ -283,7 +330,7 @@ export const LogHabitProgressModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {errors.note.message}
+                        {t(errors.note.message ?? '')}
                     </Text>
                 ) : null}
 
@@ -291,15 +338,15 @@ export const LogHabitProgressModal = ({
                     <Text
                         style={[globalStyles.formErrorText, styles.errorText]}
                     >
-                        {submitError}
+                        {t(submitError)}
                     </Text>
                 ) : null}
                 <FormActionButton
-                    accessibilityLabel="Save progress"
+                    accessibilityLabel={t('Save progress')}
                     disabled={isSubmitting}
                     isLoading={isSubmitting}
                     onPress={handleFormSubmit}
-                    title="Save progress"
+                    title={t('Save progress')}
                     containerStyle={styles.saveButton}
                 />
             </ScrollView>
@@ -330,6 +377,37 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     statusOptions: { gap: 8 },
+    timePickerButton: {
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 4,
+        justifyContent: 'center',
+        minHeight: 40,
+        paddingHorizontal: 12,
+    },
+    timePickerText: {
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 15,
+    },
+    statusPickerContainer: {
+        backgroundColor: colors.surfaceInput,
+        borderRadius: 4,
+        height: 40,
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    statusPicker: {
+        backgroundColor: colors.surfaceInput,
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        flexShrink: 0,
+    },
+    statusPickerItem: {
+        backgroundColor: colors.surfaceInput,
+        color: colors.text,
+        fontFamily: typography.fontFamily,
+        fontSize: 14,
+    },
     statusOption: {
         borderColor: colors.border,
         borderRadius: 9,

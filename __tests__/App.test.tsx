@@ -15,6 +15,10 @@ jest.mock('@react-navigation/drawer', () => ({
     }),
     DrawerContentScrollView: ({ children }: { children: unknown }) => children,
 }))
+jest.mock('@react-native-community/netinfo', () => ({
+    __esModule: true,
+    default: { addEventListener: () => () => undefined },
+}))
 
 import App from '../App'
 

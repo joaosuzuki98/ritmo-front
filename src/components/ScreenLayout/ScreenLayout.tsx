@@ -14,7 +14,7 @@ export type ScreenLayoutProps = {
     subtitle?: ReactNode
     titleAccessory?: ReactNode
     userName: string
-    level: number
+    totalAccessDays: number
     totalPoints: number
     onProfilePress: () => void
     onMenuPress: () => void
@@ -26,7 +26,7 @@ export const ScreenLayout = ({
     subtitle,
     titleAccessory,
     userName,
-    level,
+    totalAccessDays,
     totalPoints,
     onProfilePress,
     onMenuPress,
@@ -37,9 +37,9 @@ export const ScreenLayout = ({
     return (
         <View style={globalStyles.screen}>
             <TopBar
-                level={level}
                 onMenuPress={onMenuPress}
                 onProfilePress={onProfilePress}
+                totalAccessDays={totalAccessDays}
                 totalPoints={totalPoints}
                 userName={userName}
             />

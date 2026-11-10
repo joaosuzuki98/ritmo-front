@@ -32,6 +32,7 @@ import {
     OnboardingAnimation,
 } from './components/OnboardingAnimation'
 import { OnboardingProgress } from './components/OnboardingProgress'
+import { useTranslation } from '../../localization/useTranslation'
 
 type OnboardingScreenProps = {
     onComplete: (identity: OnboardingIdentity) => void
@@ -97,6 +98,7 @@ export const OnboardingScreen = ({
     onComplete,
     onSignIn,
 }: OnboardingScreenProps) => {
+    const { t } = useTranslation()
     const [currentPage, setCurrentPage] = useState(1)
     const [focusedInputPage, setFocusedInputPage] = useState<number | null>(
         null,
@@ -285,7 +287,9 @@ export const OnboardingScreen = ({
                                 <View style={styles.topBarSpacer} />
                             ) : (
                                 <Pressable
-                                    accessibilityLabel="Back to previous onboarding page"
+                                    accessibilityLabel={t(
+                                        'Back to previous onboarding page',
+                                    )}
                                     accessibilityRole="button"
                                     hitSlop={spacing.sm}
                                     onPress={handleBack}
@@ -294,14 +298,16 @@ export const OnboardingScreen = ({
                                         pressed && styles.pressed,
                                     ]}
                                 >
-                                    <Text style={styles.backText}>Back</Text>
+                                    <Text style={styles.backText}>
+                                        {t('Back')}
+                                    </Text>
                                 </Pressable>
                             )}
                             <Pressable
                                 accessibilityLabel={
                                     isAudioMuted
-                                        ? 'Turn on presentation audio'
-                                        : 'Mute presentation audio'
+                                        ? t('Turn on presentation audio')
+                                        : t('Mute presentation audio')
                                 }
                                 accessibilityRole="button"
                                 accessibilityState={{ selected: isAudioMuted }}
@@ -368,22 +374,25 @@ export const OnboardingScreen = ({
                                             width={logoWidth}
                                         />
                                         <Text
-                                            accessibilityLabel="Onboarding welcome"
+                                            accessibilityLabel={t(
+                                                'Onboarding welcome',
+                                            )}
                                             style={styles.entrySubtitle}
                                         >
-                                            Welcome
+                                            {t('Welcome')}
                                         </Text>
                                         <Text style={styles.entryDescription}>
-                                            Build new habits, plan your
-                                            schedule, set reminders, and
-                                            organize your tasks—all in one
-                                            place, in an environment designed to
-                                            bring calm to your everyday life.
+                                            {t(
+                                                'Build new habits, plan your schedule, set reminders, and organize your tasks—all in one place, in an environment designed to bring calm to your everyday life.',
+                                            )}
                                         </Text>
                                     </View>
                                 ) : (
                                     <View
-                                        accessibilityLabel={`Onboarding page ${currentPage} of 7`}
+                                        accessibilityLabel={t(
+                                            'Onboarding page {{page}} of 7',
+                                            { page: currentPage },
+                                        )}
                                         style={[
                                             styles.pageContent,
                                             pageContentPosition,
@@ -393,7 +402,10 @@ export const OnboardingScreen = ({
                                             page={currentPage}
                                         />
                                         <Text
-                                            accessibilityLabel={`Onboarding copy page ${currentPage}`}
+                                            accessibilityLabel={t(
+                                                'Onboarding copy page {{page}}',
+                                                { page: currentPage },
+                                            )}
                                             accessibilityRole="header"
                                             style={[
                                                 styles.pageDescription,
@@ -403,7 +415,7 @@ export const OnboardingScreen = ({
                                                 },
                                             ]}
                                         >
-                                            {page?.description}
+                                            {page ? t(page.description) : null}
                                         </Text>
                                         {page?.input ? (
                                             <View
@@ -417,8 +429,8 @@ export const OnboardingScreen = ({
                                                     accessibilityLabel={
                                                         page.input ===
                                                         'mascotName'
-                                                            ? 'Mascot name'
-                                                            : 'Your name'
+                                                            ? t('Mascot name')
+                                                            : t('Your name')
                                                     }
                                                     autoCapitalize="words"
                                                     autoCorrect={false}
@@ -444,8 +456,8 @@ export const OnboardingScreen = ({
                                                     placeholder={
                                                         page.input ===
                                                         'mascotName'
-                                                            ? 'My name'
-                                                            : 'Your name'
+                                                            ? t('My name')
+                                                            : t('Your name')
                                                     }
                                                     placeholderTextColor={
                                                         colors.textMuted
@@ -463,25 +475,29 @@ export const OnboardingScreen = ({
                                                 {page.input === 'mascotName' &&
                                                 mascotNameError ? (
                                                     <Text
-                                                        accessibilityLabel="Mascot name error"
+                                                        accessibilityLabel={t(
+                                                            'Mascot name error',
+                                                        )}
                                                         accessibilityLiveRegion="polite"
                                                         style={
                                                             styles.inputError
                                                         }
                                                     >
-                                                        {mascotNameError}
+                                                        {t(mascotNameError)}
                                                     </Text>
                                                 ) : null}
                                                 {page.input === 'name' &&
                                                 nameError ? (
                                                     <Text
-                                                        accessibilityLabel="Your name error"
+                                                        accessibilityLabel={t(
+                                                            'Your name error',
+                                                        )}
                                                         accessibilityLiveRegion="polite"
                                                         style={
                                                             styles.inputError
                                                         }
                                                     >
-                                                        {nameError}
+                                                        {t(nameError)}
                                                     </Text>
                                                 ) : null}
                                             </View>
@@ -494,19 +510,21 @@ export const OnboardingScreen = ({
                         <View style={styles.footer}>
                             {isEntryPage ? (
                                 <FormActionButton
-                                    accessibilityLabel="Continue onboarding"
+                                    accessibilityLabel={t(
+                                        'Continue onboarding',
+                                    )}
                                     containerStyle={styles.continueButton}
                                     onPress={handleContinue}
                                     surfaceStyle={styles.continueButtonSurface}
                                     textStyle={styles.continueText}
-                                    title="Get started"
+                                    title={t('Get started')}
                                 />
                             ) : (
                                 <Pressable
                                     accessibilityLabel={
                                         currentPage === 7
-                                            ? 'Create account'
-                                            : 'Next onboarding page'
+                                            ? t('Create account')
+                                            : t('Next onboarding page')
                                     }
                                     accessibilityRole="button"
                                     onPress={handleContinue}
@@ -517,8 +535,8 @@ export const OnboardingScreen = ({
                                 >
                                     <Text style={styles.nextText}>
                                         {currentPage === 7
-                                            ? 'Create account'
-                                            : 'Next'}
+                                            ? t('Create account')
+                                            : t('Next')}
                                     </Text>
                                 </Pressable>
                             )}
@@ -526,14 +544,14 @@ export const OnboardingScreen = ({
                             {isEntryPage ? (
                                 <View style={styles.signInPrompt}>
                                     <Text style={styles.signInPromptText}>
-                                        Already have an account?{' '}
+                                        {t('Already have an account?')}{' '}
                                         <Text
-                                            accessibilityLabel="Sign in"
+                                            accessibilityLabel={t('Sign in')}
                                             accessibilityRole="link"
                                             onPress={onSignIn}
                                             style={styles.signInLink}
                                         >
-                                            Sign in
+                                            {t('Sign in')}
                                         </Text>
                                     </Text>
                                 </View>

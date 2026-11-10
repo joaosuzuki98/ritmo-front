@@ -14,6 +14,7 @@ import { HabitCondition } from './models/HabitCondition'
 import { HabitDependency } from './models/HabitDependency'
 import { IncompletionReason } from './models/IncompletionReason'
 import { Reminder } from './models/Reminder'
+import { NotificationPreference } from './models/NotificationPreference'
 import { Reward } from './models/Reward'
 import { RoutineTemplate } from './models/RoutineTemplate'
 import { Streak } from './models/Streak'
@@ -51,6 +52,7 @@ export const database = new Database({
         TemporaryChallenge,
         Reward,
         Reminder,
+        NotificationPreference,
         RoutineTemplate,
         TodoTask,
         TodoCategory,
@@ -70,6 +72,7 @@ export * from './models/HabitCondition'
 export * from './models/HabitDependency'
 export * from './models/IncompletionReason'
 export * from './models/Reminder'
+export * from './models/NotificationPreference'
 export * from './models/Reward'
 export * from './models/RoutineTemplate'
 export * from './models/Streak'
