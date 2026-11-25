@@ -14,9 +14,9 @@ type AiHabitProposalCardProps = {
     proposal: AiHabitProposal
     state: AiConversationMessage['proposalState']
     isSaving: boolean
+    isOnline: boolean
     habitName?: string
-    onConfirmCreate: () => void
-    onConfirmUpdate: () => void
+    onConfirm: () => void
     onCancel: () => void
 }
 
@@ -32,9 +32,9 @@ export const AiHabitProposalCard = ({
     proposal,
     state,
     isSaving,
+    isOnline,
     habitName,
-    onConfirmCreate,
-    onConfirmUpdate,
+    onConfirm,
     onCancel,
 }: AiHabitProposalCardProps) => {
     const { t } = useTranslation()
@@ -177,9 +177,7 @@ export const AiHabitProposalCard = ({
             {rows}
             {state === 'applied' ? (
                 <Text style={styles.statusText}>
-                    {t(
-                        'Saved on this device. It will sync when internet is available.',
-                    )}
+                    {t('Saved and synchronized.')}
                 </Text>
             ) : null}
             {state === 'cancelled' ? (
@@ -187,54 +185,50 @@ export const AiHabitProposalCard = ({
                     {t('Proposal cancelled.')}
                 </Text>
             ) : null}
-            {state === 'invalid' ? (
-                <Text style={styles.errorText}>
-                    {t(
-                        'This proposal cannot be applied because its target is no longer available for your account.',
-                    )}
+            {state === 'syncPending' ? (
+                <Text style={styles.statusText}>
+                    {t('Saved on the server. Sync is pending.')}
                 </Text>
             ) : null}
-            {state === 'pending' ? (
+            {state === 'pending' || state === 'syncPending' ? (
                 <View style={styles.actions}>
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={t(
-                            proposal.type === 'habit.create'
-                                ? 'Review and complete details'
+                            state === 'syncPending'
+                                ? 'Retry sync'
                                 : 'Confirm proposal',
                         )}
-                        disabled={isSaving}
-                        onPress={
-                            proposal.type === 'habit.create'
-                                ? onConfirmCreate
-                                : onConfirmUpdate
-                        }
+                        disabled={isSaving || !isOnline}
+                        onPress={onConfirm}
                         style={[
                             styles.confirmButton,
-                            isSaving && styles.disabled,
+                            (isSaving || !isOnline) && styles.disabled,
                         ]}
                     >
                         <Text style={styles.confirmText}>
                             {isSaving
                                 ? t('Saving…')
                                 : t(
-                                      proposal.type === 'habit.create'
-                                          ? 'Review and complete details'
+                                      state === 'syncPending'
+                                          ? 'Retry sync'
                                           : 'Confirm proposal',
                                   )}
                         </Text>
                     </Pressable>
-                    <Pressable
-                        accessibilityLabel={t('Cancel proposal')}
-                        accessibilityRole="button"
-                        disabled={isSaving}
-                        onPress={onCancel}
-                        style={styles.cancelButton}
-                    >
-                        <Text style={styles.cancelText}>
-                            {t('Cancel proposal')}
-                        </Text>
-                    </Pressable>
+                    {state === 'pending' ? (
+                        <Pressable
+                            accessibilityLabel={t('Cancel proposal')}
+                            accessibilityRole="button"
+                            disabled={isSaving || !isOnline}
+                            onPress={onCancel}
+                            style={styles.cancelButton}
+                        >
+                            <Text style={styles.cancelText}>
+                                {t('Cancel proposal')}
+                            </Text>
+                        </Pressable>
+                    ) : null}
                 </View>
             ) : null}
         </View>
@@ -308,12 +302,6 @@ const styles = StyleSheet.create({
     disabled: { opacity: 0.5 },
     statusText: {
         color: colors.textMuted,
-        fontFamily: typography.fontFamily,
-        fontSize: 13,
-        marginTop: spacing.sm,
-    },
-    errorText: {
-        color: colors.danger,
         fontFamily: typography.fontFamily,
         fontSize: 13,
         marginTop: spacing.sm,

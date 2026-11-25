@@ -39,7 +39,6 @@ import { useAskTheStarsViewModel } from './useAskTheStarsViewModel'
 import { useAiChatViewModel } from './useAiChatViewModel'
 import { useAnalysisLoading } from './useAnalysisLoading'
 import { useTranslation } from '../../localization/useTranslation'
-import { AddHabitModal } from '../HabitsDashboard/components/AddHabitModal'
 
 type AskTheStarsScreenProps = {
     currentUser: User
@@ -112,7 +111,6 @@ export const AskTheStarsScreen = ({
         isLoading,
         hasLoadError,
     })
-    const currentWeekDay = clampWeekDay(new Date().getDay() || 7)
 
     useEffect(() => {
         if (isChatFlow && aiChat.messages.length)
@@ -433,17 +431,6 @@ export const AskTheStarsScreen = ({
                             </Text>
                         ) : null}
                         {aiChat.messages.map(message => {
-                            const updateProposal =
-                                message.proposal?.type === 'habit.update'
-                                    ? message.proposal
-                                    : null
-                            const habitName = updateProposal
-                                ? aiChat.habitOptions.find(
-                                      option =>
-                                          option.id === updateProposal.entityId,
-                                  )?.title
-                                : undefined
-
                             return (
                                 <View
                                     key={message.id}
@@ -459,20 +446,15 @@ export const AskTheStarsScreen = ({
                                     </Text>
                                     {message.proposal ? (
                                         <AiHabitProposalCard
-                                            habitName={habitName}
                                             isSaving={aiChat.isSavingProposal}
+                                            isOnline={aiChat.isOnline}
                                             onCancel={() =>
                                                 aiChat.cancelProposal(
                                                     message.id,
                                                 )
                                             }
-                                            onConfirmCreate={() =>
-                                                aiChat.openCreateProposal(
-                                                    message.id,
-                                                )
-                                            }
-                                            onConfirmUpdate={() =>
-                                                aiChat.confirmUpdateProposal(
+                                            onConfirm={() =>
+                                                aiChat.confirmProposal(
                                                     message.id,
                                                 )
                                             }
@@ -503,11 +485,6 @@ export const AskTheStarsScreen = ({
                                 style={styles.errorMessage}
                             >
                                 {t(aiChat.errorMessage)}
-                            </Text>
-                        ) : null}
-                        {aiChat.statisticsNotice ? (
-                            <Text style={styles.chatStatusText}>
-                                {t(aiChat.statisticsNotice)}
                             </Text>
                         ) : null}
                     </View>
@@ -811,17 +788,6 @@ export const AskTheStarsScreen = ({
                     )}
                 </ScrollView>
             </BottomSheetLayout>
-            {isChatFlow ? (
-                <AddHabitModal
-                    categoryOptions={aiChat.categoryOptions}
-                    habitOptions={aiChat.habitOptions}
-                    initialFormData={aiChat.createInitialFormData}
-                    initialWeekDay={currentWeekDay}
-                    isVisible={aiChat.createProposalMessage !== null}
-                    onClose={aiChat.closeCreateProposal}
-                    onCreateHabit={aiChat.createHabitFromProposal}
-                />
-            ) : null}
         </KeyboardAvoidingView>
     )
 }

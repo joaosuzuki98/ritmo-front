@@ -13,6 +13,7 @@ import { AnimatedSuggestionCard } from '../../../src/screens/AskTheStars/compone
 import * as scheduleAnalysis from '../../../src/habits/habitScheduleAnalysis'
 import * as loadAnalysis from '../../../src/habits/habitLoadAnalysis'
 import { aiEndpoints } from '../../../src/services/endpoints/ai'
+import { synchronizeDatabase } from '../../../src/database/sync/synchronize'
 
 jest.mock('../../../src/database', () => ({
     database: { get: jest.fn(), write: jest.fn() },
@@ -25,7 +26,10 @@ jest.mock('@react-native-community/netinfo', () => ({
     useNetInfo: jest.fn(),
 }))
 jest.mock('../../../src/services/endpoints/ai', () => ({
-    aiEndpoints: { chat: jest.fn() },
+    aiEndpoints: { streamChat: jest.fn(), decideProposal: jest.fn() },
+}))
+jest.mock('../../../src/database/sync/synchronize', () => ({
+    synchronizeDatabase: jest.fn().mockResolvedValue(undefined),
 }))
 jest.mock('../../../src/components/StarBackground/StarBackground', () => ({
     StarBackground: () => null,
@@ -110,10 +114,14 @@ describe('AskTheStarsScreen analysis loading', () => {
             isConnected: true,
             isInternetReachable: true,
         } as NetInfoState)
-        jest.mocked(aiEndpoints.chat).mockResolvedValue({
+        jest.mocked(aiEndpoints.streamChat).mockResolvedValue({
             reply: 'Here is a suggestion.',
             proposal: null,
+            proposalId: null,
+            proposalExpiresAt: null,
         })
+        jest.mocked(aiEndpoints.decideProposal).mockResolvedValue(undefined)
+        jest.mocked(synchronizeDatabase).mockResolvedValue(undefined)
         observers = {}
         subscriptions = []
         ;(database.get as jest.Mock).mockImplementation((table: TableName) => ({
@@ -242,9 +250,9 @@ describe('AskTheStarsScreen analysis loading', () => {
             renderer.root.findAllByType(Text).map(node => node.props.children)
         expect(visibleTexts()).toContain('Help me make a routine')
         expect(visibleTexts()).toContain('Here is a suggestion.')
-        expect(aiEndpoints.chat).toHaveBeenCalledTimes(1)
+        expect(aiEndpoints.streamChat).toHaveBeenCalledTimes(1)
 
-        jest.mocked(aiEndpoints.chat).mockRejectedValueOnce(
+        jest.mocked(aiEndpoints.streamChat).mockRejectedValueOnce(
             new Error('Network error'),
         )
         act(() =>
@@ -261,6 +269,42 @@ describe('AskTheStarsScreen analysis loading', () => {
         expect(visibleTexts()).toContain(
             'Unable to get an AI response. Please try again.',
         )
+    })
+
+    it('confirms a proposal on the server and synchronizes the result', async () => {
+        const proposalId = '33114aa6-ab20-41d1-9f08-45f439ef7c53'
+        jest.mocked(aiEndpoints.streamChat).mockResolvedValue({
+            reply: 'Posso criar a tarefa.',
+            proposal: { type: 'todo.create', task: { title: 'Comprar ração' } },
+            proposalId,
+            proposalExpiresAt: '2026-11-25T12:15:00.000Z',
+        })
+        act(() => {
+            renderer = create(screen())
+        })
+        act(() =>
+            renderer.root
+                .findByType(TextInput)
+                .props.onChangeText('Crie uma tarefa'),
+        )
+        await act(async () =>
+            renderer.root
+                .findByProps({ accessibilityLabel: 'Send message' })
+                .props.onPress(),
+        )
+        await act(async () =>
+            renderer.root
+                .findByProps({ accessibilityLabel: 'Confirm proposal' })
+                .props.onPress(),
+        )
+        expect(aiEndpoints.decideProposal).toHaveBeenCalledWith(
+            proposalId,
+            'accepted',
+        )
+        expect(synchronizeDatabase).toHaveBeenCalledTimes(1)
+        expect(
+            renderer.root.findAllByType(Text).map(node => node.props.children),
+        ).toContain('Saved and synchronized.')
     })
 
     it('shows weekly load guidance only in the weekly analysis flow', () => {

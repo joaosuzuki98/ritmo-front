@@ -1,86 +1,48 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Q } from '@nozbe/watermelondb'
+import { useEffect, useRef, useState } from 'react'
 import { useNetInfo } from '@react-native-community/netinfo'
 
-import { clampWeekDay } from '../../constants/weekDays'
-import {
-    database,
-    type Category,
-    type Habit,
-    type CompletionRecord,
-    type Event,
-    type Goal,
-    type IncompletionReason,
-    type TodoTask,
-} from '../../database'
-import type { HabitOption } from '../HabitsDashboard/habitDashboard.types'
-import type { AddHabitFormData } from '../HabitsDashboard/addHabitSchema'
-import {
-    createHabitLocally,
-    updateHabitLocally,
-} from '../HabitsDashboard/habitPersistence'
+import { API_BASE_URL } from '../../constants/api'
+import { synchronizeDatabase } from '../../database/sync/synchronize'
+import { useLanguageStore } from '../../localization/useLanguageStore'
 import { aiEndpoints } from '../../services/endpoints/ai'
 import { AiChatError } from '../../services/aiChatError'
 import {
-    buildAiChatContext,
     getRecentAiChatHistory,
-    getAiHabitUpdateFormData,
-    isStatisticsQuestion,
-    toCreateHabitFormData,
     type AiConversationMessage,
 } from './aiChatUtils'
-import { buildAiChatStatistics } from './aiChatStatistics'
-import { applyAiProposalLocally } from './aiProposalPersistence'
 
 const makeMessageId = (counter: number) => `${Date.now()}-${counter}`
 
 export const useAiChatViewModel = (userId: string) => {
     const { isConnected, isInternetReachable } = useNetInfo()
+    const language = useLanguageStore(state => state.language)
     const isOnline = isConnected === true && isInternetReachable !== false
     const [messages, setMessages] = useState<AiConversationMessage[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [isSavingProposal, setIsSavingProposal] = useState(false)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
-    const [habitOptions, setHabitOptions] = useState<HabitOption[]>([])
-    const [categoryOptions, setCategoryOptions] = useState<string[]>([])
-    const [statisticsNotice, setStatisticsNotice] = useState<string | null>(
-        null,
-    )
-    const [createProposalMessageId, setCreateProposalMessageId] = useState<
-        string | null
-    >(null)
     const sendLock = useRef(false)
     const proposalSaveLock = useRef(false)
     const messageCounter = useRef(0)
+    const activeRequest = useRef<AbortController | null>(null)
+    const sessionVersion = useRef(0)
 
     useEffect(() => {
         setMessages([])
         setInput('')
         setErrorMessage(null)
-        setCreateProposalMessageId(null)
-        setHabitOptions([])
-        setCategoryOptions([])
-        setStatisticsNotice(null)
+        sessionVersion.current += 1
+        sendLock.current = false
+        proposalSaveLock.current = false
+        setIsLoading(false)
+        setIsSavingProposal(false)
+        return () => {
+            sessionVersion.current += 1
+            activeRequest.current?.abort()
+            activeRequest.current = null
+        }
     }, [userId])
-
-    const createProposalMessage = useMemo(
-        () =>
-            messages.find(message => message.id === createProposalMessageId) ??
-            null,
-        [createProposalMessageId, messages],
-    )
-    const createProposal =
-        createProposalMessage?.proposal?.type === 'habit.create'
-            ? createProposalMessage.proposal
-            : null
-    const createInitialFormData = useMemo(() => {
-        if (!createProposal) return undefined
-        return toCreateHabitFormData(
-            createProposal,
-            clampWeekDay(new Date().getDay() || 7),
-        )
-    }, [createProposal])
 
     const getNextMessageId = () => {
         messageCounter.current += 1
@@ -93,9 +55,10 @@ export const useAiChatViewModel = (userId: string) => {
             return
 
         sendLock.current = true
+        const controller = new AbortController()
+        activeRequest.current = controller
         setIsLoading(true)
         setErrorMessage(null)
-        setStatisticsNotice(null)
         setInput('')
         const userMessage: AiConversationMessage = {
             id: getNextMessageId(),
@@ -105,138 +68,31 @@ export const useAiChatViewModel = (userId: string) => {
         setMessages(current => [...current, userMessage])
 
         try {
-            const [
-                habits,
-                categories,
-                completions,
-                goals,
-                reasons,
-                tasks,
-                events,
-            ] = await Promise.all([
-                database
-                    .get<Habit>('habits')
-                    .query(Q.where('user_id', userId))
-                    .fetch(),
-                database
-                    .get<Category>('categories')
-                    .query(Q.where('user_id', userId))
-                    .fetch(),
-                database
-                    .get<CompletionRecord>('completion_records')
-                    .query()
-                    .fetch(),
-                database.get<Goal>('goals').query().fetch(),
-                database
-                    .get<IncompletionReason>('incompletion_reasons')
-                    .query()
-                    .fetch(),
-                database
-                    .get<TodoTask>('todo_tasks')
-                    .query(Q.where('user_id', userId))
-                    .fetch(),
-                database
-                    .get<Event>('events')
-                    .query(Q.where('user_id', userId))
-                    .fetch(),
-            ])
-            const contextHabits = buildAiChatContext(habits)
-            setHabitOptions(
-                habits.map(habit => ({ id: habit.id, title: habit.name })),
-            )
-            setCategoryOptions(
-                Array.from(
-                    new Set(
-                        categories
-                            .map(category => category.name.trim())
-                            .filter(Boolean),
-                    ),
-                ).sort((left, right) => left.localeCompare(right)),
-            )
-
-            const history = getRecentAiChatHistory(messages)
-            const statisticsMode = isStatisticsQuestion(message)
-            const statistics = statisticsMode
-                ? buildAiChatStatistics({
-                      habits,
-                      completions: completions.filter(record =>
-                          habits.some(
-                              habit =>
-                                  habit.id === record.habitId &&
-                                  habit.userId === userId,
-                          ),
-                      ),
-                      categories,
-                      goals: goals.filter(goal =>
-                          habits.some(
-                              habit =>
-                                  habit.id === goal.habitId &&
-                                  habit.userId === userId,
-                          ),
-                      ),
-                      reasons,
-                  })
-                : undefined
-            const response = await aiEndpoints.chat({
-                message,
-                mode: statisticsMode ? 'statistics' : 'chat',
-                history: history.length ? history : undefined,
-                context: {
-                    habits: contextHabits,
-                    ...(statistics ? { statistics } : {}),
+            const history = getRecentAiChatHistory(messages).map(item => ({
+                ...item,
+                content: item.content.slice(0, 2000),
+            }))
+            const response = await aiEndpoints.streamChat(
+                {
+                    message,
+                    history: history.length ? history : undefined,
+                    language,
                 },
-            })
-            if (statisticsMode && response.proposal)
-                throw new AiChatError({
-                    stage: 'response',
-                    fields: ['proposal'],
-                })
-            setStatisticsNotice(
-                statisticsMode &&
-                    !statistics?.periods?.some(period => period.planned > 0)
-                    ? 'There is not enough local history to calculate reliable statistics.'
-                    : null,
+                controller.signal,
             )
+            if (controller.signal.aborted) return
             const proposal = response.proposal
-            const ownsHabit = (id: string) =>
-                habits.some(habit => habit.id === id && habit.userId === userId)
-            const proposalTargetExists = !proposal
-                ? false
-                : proposal.type === 'habit.update' ||
-                  proposal.type === 'todo.update' ||
-                  proposal.type === 'event.update' ||
-                  proposal.type === 'goal.update'
-                ? (proposal.type === 'habit.update' &&
-                      ownsHabit(proposal.entityId)) ||
-                  (proposal.type === 'todo.update' &&
-                      tasks.some(task => task.id === proposal.entityId)) ||
-                  (proposal.type === 'event.update' &&
-                      events.some(event => event.id === proposal.entityId)) ||
-                  (proposal.type === 'goal.update' &&
-                      goals.some(
-                          goal =>
-                              goal.id === proposal.entityId &&
-                              ownsHabit(goal.habitId),
-                      ))
-                : proposal.type === 'habit.completion.create'
-                ? ownsHabit(proposal.habitId)
-                : proposal.type === 'goal.create'
-                ? ownsHabit(proposal.goal.habitId)
-                : true
-            const proposalState = proposal
-                ? proposalTargetExists
-                    ? 'pending'
-                    : 'invalid'
-                : undefined
             const assistantMessage: AiConversationMessage = {
                 id: getNextMessageId(),
                 role: 'assistant',
                 content: response.reply,
                 proposal: proposal ?? undefined,
-                proposalState,
+                proposalId: response.proposalId ?? undefined,
+                proposalState: proposal ? 'pending' : undefined,
             }
             setMessages(current => [...current, assistantMessage])
         } catch (error) {
+            if (controller.signal.aborted) return
             if (__DEV__)
                 console.warn(
                     'AI chat failed',
@@ -250,8 +106,11 @@ export const useAiChatViewModel = (userId: string) => {
                     : 'Unable to get an AI response. Please try again.',
             )
         } finally {
-            sendLock.current = false
-            setIsLoading(false)
+            if (activeRequest.current === controller) {
+                activeRequest.current = null
+                sendLock.current = false
+                setIsLoading(false)
+            }
         }
     }
 
@@ -260,138 +119,89 @@ export const useAiChatViewModel = (userId: string) => {
         setMessages([])
         setInput('')
         setErrorMessage(null)
-        setStatisticsNotice(null)
-        setCreateProposalMessageId(null)
     }
 
-    const cancelProposal = (messageId: string) => {
+    const setProposalState = (
+        messageId: string,
+        proposalState: AiConversationMessage['proposalState'],
+    ) => {
         setMessages(current =>
-            current.map(message =>
-                message.id === messageId
-                    ? { ...message, proposalState: 'cancelled' }
-                    : message,
+            current.map(item =>
+                item.id === messageId ? { ...item, proposalState } : item,
             ),
         )
     }
 
-    const openCreateProposal = (messageId: string) => {
-        const message = messages.find(item => item.id === messageId)
-        if (
-            message?.proposal?.type !== 'habit.create' ||
-            message.proposalState !== 'pending'
-        )
-            return
-        setCreateProposalMessageId(messageId)
-    }
-
-    const closeCreateProposal = () => setCreateProposalMessageId(null)
-
-    const createHabitFromProposal = async (formData: AddHabitFormData) => {
-        if (
-            !createProposalMessage ||
-            !createProposal ||
-            createProposalMessage.proposalState !== 'pending' ||
-            proposalSaveLock.current
-        )
-            return
-        proposalSaveLock.current = true
-        setIsSavingProposal(true)
-        setErrorMessage(null)
-        try {
-            await createHabitLocally(
-                userId,
-                formData,
-                createProposal.habit.status,
-            )
-            setMessages(current =>
-                current.map(message =>
-                    message.id === createProposalMessage.id
-                        ? { ...message, proposalState: 'applied' }
-                        : message,
-                ),
-            )
-            closeCreateProposal()
-        } catch {
-            setErrorMessage('Unable to save this habit. Please try again.')
-        } finally {
-            proposalSaveLock.current = false
-            setIsSavingProposal(false)
-        }
-    }
-
-    const confirmUpdateProposal = async (messageId: string) => {
+    const decideProposal = async (
+        messageId: string,
+        decision: 'accepted' | 'rejected',
+    ) => {
         const message = messages.find(item => item.id === messageId)
         if (
             !message?.proposal ||
-            message.proposal.type === 'habit.create' ||
-            message.proposalState !== 'pending' ||
+            !message.proposalId ||
+            !isOnline ||
+            (message.proposalState !== 'pending' &&
+                !(
+                    decision === 'accepted' &&
+                    message.proposalState === 'syncPending'
+                )) ||
             proposalSaveLock.current
         )
             return
-
+        const version = sessionVersion.current
         proposalSaveLock.current = true
         setIsSavingProposal(true)
         setErrorMessage(null)
         try {
-            if (message.proposal.type === 'habit.update') {
-                const habit = await database
-                    .get<Habit>('habits')
-                    .find(message.proposal.entityId)
-                    .catch(() => null)
-                if (!habit || habit.userId !== userId)
-                    throw new Error('Habit is no longer available.')
-                const formData = await getAiHabitUpdateFormData(
-                    userId,
-                    habit,
-                    message.proposal.changes,
-                )
-                await updateHabitLocally(
-                    userId,
-                    habit.id,
-                    formData,
-                    message.proposal.changes.status,
-                )
-            } else {
-                await applyAiProposalLocally(userId, message.proposal)
+            if (message.proposalState === 'pending') {
+                await aiEndpoints.decideProposal(message.proposalId, decision)
+                if (sessionVersion.current !== version) return
             }
-            setMessages(current =>
-                current.map(item =>
-                    item.id === messageId
-                        ? { ...item, proposalState: 'applied' }
-                        : item,
-                ),
-            )
+            if (decision === 'rejected') {
+                setProposalState(messageId, 'cancelled')
+                return
+            }
+            setProposalState(messageId, 'syncPending')
+            try {
+                await synchronizeDatabase({ baseUrl: API_BASE_URL })
+            } catch {
+                if (sessionVersion.current === version)
+                    setErrorMessage(
+                        'The change was saved on the server but could not be synced. Please retry syncing.',
+                    )
+                return
+            }
+            if (sessionVersion.current === version)
+                setProposalState(messageId, 'applied')
         } catch (error) {
+            if (sessionVersion.current !== version) return
             setErrorMessage(
-                error instanceof Error
+                error instanceof AiChatError
                     ? error.message
                     : 'Unable to save this change. Please try again.',
             )
         } finally {
-            proposalSaveLock.current = false
-            setIsSavingProposal(false)
+            if (sessionVersion.current === version) {
+                proposalSaveLock.current = false
+                setIsSavingProposal(false)
+            }
         }
     }
 
     return {
-        cancelProposal,
-        categoryOptions,
+        cancelProposal: (messageId: string) =>
+            decideProposal(messageId, 'rejected'),
         clearChat,
-        statisticsNotice,
-        closeCreateProposal,
-        confirmUpdateProposal,
-        createHabitFromProposal,
-        createInitialFormData,
-        createProposalMessage,
+        confirmProposal: (messageId: string) =>
+            decideProposal(messageId, 'accepted'),
         errorMessage,
         handleSend,
-        habitOptions,
         input,
         isLoading,
         isOnline,
         isSavingProposal,
         messages,
-        openCreateProposal,
         setInput,
     }
 }
