@@ -553,6 +553,7 @@ const portuguese: Record<string, string> = {
     'Hide password': 'Ocultar senha',
     'Show password': 'Mostrar senha',
     'Signing in…': 'Entrando…',
+    'Incorrect login details.': 'Dados de acesso incorretos.',
     'Unable to sign in. Please try again.':
         'Não foi possível entrar. Tente novamente.',
     'Start building a routine that works for you.':
