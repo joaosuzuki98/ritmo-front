@@ -1,6 +1,7 @@
 import type { AppLanguage } from './languages'
 
 const portuguese: Record<string, string> = {
+    Home: 'Início',
     Settings: 'Configurações',
     'Customize your experience': 'Personalize sua experiência',
     General: 'Geral',
