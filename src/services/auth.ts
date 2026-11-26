@@ -87,6 +87,8 @@ export const authenticateUser = async (email: string, password: string) => {
         const response = await authEndpoints.login({ email, password })
         return await saveAuthenticatedResponse(response)
     } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401)
+            throw new Error('Incorrect login details.')
         throw normalizeApiError(error)
     }
 }

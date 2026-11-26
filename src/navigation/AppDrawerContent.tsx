@@ -3,6 +3,7 @@ import type { DrawerContentComponentProps } from '@react-navigation/drawer'
 import {
     ChartBar,
     GearSix,
+    House,
     SignOut,
     Sparkle,
     Storefront,
@@ -32,6 +33,7 @@ type MenuItem = {
     label: string
     route: MenuRoute | null
     icon:
+        | 'home'
         | 'profile'
         | 'ranking'
         | 'friends'
@@ -43,6 +45,12 @@ type MenuItem = {
 }
 
 const menuItems: MenuItem[] = [
+    {
+        label: 'Home',
+        route: 'Habits',
+        icon: 'home',
+        isAvailable: true,
+    },
     {
         label: 'Profile',
         route: null,
@@ -92,6 +100,7 @@ type MenuIconName = MenuItem['icon']
 const getMenuIcon = (name: MenuIconName, color: string) => {
     const iconProps = { color, size: 22, weight: 'regular' as const }
 
+    if (name === 'home') return <House {...iconProps} />
     if (name === 'profile') return <UserCircle {...iconProps} />
     if (name === 'ranking') return <Trophy {...iconProps} />
     if (name === 'friends') return <UsersThree {...iconProps} />
@@ -157,6 +166,7 @@ export const AppDrawerContent = ({
                         return (
                             <Pressable
                                 key={item.label}
+                                accessibilityLabel={t(item.label)}
                                 accessibilityRole="button"
                                 accessibilityState={{
                                     disabled: !item.isAvailable,

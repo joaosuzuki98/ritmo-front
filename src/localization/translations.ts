@@ -1,6 +1,7 @@
 import type { AppLanguage } from './languages'
 
 const portuguese: Record<string, string> = {
+    Home: 'Início',
     Settings: 'Configurações',
     'Customize your experience': 'Personalize sua experiência',
     General: 'Geral',
@@ -408,17 +409,19 @@ const portuguese: Record<string, string> = {
     Daily: 'Todos os dias',
     Weekly: 'Semanal',
     minutes: 'minutos',
-    'Review and complete details': 'Revisar e completar detalhes',
-    'Confirm change': 'Confirmar alteração',
     'Cancel proposal': 'Cancelar proposta',
-    'Saved on this device. It will sync when internet is available.':
-        'Salvo neste dispositivo. Será sincronizado quando houver internet.',
     'Proposal cancelled.': 'Proposta cancelada.',
-    'This proposal cannot be applied because the habit was not included in the request.':
-        'Esta proposta não pode ser aplicada porque o hábito não foi incluído na solicitação.',
-    'This proposal cannot be applied because its target is no longer available for your account.':
-        'Esta proposta não pode ser aplicada porque o item não está mais disponível para sua conta.',
     'Confirm proposal': 'Confirmar proposta',
+    'Retry sync': 'Tentar sincronizar novamente',
+    'Saved and synchronized.': 'Salvo e sincronizado.',
+    'Saved on the server. Sync is pending.':
+        'Salvo no servidor. A sincronização está pendente.',
+    'The change was saved on the server but could not be synced. Please retry syncing.':
+        'A alteração foi salva no servidor, mas não foi sincronizada. Tente sincronizar novamente.',
+    'This proposal expired or cannot be applied. Please ask again.':
+        'Esta proposta expirou ou não pode ser aplicada. Faça o pedido novamente.',
+    'The server could not apply this proposal. Please ask again.':
+        'O servidor não conseguiu aplicar esta proposta. Faça o pedido novamente.',
     'Clear chat': 'Limpar conversa',
     Date: 'Data',
     'Completion time': 'Horário de conclusão',
@@ -427,8 +430,6 @@ const portuguese: Record<string, string> = {
     Deadline: 'Prazo',
     Starts: 'Início',
     Ends: 'Término',
-    'There is not enough local history to calculate reliable statistics.':
-        'Ainda não há histórico local suficiente para calcular estatísticas confiáveis.',
     'Habit is no longer available.': 'Este hábito não está mais disponível.',
     'Task ID': 'ID da tarefa',
     'Event ID': 'ID do evento',
@@ -436,8 +437,6 @@ const portuguese: Record<string, string> = {
     'Task is no longer available.': 'Esta tarefa não está mais disponível.',
     'Event is no longer available.': 'Este evento não está mais disponível.',
     'Goal is no longer available.': 'Esta meta não está mais disponível.',
-    'The proposed completion date is invalid.':
-        'A data proposta para a conclusão é inválida.',
     'The proposed event time is invalid.':
         'O horário proposto para o evento é inválido.',
     'I’m reviewing your weekly routine and completion history.':
@@ -553,6 +552,7 @@ const portuguese: Record<string, string> = {
     'Hide password': 'Ocultar senha',
     'Show password': 'Mostrar senha',
     'Signing in…': 'Entrando…',
+    'Incorrect login details.': 'Dados de acesso incorretos.',
     'Unable to sign in. Please try again.':
         'Não foi possível entrar. Tente novamente.',
     'Start building a routine that works for you.':

@@ -1,4 +1,9 @@
-type AiChatErrorStage = 'request' | 'authentication' | 'http' | 'response'
+type AiChatErrorStage =
+    | 'request'
+    | 'authentication'
+    | 'http'
+    | 'response'
+    | 'proposal'
 
 type AiChatErrorDetails = {
     stage: AiChatErrorStage
@@ -13,6 +18,10 @@ const getErrorMessage = ({ stage, status }: AiChatErrorDetails): string => {
         return 'The AI response does not match the expected format.'
     if (stage === 'authentication' || status === 401 || status === 403)
         return 'Unable to authenticate the AI request. Please sign in again.'
+    if (stage === 'proposal' && (status === 404 || status === 409))
+        return 'This proposal expired or cannot be applied. Please ask again.'
+    if (stage === 'proposal' && (status === 400 || status === 422))
+        return 'The server could not apply this proposal. Please ask again.'
     if (status === 400 || status === 422)
         return 'The server rejected the AI request. Check the chat API contract.'
     if (status === 404)

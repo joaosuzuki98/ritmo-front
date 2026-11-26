@@ -5,7 +5,6 @@ jest.mock('../../../src/database', () => ({
 import { database, type Habit } from '../../../src/database'
 import { createHabitLocally } from '../../../src/screens/HabitsDashboard/habitPersistence'
 import type { AddHabitFormData } from '../../../src/screens/HabitsDashboard/addHabitSchema'
-import { toCreateHabitFormData } from '../../../src/screens/AskTheStars/aiChatUtils'
 
 const mockGet = database.get as jest.Mock
 const mockWrite = database.write as jest.Mock
@@ -86,24 +85,15 @@ describe('createHabitLocally', () => {
         expect(mockWrite).not.toHaveBeenCalled()
     })
 
-    const createFromProposal = (categoryName?: string) =>
-        createHabitLocally(
-            'user-1',
-            toCreateHabitFormData(
-                {
-                    type: 'habit.create',
-                    habit: {
-                        name: 'Caminhada',
-                        frequencyType: 'daily',
-                        ...(categoryName === undefined ? {} : { categoryName }),
-                    },
-                },
-                3,
-            ),
-        )
+    const createWithCategory = (categoryName = '') =>
+        createHabitLocally('user-1', {
+            ...formData,
+            name: 'Caminhada',
+            categoryName,
+        })
 
-    it('creates a proposed habit without a category when none was suggested', async () => {
-        const habit = await createFromProposal()
+    it('creates a habit without a category when none was provided', async () => {
+        const habit = await createWithCategory()
 
         expect(habit.categoryId).toBeUndefined()
         expect(habit.id).toBe('watermelon-generated-id')
@@ -117,19 +107,19 @@ describe('createHabitLocally', () => {
             { id: 'existing-category', userId: 'user-1', name: 'saúde' },
         ])
 
-        const habit = await createFromProposal('Saúde')
+        const habit = await createWithCategory('Saúde')
 
         expect(habit.categoryId).toBe('existing-category')
         expect(mockCreateCategory).not.toHaveBeenCalled()
         expect(mockWrite).toHaveBeenCalledTimes(1)
     })
 
-    it('creates a local category when the suggested name exists only for another user', async () => {
+    it('creates a local category when the name exists only for another user', async () => {
         mockFetchCategories.mockResolvedValue([
             { id: 'other-user-category', userId: 'user-2', name: 'Saúde' },
         ])
 
-        const habit = await createFromProposal('Saúde')
+        const habit = await createWithCategory('Saúde')
 
         expect(mockCreateCategory).toHaveBeenCalledTimes(1)
         await expect(mockCreateCategory.mock.results[0].value).resolves.toEqual(
